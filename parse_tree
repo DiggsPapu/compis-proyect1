@@ -1,0 +1,1 @@
+(program (declaration (statement (exprStmt (expression (assignment (logic_or (logic_and (equality (comparison (term (factor (unary (call (primary 1)))) + (factor (unary (call (primary 2))))))))))) ;))) <EOF>)
