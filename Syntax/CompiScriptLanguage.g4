@@ -1,12 +1,12 @@
-grammar Compiscript;
+grammar CompiScriptLanguage;
 
 program: declaration* EOF ;
 
 declaration: 
-    classDecl # classDecl
-    |   funDecl # funDecl
-    |   varDecl # varDecl
-    |   statement # statement
+    classDecl # classDeclaration
+    |   funDecl # functionDeclaration
+    |   varDecl # variableDeclaration
+    |   statement # statementDeclaration
     ;
 
 classDecl: 'class' IDENTIFIER ('<' IDENTIFIER)? '{' function* '}'
@@ -19,125 +19,65 @@ varDecl: 'var' IDENTIFIER ('=' expression)? ';'
 ;
 
 statement: 
-    exprStmt # exprStmt
-    | forStmt # forStmt
-    | ifStmt # ifStmt
-    | printStmt # printStmt
-    | returnStmt # returnStmt
-    | whileStmt # whileStmt
-    | block # block
+    exprStmt # expressionStatement
+    | forStmt # forStatement
+    | ifStmt # ifStatement
+    | printStmt # printStatement
+    | returnStmt # returnStatement
+    | whileStmt # whileStatement
+    | block # blockStatement
     ;
 
-exprStmt:
-    expression ';'
-    ;
+exprStmt: expression ';' ;
 
-forStmt:
-    'for' '(' (varDecl | exprStmt | ';') expression? ';' expression? ')' statement
-    ;
+forStmt: 'for' '(' (varDecl | exprStmt | ';') expression? ';' expression? ')' statement ;
 
-ifStmt:
-    'if' '(' expression ')' statement ('else' statement)?
-    ;
+ifStmt: 'if' '(' expression ')' statement ('else' statement)? ;
 
-printStmt: 
-    'print' expression ';'
-    ;
+printStmt: 'print' expression ';' ;
 
-returnStmt: 
-    'return' expression? ';'
-    ;
+returnStmt: 'return' expression? ';' ;
 
-whileStmt: 
-    'while' '(' expression ')' statement
-    ;
+whileStmt: 'while' '(' expression ')' statement ;
 
-block: '{' '(' expression ')' '}' statement
-    ;
+block: '{' declaration* '}' ;
 
-expression:
-    assignment
-    ;
+expression: assignment ;
 
-assignment:
-    (call '.')? IDENTIFIER '=' assignment
-    | logic_or
-    ;
+assignment: (call '.')? IDENTIFIER '=' assignment | logic_or ;
 
-logic_or:
-    logic_and ('or' logic_and)*
-    ;
+logic_or: logic_and ('or' logic_and)* ;
 
-logic_and: 
-    equality ('and' equality)*
-    ;
+logic_and: equality ('and' equality)* ;
 
-equality: 
-    comparison (( '!=' | '==' ) comparison)*
-    ;
+equality: comparison (( '!=' | '==' ) comparison)* ;
 
-comparison: 
-    term (( '>' | '>=' | '<' | '<=' ) term)*
-    ;
+comparison: term (( '>' | '>=' | '<' | '<=' ) term)* ;
 
-term: 
-    factor (( '-' | '+' ) factor)* 
-    ;
+term: factor (( '-' | '+' ) factor)* ;
 
-factor: 
-    unary (( '/' | '*' ) unary)* 
-    ;
+factor: unary (( '/' | '*' ) unary)* ;
 
-unary: 
-    ( '!' | '-' ) unary
-    | call 
-    ;
+unary: ( '!' | '-' ) unary | call ;
 
-call: 
-    primary ( '(' arguments? ')' | '.' IDENTIFIER )*
-    ;
-primary: 
-    'true'
-    | 'false'
-    | 'nil'
-    | 'this'
-    | NUMBER
-    | STRING
-    | IDENTIFIER
-    | '(' expression ')'
-    | 'super' '.' IDENTIFIER
-    ;
+call: primary ( '(' arguments? ')' | '.' IDENTIFIER )* ;
 
-function : 
-    IDENTIFIER '(' parameters? ')' block
-    ;
+primary: 'true' | 'false' | 'nil' | 'this' | NUMBER | STRING | IDENTIFIER | '(' expression ')' | 'super' '.' IDENTIFIER ;
 
-parameters: 
-    IDENTIFIER ( ',' IDENTIFIER )*
-    ;
+function : IDENTIFIER '(' parameters? ')' block ;
 
-arguments: 
-    expression ( ',' expression )*
-    ;
+parameters: IDENTIFIER ( ',' IDENTIFIER )* ;
 
-NUMBER: 
-    DIGIT+ ( '.' DIGIT+ )?
-    ;
+arguments: expression ( ',' expression )* ;
 
-STRING: 
-    '"' (~["\\])* '"' 
-    ;
-IDENTIFIER:
-    ALPHA ( ALPHA | DIGIT )* 
-    ;
-fragment ALPHA: 
-    [a-zA-Z_]
-    ;
-    
-fragment DIGIT: 
-    [0-9] 
-    ;
+NUMBER: DIGIT+ ( '.' DIGIT+ )? ;
 
-WS: 
-    [ \t\r\n]+ -> skip 
-    ;
+STRING: '"' (~["\\])* '"' ;
+
+IDENTIFIER: ALPHA ( ALPHA | DIGIT )* ;
+
+fragment ALPHA: [a-zA-Z_] ;
+
+fragment DIGIT: [0-9] ;
+
+WS: [ \t\r\n]+ -> skip ;
