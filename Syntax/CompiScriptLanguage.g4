@@ -56,7 +56,7 @@ comparison: term (( '>' | '>=' | '<' | '<=' ) term)* ;
 
 term: factor (( '-' | '+' ) factor)* ;
 
-factor: unary (( '/' | '*' ) unary)* ;
+factor: unary (( '/' | '*' | '%' ) unary)* ;
 
 unary: ( '!' | '-' ) unary | call ;
 

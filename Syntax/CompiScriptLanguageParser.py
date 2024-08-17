@@ -10,7 +10,7 @@ else:
 
 def serializedATN():
     return [
-        4,1,39,277,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
+        4,1,40,277,2,0,7,0,2,1,7,1,2,2,7,2,2,3,7,3,2,4,7,4,2,5,7,5,2,6,7,
         6,2,7,7,7,2,8,7,8,2,9,7,9,2,10,7,10,2,11,7,11,2,12,7,12,2,13,7,13,
         2,14,7,14,2,15,7,15,2,16,7,16,2,17,7,17,2,18,7,18,2,19,7,19,2,20,
         7,20,2,21,7,21,2,22,7,22,2,23,7,23,2,24,7,24,2,25,7,25,2,26,7,26,
@@ -34,7 +34,7 @@ def serializedATN():
         1,25,1,25,1,25,5,25,264,8,25,10,25,12,25,267,9,25,1,26,1,26,1,26,
         5,26,272,8,26,10,26,12,26,275,9,26,1,26,0,0,27,0,2,4,6,8,10,12,14,
         16,18,20,22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52,0,5,1,0,
-        20,21,2,0,2,2,22,24,1,0,25,26,1,0,27,28,2,0,25,25,29,29,292,0,57,
+        20,21,2,0,2,2,22,24,1,0,25,26,1,0,27,29,2,0,25,25,30,30,292,0,57,
         1,0,0,0,2,66,1,0,0,0,4,68,1,0,0,0,6,83,1,0,0,0,8,86,1,0,0,0,10,101,
         1,0,0,0,12,103,1,0,0,0,14,106,1,0,0,0,16,123,1,0,0,0,18,132,1,0,
         0,0,20,136,1,0,0,0,22,142,1,0,0,0,24,148,1,0,0,0,26,157,1,0,0,0,
@@ -45,11 +45,11 @@ def serializedATN():
         0,0,0,58,60,1,0,0,0,59,57,1,0,0,0,60,61,5,0,0,1,61,1,1,0,0,0,62,
         67,3,4,2,0,63,67,3,6,3,0,64,67,3,8,4,0,65,67,3,10,5,0,66,62,1,0,
         0,0,66,63,1,0,0,0,66,64,1,0,0,0,66,65,1,0,0,0,67,3,1,0,0,0,68,69,
-        5,1,0,0,69,72,5,38,0,0,70,71,5,2,0,0,71,73,5,38,0,0,72,70,1,0,0,
+        5,1,0,0,69,72,5,39,0,0,70,71,5,2,0,0,71,73,5,39,0,0,72,70,1,0,0,
         0,72,73,1,0,0,0,73,74,1,0,0,0,74,78,5,3,0,0,75,77,3,48,24,0,76,75,
         1,0,0,0,77,80,1,0,0,0,78,76,1,0,0,0,78,79,1,0,0,0,79,81,1,0,0,0,
         80,78,1,0,0,0,81,82,5,4,0,0,82,5,1,0,0,0,83,84,5,5,0,0,84,85,3,48,
-        24,0,85,7,1,0,0,0,86,87,5,6,0,0,87,90,5,38,0,0,88,89,5,7,0,0,89,
+        24,0,85,7,1,0,0,0,86,87,5,6,0,0,87,90,5,39,0,0,88,89,5,7,0,0,89,
         91,3,26,13,0,90,88,1,0,0,0,90,91,1,0,0,0,91,92,1,0,0,0,92,93,5,8,
         0,0,93,9,1,0,0,0,94,102,3,12,6,0,95,102,3,14,7,0,96,102,3,16,8,0,
         97,102,3,18,9,0,98,102,3,20,10,0,99,102,3,22,11,0,100,102,3,24,12,
@@ -72,7 +72,7 @@ def serializedATN():
         153,1,0,0,0,153,155,1,0,0,0,154,152,1,0,0,0,155,156,5,4,0,0,156,
         25,1,0,0,0,157,158,3,28,14,0,158,27,1,0,0,0,159,160,3,44,22,0,160,
         161,5,17,0,0,161,163,1,0,0,0,162,159,1,0,0,0,162,163,1,0,0,0,163,
-        164,1,0,0,0,164,165,5,38,0,0,165,166,5,7,0,0,166,169,3,28,14,0,167,
+        164,1,0,0,0,164,165,5,39,0,0,165,166,5,7,0,0,166,169,3,28,14,0,167,
         169,3,30,15,0,168,162,1,0,0,0,168,167,1,0,0,0,169,29,1,0,0,0,170,
         175,3,32,16,0,171,172,5,18,0,0,172,174,3,32,16,0,173,171,1,0,0,0,
         174,177,1,0,0,0,175,173,1,0,0,0,175,176,1,0,0,0,176,31,1,0,0,0,177,
@@ -91,20 +91,20 @@ def serializedATN():
         42,21,0,220,222,3,44,22,0,221,218,1,0,0,0,221,220,1,0,0,0,222,43,
         1,0,0,0,223,233,3,46,23,0,224,226,5,10,0,0,225,227,3,52,26,0,226,
         225,1,0,0,0,226,227,1,0,0,0,227,228,1,0,0,0,228,232,5,11,0,0,229,
-        230,5,17,0,0,230,232,5,38,0,0,231,224,1,0,0,0,231,229,1,0,0,0,232,
+        230,5,17,0,0,230,232,5,39,0,0,231,224,1,0,0,0,231,229,1,0,0,0,232,
         235,1,0,0,0,233,231,1,0,0,0,233,234,1,0,0,0,234,45,1,0,0,0,235,233,
-        1,0,0,0,236,251,5,30,0,0,237,251,5,31,0,0,238,251,5,32,0,0,239,251,
-        5,33,0,0,240,251,5,36,0,0,241,251,5,37,0,0,242,251,5,38,0,0,243,
+        1,0,0,0,236,251,5,31,0,0,237,251,5,32,0,0,238,251,5,33,0,0,239,251,
+        5,34,0,0,240,251,5,37,0,0,241,251,5,38,0,0,242,251,5,39,0,0,243,
         244,5,10,0,0,244,245,3,26,13,0,245,246,5,11,0,0,246,251,1,0,0,0,
-        247,248,5,34,0,0,248,249,5,17,0,0,249,251,5,38,0,0,250,236,1,0,0,
+        247,248,5,35,0,0,248,249,5,17,0,0,249,251,5,39,0,0,250,236,1,0,0,
         0,250,237,1,0,0,0,250,238,1,0,0,0,250,239,1,0,0,0,250,240,1,0,0,
         0,250,241,1,0,0,0,250,242,1,0,0,0,250,243,1,0,0,0,250,247,1,0,0,
-        0,251,47,1,0,0,0,252,253,5,38,0,0,253,255,5,10,0,0,254,256,3,50,
+        0,251,47,1,0,0,0,252,253,5,39,0,0,253,255,5,10,0,0,254,256,3,50,
         25,0,255,254,1,0,0,0,255,256,1,0,0,0,256,257,1,0,0,0,257,258,5,11,
-        0,0,258,259,3,24,12,0,259,49,1,0,0,0,260,265,5,38,0,0,261,262,5,
-        35,0,0,262,264,5,38,0,0,263,261,1,0,0,0,264,267,1,0,0,0,265,263,
+        0,0,258,259,3,24,12,0,259,49,1,0,0,0,260,265,5,39,0,0,261,262,5,
+        36,0,0,262,264,5,39,0,0,263,261,1,0,0,0,264,267,1,0,0,0,265,263,
         1,0,0,0,265,266,1,0,0,0,266,51,1,0,0,0,267,265,1,0,0,0,268,273,3,
-        26,13,0,269,270,5,35,0,0,270,272,3,26,13,0,271,269,1,0,0,0,272,275,
+        26,13,0,269,270,5,36,0,0,270,272,3,26,13,0,271,269,1,0,0,0,272,275,
         1,0,0,0,273,271,1,0,0,0,273,274,1,0,0,0,274,53,1,0,0,0,275,273,1,
         0,0,0,28,57,66,72,78,90,101,111,114,118,130,138,152,162,168,175,
         183,191,199,207,215,221,226,231,233,250,255,265,273
@@ -124,8 +124,8 @@ class CompiScriptLanguageParser ( Parser ):
                      "'var'", "'='", "';'", "'for'", "'('", "')'", "'if'", 
                      "'else'", "'print'", "'return'", "'while'", "'.'", 
                      "'or'", "'and'", "'!='", "'=='", "'>'", "'>='", "'<='", 
-                     "'-'", "'+'", "'/'", "'*'", "'!'", "'true'", "'false'", 
-                     "'nil'", "'this'", "'super'", "','" ]
+                     "'-'", "'+'", "'/'", "'*'", "'%'", "'!'", "'true'", 
+                     "'false'", "'nil'", "'this'", "'super'", "','" ]
 
     symbolicNames = [ "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
                       "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
@@ -136,7 +136,7 @@ class CompiScriptLanguageParser ( Parser ):
                       "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
                       "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
                       "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                      "NUMBER", "STRING", "IDENTIFIER", "WS" ]
+                      "<INVALID>", "NUMBER", "STRING", "IDENTIFIER", "WS" ]
 
     RULE_program = 0
     RULE_declaration = 1
@@ -209,10 +209,11 @@ class CompiScriptLanguageParser ( Parser ):
     T__32=33
     T__33=34
     T__34=35
-    NUMBER=36
-    STRING=37
-    IDENTIFIER=38
-    WS=39
+    T__35=36
+    NUMBER=37
+    STRING=38
+    IDENTIFIER=39
+    WS=40
 
     def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
         super().__init__(input, output)
@@ -270,7 +271,7 @@ class CompiScriptLanguageParser ( Parser ):
             self.state = 57
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & 514892879466) != 0):
+            while (((_la) & ~0x3f) == 0 and ((1 << _la) & 1029752084074) != 0):
                 self.state = 54
                 self.declaration()
                 self.state = 59
@@ -432,7 +433,7 @@ class CompiScriptLanguageParser ( Parser ):
                 self.state = 64
                 self.varDecl()
                 pass
-            elif token in [3, 9, 10, 12, 14, 15, 16, 25, 29, 30, 31, 32, 33, 34, 36, 37, 38]:
+            elif token in [3, 9, 10, 12, 14, 15, 16, 25, 30, 31, 32, 33, 34, 35, 37, 38, 39]:
                 localctx = CompiScriptLanguageParser.StatementDeclarationContext(self, localctx)
                 self.enterOuterAlt(localctx, 4)
                 self.state = 65
@@ -516,7 +517,7 @@ class CompiScriptLanguageParser ( Parser ):
             self.state = 78
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==38:
+            while _la==39:
                 self.state = 75
                 self.function()
                 self.state = 80
@@ -851,7 +852,7 @@ class CompiScriptLanguageParser ( Parser ):
             self.state = 101
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [10, 25, 29, 30, 31, 32, 33, 34, 36, 37, 38]:
+            if token in [10, 25, 30, 31, 32, 33, 34, 35, 37, 38, 39]:
                 localctx = CompiScriptLanguageParser.ExpressionStatementContext(self, localctx)
                 self.enterOuterAlt(localctx, 1)
                 self.state = 94
@@ -1019,7 +1020,7 @@ class CompiScriptLanguageParser ( Parser ):
                 self.state = 108
                 self.varDecl()
                 pass
-            elif token in [10, 25, 29, 30, 31, 32, 33, 34, 36, 37, 38]:
+            elif token in [10, 25, 30, 31, 32, 33, 34, 35, 37, 38, 39]:
                 self.state = 109
                 self.exprStmt()
                 pass
@@ -1033,7 +1034,7 @@ class CompiScriptLanguageParser ( Parser ):
             self.state = 114
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if (((_la) & ~0x3f) == 0 and ((1 << _la) & 514892760064) != 0):
+            if (((_la) & ~0x3f) == 0 and ((1 << _la) & 1029751964672) != 0):
                 self.state = 113
                 self.expression()
 
@@ -1043,7 +1044,7 @@ class CompiScriptLanguageParser ( Parser ):
             self.state = 118
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if (((_la) & ~0x3f) == 0 and ((1 << _la) & 514892760064) != 0):
+            if (((_la) & ~0x3f) == 0 and ((1 << _la) & 1029751964672) != 0):
                 self.state = 117
                 self.expression()
 
@@ -1229,7 +1230,7 @@ class CompiScriptLanguageParser ( Parser ):
             self.state = 138
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if (((_la) & ~0x3f) == 0 and ((1 << _la) & 514892760064) != 0):
+            if (((_la) & ~0x3f) == 0 and ((1 << _la) & 1029751964672) != 0):
                 self.state = 137
                 self.expression()
 
@@ -1351,7 +1352,7 @@ class CompiScriptLanguageParser ( Parser ):
             self.state = 152
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & 514892879466) != 0):
+            while (((_la) & ~0x3f) == 0 and ((1 << _la) & 1029752084074) != 0):
                 self.state = 149
                 self.declaration()
                 self.state = 154
@@ -1884,10 +1885,10 @@ class CompiScriptLanguageParser ( Parser ):
             self.state = 215
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==27 or _la==28:
+            while (((_la) & ~0x3f) == 0 and ((1 << _la) & 939524096) != 0):
                 self.state = 211
                 _la = self._input.LA(1)
-                if not(_la==27 or _la==28):
+                if not((((_la) & ~0x3f) == 0 and ((1 << _la) & 939524096) != 0)):
                     self._errHandler.recoverInline(self)
                 else:
                     self._errHandler.reportMatch(self)
@@ -1951,11 +1952,11 @@ class CompiScriptLanguageParser ( Parser ):
             self.state = 221
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [25, 29]:
+            if token in [25, 30]:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 218
                 _la = self._input.LA(1)
-                if not(_la==25 or _la==29):
+                if not(_la==25 or _la==30):
                     self._errHandler.recoverInline(self)
                 else:
                     self._errHandler.reportMatch(self)
@@ -1963,7 +1964,7 @@ class CompiScriptLanguageParser ( Parser ):
                 self.state = 219
                 self.unary()
                 pass
-            elif token in [10, 30, 31, 32, 33, 34, 36, 37, 38]:
+            elif token in [10, 31, 32, 33, 34, 35, 37, 38, 39]:
                 self.enterOuterAlt(localctx, 2)
                 self.state = 220
                 self.call()
@@ -2047,7 +2048,7 @@ class CompiScriptLanguageParser ( Parser ):
                         self.state = 226
                         self._errHandler.sync(self)
                         _la = self._input.LA(1)
-                        if (((_la) & ~0x3f) == 0 and ((1 << _la) & 514892760064) != 0):
+                        if (((_la) & ~0x3f) == 0 and ((1 << _la) & 1029751964672) != 0):
                             self.state = 225
                             self.arguments()
 
@@ -2125,37 +2126,37 @@ class CompiScriptLanguageParser ( Parser ):
             self.state = 250
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [30]:
+            if token in [31]:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 236
-                self.match(CompiScriptLanguageParser.T__29)
-                pass
-            elif token in [31]:
-                self.enterOuterAlt(localctx, 2)
-                self.state = 237
                 self.match(CompiScriptLanguageParser.T__30)
                 pass
             elif token in [32]:
-                self.enterOuterAlt(localctx, 3)
-                self.state = 238
+                self.enterOuterAlt(localctx, 2)
+                self.state = 237
                 self.match(CompiScriptLanguageParser.T__31)
                 pass
             elif token in [33]:
-                self.enterOuterAlt(localctx, 4)
-                self.state = 239
+                self.enterOuterAlt(localctx, 3)
+                self.state = 238
                 self.match(CompiScriptLanguageParser.T__32)
                 pass
-            elif token in [36]:
+            elif token in [34]:
+                self.enterOuterAlt(localctx, 4)
+                self.state = 239
+                self.match(CompiScriptLanguageParser.T__33)
+                pass
+            elif token in [37]:
                 self.enterOuterAlt(localctx, 5)
                 self.state = 240
                 self.match(CompiScriptLanguageParser.NUMBER)
                 pass
-            elif token in [37]:
+            elif token in [38]:
                 self.enterOuterAlt(localctx, 6)
                 self.state = 241
                 self.match(CompiScriptLanguageParser.STRING)
                 pass
-            elif token in [38]:
+            elif token in [39]:
                 self.enterOuterAlt(localctx, 7)
                 self.state = 242
                 self.match(CompiScriptLanguageParser.IDENTIFIER)
@@ -2169,10 +2170,10 @@ class CompiScriptLanguageParser ( Parser ):
                 self.state = 245
                 self.match(CompiScriptLanguageParser.T__10)
                 pass
-            elif token in [34]:
+            elif token in [35]:
                 self.enterOuterAlt(localctx, 9)
                 self.state = 247
-                self.match(CompiScriptLanguageParser.T__33)
+                self.match(CompiScriptLanguageParser.T__34)
                 self.state = 248
                 self.match(CompiScriptLanguageParser.T__16)
                 self.state = 249
@@ -2242,7 +2243,7 @@ class CompiScriptLanguageParser ( Parser ):
             self.state = 255
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==38:
+            if _la==39:
                 self.state = 254
                 self.parameters()
 
@@ -2305,9 +2306,9 @@ class CompiScriptLanguageParser ( Parser ):
             self.state = 265
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==35:
+            while _la==36:
                 self.state = 261
-                self.match(CompiScriptLanguageParser.T__34)
+                self.match(CompiScriptLanguageParser.T__35)
                 self.state = 262
                 self.match(CompiScriptLanguageParser.IDENTIFIER)
                 self.state = 267
@@ -2369,9 +2370,9 @@ class CompiScriptLanguageParser ( Parser ):
             self.state = 273
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==35:
+            while _la==36:
                 self.state = 269
-                self.match(CompiScriptLanguageParser.T__34)
+                self.match(CompiScriptLanguageParser.T__35)
                 self.state = 270
                 self.expression()
                 self.state = 275
