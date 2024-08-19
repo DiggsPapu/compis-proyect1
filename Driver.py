@@ -2,7 +2,7 @@ import sys
 from antlr4 import *
 from Syntax.CompiScriptLanguageLexer import *
 from Syntax.CompiScriptLanguageParser import *
-# from Semantic.CompiScriptVisitor import *
+from Semantic.CompiScriptVisitor import *
 from Syntax.CompiScriptLanguageVisitor import *
 from antlr4.tree.Trees import Trees
 import graphviz
@@ -23,13 +23,13 @@ def create_visual_tree(tree, parser):
 
     
 def main(argv):
-    input_stream = InputStream("1+2;")
+    input_stream = FileStream('./Textos/Statement.txt')
     lexer = CompiScriptLanguageLexer(input_stream)
     stream = CommonTokenStream(lexer)
     parser = CompiScriptLanguageParser(stream)
     tree = parser.program()  # We are using 'program' since this is the starting rule based on our CompiScriptLanguage grammar, yay!
     
-    visitor = CompiScriptLanguageVisitor()
+    visitor = CompiScriptVisitor()
     
     # Genera el árbol como texto
     tree_str = Trees.toStringTree(tree, None, parser)
