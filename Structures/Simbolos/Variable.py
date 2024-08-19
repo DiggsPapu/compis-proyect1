@@ -7,6 +7,11 @@ class Variable(Simbolo):
     def __init__(self, nombreSimbolo, valor, tipo: Tipo, ambito: int, inicializador:Tipo=Nil) -> None:
         super().__init__(nombreSimbolo, valor, tipo, ambito)
         # Inicializacion de la variable, sirve para comprobar que el inicializado es el mismo que el esperado
+        self.inicializador:Tipo = inicializador
+    
+    def definirInicializador(self, inicializador:Tipo):
         self.inicializador = inicializador
     
+    def redefinirTipo(self, tipo:Tipo):
+        self.tipo = tipo
     

@@ -10,3 +10,5 @@ class Campo(Simbolo):
         # Para definir a que variable pertenece este campo o atributo
         self.perteneceVariable = nombreVariable
         
+    def definirInicializador(self, inicializador:Tipo):
+        self.inicializador = inicializador

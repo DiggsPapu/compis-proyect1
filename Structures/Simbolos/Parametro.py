@@ -7,6 +7,8 @@ class Parametro(Simbolo):
         super().__init__(nombreSimbolo, valor, tipo, ambito)
         # Sirve para verificar que el parametro tipo esperado inicializado es el esperado
         self.inicializacion = inicializador
-        # Para definir a que variable pertenece este 
+        # Para definir a que funcion pertenece este parametro
         self.perteneceVariable = nombreVariable
         
+    def definirInicializador(self, inicializador:Tipo):
+        self.inicializador = inicializador
