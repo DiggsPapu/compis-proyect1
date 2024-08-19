@@ -1,6 +1,8 @@
 from Structures.Tipos.Tipo import *
 
 class Numero(Tipo):
+    def __init__(self, nombreTipo, valor) -> None:
+        super().__init__(nombreTipo, valor)
     # >
     def mayorQue(val1, val2):
         pass

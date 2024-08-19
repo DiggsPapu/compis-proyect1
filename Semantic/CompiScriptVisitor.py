@@ -1,13 +1,25 @@
 from Syntax.CompiScriptLanguageVisitor import *
+from Syntax.CompiScriptLanguageParser import *
+from Structures.HashMap import *
+from Structures.Ambito import *
+from Structures.Tipos.Tipo import *
+from Structures.Simbolos.Variable import *
 
 # Implementacion
 class CompiScriptVisitor(CompiScriptLanguageVisitor):
-    
+    def __init__(self) -> None:
+        super().__init__()
+        self.TablaDeSimbolos = HashMap()
+        self.TablaDeTipos = HashMap()
+        self.TablaDeAmbitos = HashMap()
+        self.ambitoActual = 0
+        
     # Visit a parse tree produced by CompiScriptLanguageParser#program.
     def visitProgram(self, ctx:CompiScriptLanguageParser.ProgramContext):
-        for child in ctx.stat():
+        # Crear el contexto main que seria el contexto 0
+        self.TablaDeAmbitos.put(0, Ambito(identificador=0))
+        for child in ctx.declaration():
             self.visit(child)
-
 
     # Visit a parse tree produced by CompiScriptLanguageParser#classDeclaration.
     def visitClassDeclaration(self, ctx:CompiScriptLanguageParser.ClassDeclarationContext):
@@ -41,6 +53,9 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#varDecl.
     def visitVarDecl(self, ctx:CompiScriptLanguageParser.VarDeclContext):
+        id = ctx.IDENTIFIER().symbol.text
+        # Averiguaremos el tipo despues y la inicializacion despues
+        self.TablaDeSimbolos.put(id, Variable(nombreSimbolo=id, ambito=self.ambitoActual))
         return self.visitChildren(ctx)
 
 
