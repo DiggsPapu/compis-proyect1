@@ -1,8 +1,10 @@
 from Structures.Tipos.Tipo import *
 
 class Cadena(Tipo):
-    def __init__(self, nombreTipo, valor) -> None:
+    def __init__(self, nombreTipo="cadena", valor="cadena") -> None:
         super().__init__(nombreTipo, valor)
+    def __str__(self) -> str:
+        return "cadena"
     # >
     def mayorQue(val1, val2):
         pass

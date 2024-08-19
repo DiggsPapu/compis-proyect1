@@ -1,8 +1,10 @@
 from Structures.Tipos.Tipo import *
 
 class Nil(Tipo):
-    def __init__(self, nombreTipo, valor) -> None:
+    def __init__(self, nombreTipo="nil", valor="nil") -> None:
         super().__init__(nombreTipo, valor)
+    def __str__(self) -> str:
+        return "nil"
     # >
     def mayorQue(val1, val2):
         pass

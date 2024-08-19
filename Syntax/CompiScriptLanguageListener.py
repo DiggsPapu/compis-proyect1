@@ -17,39 +17,12 @@ class CompiScriptLanguageListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CompiScriptLanguageParser#classDeclaration.
-    def enterClassDeclaration(self, ctx:CompiScriptLanguageParser.ClassDeclarationContext):
+    # Enter a parse tree produced by CompiScriptLanguageParser#declaration.
+    def enterDeclaration(self, ctx:CompiScriptLanguageParser.DeclarationContext):
         pass
 
-    # Exit a parse tree produced by CompiScriptLanguageParser#classDeclaration.
-    def exitClassDeclaration(self, ctx:CompiScriptLanguageParser.ClassDeclarationContext):
-        pass
-
-
-    # Enter a parse tree produced by CompiScriptLanguageParser#functionDeclaration.
-    def enterFunctionDeclaration(self, ctx:CompiScriptLanguageParser.FunctionDeclarationContext):
-        pass
-
-    # Exit a parse tree produced by CompiScriptLanguageParser#functionDeclaration.
-    def exitFunctionDeclaration(self, ctx:CompiScriptLanguageParser.FunctionDeclarationContext):
-        pass
-
-
-    # Enter a parse tree produced by CompiScriptLanguageParser#variableDeclaration.
-    def enterVariableDeclaration(self, ctx:CompiScriptLanguageParser.VariableDeclarationContext):
-        pass
-
-    # Exit a parse tree produced by CompiScriptLanguageParser#variableDeclaration.
-    def exitVariableDeclaration(self, ctx:CompiScriptLanguageParser.VariableDeclarationContext):
-        pass
-
-
-    # Enter a parse tree produced by CompiScriptLanguageParser#statementDeclaration.
-    def enterStatementDeclaration(self, ctx:CompiScriptLanguageParser.StatementDeclarationContext):
-        pass
-
-    # Exit a parse tree produced by CompiScriptLanguageParser#statementDeclaration.
-    def exitStatementDeclaration(self, ctx:CompiScriptLanguageParser.StatementDeclarationContext):
+    # Exit a parse tree produced by CompiScriptLanguageParser#declaration.
+    def exitDeclaration(self, ctx:CompiScriptLanguageParser.DeclarationContext):
         pass
 
 
@@ -80,66 +53,12 @@ class CompiScriptLanguageListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CompiScriptLanguageParser#expressionStatement.
-    def enterExpressionStatement(self, ctx:CompiScriptLanguageParser.ExpressionStatementContext):
+    # Enter a parse tree produced by CompiScriptLanguageParser#statement.
+    def enterStatement(self, ctx:CompiScriptLanguageParser.StatementContext):
         pass
 
-    # Exit a parse tree produced by CompiScriptLanguageParser#expressionStatement.
-    def exitExpressionStatement(self, ctx:CompiScriptLanguageParser.ExpressionStatementContext):
-        pass
-
-
-    # Enter a parse tree produced by CompiScriptLanguageParser#forStatement.
-    def enterForStatement(self, ctx:CompiScriptLanguageParser.ForStatementContext):
-        pass
-
-    # Exit a parse tree produced by CompiScriptLanguageParser#forStatement.
-    def exitForStatement(self, ctx:CompiScriptLanguageParser.ForStatementContext):
-        pass
-
-
-    # Enter a parse tree produced by CompiScriptLanguageParser#ifStatement.
-    def enterIfStatement(self, ctx:CompiScriptLanguageParser.IfStatementContext):
-        pass
-
-    # Exit a parse tree produced by CompiScriptLanguageParser#ifStatement.
-    def exitIfStatement(self, ctx:CompiScriptLanguageParser.IfStatementContext):
-        pass
-
-
-    # Enter a parse tree produced by CompiScriptLanguageParser#printStatement.
-    def enterPrintStatement(self, ctx:CompiScriptLanguageParser.PrintStatementContext):
-        pass
-
-    # Exit a parse tree produced by CompiScriptLanguageParser#printStatement.
-    def exitPrintStatement(self, ctx:CompiScriptLanguageParser.PrintStatementContext):
-        pass
-
-
-    # Enter a parse tree produced by CompiScriptLanguageParser#returnStatement.
-    def enterReturnStatement(self, ctx:CompiScriptLanguageParser.ReturnStatementContext):
-        pass
-
-    # Exit a parse tree produced by CompiScriptLanguageParser#returnStatement.
-    def exitReturnStatement(self, ctx:CompiScriptLanguageParser.ReturnStatementContext):
-        pass
-
-
-    # Enter a parse tree produced by CompiScriptLanguageParser#whileStatement.
-    def enterWhileStatement(self, ctx:CompiScriptLanguageParser.WhileStatementContext):
-        pass
-
-    # Exit a parse tree produced by CompiScriptLanguageParser#whileStatement.
-    def exitWhileStatement(self, ctx:CompiScriptLanguageParser.WhileStatementContext):
-        pass
-
-
-    # Enter a parse tree produced by CompiScriptLanguageParser#blockStatement.
-    def enterBlockStatement(self, ctx:CompiScriptLanguageParser.BlockStatementContext):
-        pass
-
-    # Exit a parse tree produced by CompiScriptLanguageParser#blockStatement.
-    def exitBlockStatement(self, ctx:CompiScriptLanguageParser.BlockStatementContext):
+    # Exit a parse tree produced by CompiScriptLanguageParser#statement.
+    def exitStatement(self, ctx:CompiScriptLanguageParser.StatementContext):
         pass
 
 
@@ -212,15 +131,6 @@ class CompiScriptLanguageListener(ParseTreeListener):
 
     # Exit a parse tree produced by CompiScriptLanguageParser#expression.
     def exitExpression(self, ctx:CompiScriptLanguageParser.ExpressionContext):
-        pass
-
-
-    # Enter a parse tree produced by CompiScriptLanguageParser#assignment.
-    def enterAssignment(self, ctx:CompiScriptLanguageParser.AssignmentContext):
-        pass
-
-    # Exit a parse tree produced by CompiScriptLanguageParser#assignment.
-    def exitAssignment(self, ctx:CompiScriptLanguageParser.AssignmentContext):
         pass
 
 

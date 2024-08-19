@@ -1,8 +1,11 @@
 from Structures.Tipos.Tipo import *
 
 class Booleano(Tipo):
-    def __init__(self, nombreTipo, valor) -> None:
+    def __init__(self, nombreTipo="booleano", valor="booleano") -> None:
         super().__init__(nombreTipo, valor)
+    
+    def __str__(self) -> str:
+        return "booleano"
     # >
     def mayorQue(val1, val2):
         pass

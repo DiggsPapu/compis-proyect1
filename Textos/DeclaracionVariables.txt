@@ -1,1 +1,5 @@
+var prueba;
 var numero = 1;
+var booleano = true;
+var cadena = "hola";
+var nulo = nil;

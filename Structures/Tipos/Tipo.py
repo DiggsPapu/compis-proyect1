@@ -2,7 +2,7 @@
 # Value -> Clase del tipo por ejemplo la clase int que defina que puede o que no puede hacer el tipo
 
 class Tipo():
-    def __init__(self, nombreTipo, valor) -> None:
+    def __init__(self, nombreTipo="tipo", valor="tipo") -> None:
         self.nombreTipo = nombreTipo
         self.valor = valor
     

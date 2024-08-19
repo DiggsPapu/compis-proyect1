@@ -4,6 +4,10 @@ from Structures.HashMap import *
 from Structures.Ambito import *
 from Structures.Tipos.Tipo import *
 from Structures.Simbolos.Variable import *
+from Structures.Tipos.Numero import *
+from Structures.Tipos.Nil import *
+from Structures.Tipos.Cadena import *
+from Structures.Tipos.Booleano import *
 
 # Implementacion
 class CompiScriptVisitor(CompiScriptLanguageVisitor):
@@ -21,26 +25,6 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         for child in ctx.declaration():
             self.visit(child)
 
-    # Visit a parse tree produced by CompiScriptLanguageParser#classDeclaration.
-    def visitClassDeclaration(self, ctx:CompiScriptLanguageParser.ClassDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#functionDeclaration.
-    def visitFunctionDeclaration(self, ctx:CompiScriptLanguageParser.FunctionDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#variableDeclaration.
-    def visitVariableDeclaration(self, ctx:CompiScriptLanguageParser.VariableDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#statementDeclaration.
-    def visitStatementDeclaration(self, ctx:CompiScriptLanguageParser.StatementDeclarationContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CompiScriptLanguageParser#classDecl.
     def visitClassDecl(self, ctx:CompiScriptLanguageParser.ClassDeclContext):
         return self.visitChildren(ctx)
@@ -56,43 +40,15 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         id = ctx.IDENTIFIER().symbol.text
         # Averiguaremos el tipo despues y la inicializacion despues
         self.TablaDeSimbolos.put(id, Variable(nombreSimbolo=id, ambito=self.ambitoActual))
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#expressionStatement.
-    def visitExpressionStatement(self, ctx:CompiScriptLanguageParser.ExpressionStatementContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#forStatement.
-    def visitForStatement(self, ctx:CompiScriptLanguageParser.ForStatementContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#ifStatement.
-    def visitIfStatement(self, ctx:CompiScriptLanguageParser.IfStatementContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#printStatement.
-    def visitPrintStatement(self, ctx:CompiScriptLanguageParser.PrintStatementContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#returnStatement.
-    def visitReturnStatement(self, ctx:CompiScriptLanguageParser.ReturnStatementContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#whileStatement.
-    def visitWhileStatement(self, ctx:CompiScriptLanguageParser.WhileStatementContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#blockStatement.
-    def visitBlockStatement(self, ctx:CompiScriptLanguageParser.BlockStatementContext):
-        return self.visitChildren(ctx)
-
+        # En caso de que tenga una expresion, porque puede que sea una variable solo definida sin inicializar
+        if ctx.expression():
+            # Obtener tipo
+            variableTipo = self.visit(ctx.expression())
+            # Inicializar la variable y definir el tipo porque al principio es nil
+            simbolo:Variable = self.TablaDeSimbolos.get(id) 
+            simbolo.definirInicializador(variableTipo)
+            simbolo.redefinirTipo(variableTipo)
+            
 
     # Visit a parse tree produced by CompiScriptLanguageParser#exprStmt.
     def visitExprStmt(self, ctx:CompiScriptLanguageParser.ExprStmtContext):
@@ -131,56 +87,126 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#expression.
     def visitExpression(self, ctx:CompiScriptLanguageParser.ExpressionContext):
+        # Solo es un logic_or
+        if ctx.logic_or():
+            return self.visit(ctx.logic_or())
         return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#assignment.
-    def visitAssignment(self, ctx:CompiScriptLanguageParser.AssignmentContext):
-        return self.visitChildren(ctx)
-
+    
 
     # Visit a parse tree produced by CompiScriptLanguageParser#logic_or.
     def visitLogic_or(self, ctx:CompiScriptLanguageParser.Logic_orContext):
+        # En caso de que sea solo un hijo entonces solo sera un logic_and
+        if ctx.getChildCount() == 1:
+            if type(ctx.logic_and())==list:
+                for child in ctx.logic_and():
+                    return self.visit(child)
+            else:
+                return self.visit(ctx.logic_and())
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#logic_and.
     def visitLogic_and(self, ctx:CompiScriptLanguageParser.Logic_andContext):
+        # En caso de que sea solo un hijo entonces solo sera un equality
+        if ctx.getChildCount() == 1:
+            if type(ctx.equality())==list:
+                for child in ctx.equality():
+                    return self.visit(child)
+            else:
+                return self.visit(ctx.equality())
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#equality.
     def visitEquality(self, ctx:CompiScriptLanguageParser.EqualityContext):
+        # En caso de que sea solo un hijo entonces solo sera un comparison
+        if ctx.getChildCount() == 1:
+            if type(ctx.comparison())==list:
+                for child in ctx.comparison():
+                    return self.visit(child)
+            else:
+                return self.visit(ctx.comparison())
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#comparison.
     def visitComparison(self, ctx:CompiScriptLanguageParser.ComparisonContext):
+        # En caso de que sea solo un hijo entonces solo sera un term
+        if ctx.getChildCount() == 1:
+            if type(ctx.term())==list:
+                for child in ctx.term():
+                    return self.visit(child)
+            else:
+                return self.visit(ctx.term())
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#term.
     def visitTerm(self, ctx:CompiScriptLanguageParser.TermContext):
+        # En caso de que sea solo un hijo entonces solo sera un factor
+        if ctx.getChildCount() == 1:
+            if type(ctx.factor())==list:
+                for child in ctx.factor():
+                    return self.visit(child)
+            else:
+                return self.visit(ctx.factor())
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#factor.
     def visitFactor(self, ctx:CompiScriptLanguageParser.FactorContext):
+        # En caso de que sea solo un hijo entonces solo sera un unary
+        if ctx.getChildCount() == 1:
+            if type(ctx.unary())==list:
+                for child in ctx.unary():
+                    return self.visit(child)
+            else:
+                return self.visit(ctx.unary())
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#unary.
     def visitUnary(self, ctx:CompiScriptLanguageParser.UnaryContext):
+        # En caso de que sea una call que retorne solo el call
+        if ctx.call():
+            return self.visit(ctx.call())
+                
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#call.
     def visitCall(self, ctx:CompiScriptLanguageParser.CallContext):
+        # en caso de que la cantidad de hijos sea 1 entonces solo es un primary
+        if ctx.getChildCount() == 1:
+            if type(ctx.primary())==list:
+                for child in ctx.primary():
+                    return self.visit(child)
+            else:
+                return self.visit(ctx.primary())
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#primary.
     def visitPrimary(self, ctx:CompiScriptLanguageParser.PrimaryContext):
+        # Primary es el tipo basico, puede ser casi cualquier cosa, una expresion, una definicion de variable, etc
+        # Es una variable o es un super.IDENTIFIER hay que buscarlo en la tabla de simbolos
+        if ctx.IDENTIFIER():
+            id = ctx.IDENTIFIER().symbol.text
+            symbol = self.TablaDeSimbolos.get(id)
+            
+        # Tipo numero
+        elif ctx.NUMBER():
+            return Numero()
+        # Tipo string
+        elif ctx.STRING():
+            return Cadena()
+        # Tipo booleano
+        elif ctx.getText() == "false" or ctx.getText() == "true":
+            return Booleano()
+        # Tipo booleano
+        elif ctx.getText() == "nil":
+            return Nil()
+        
         return self.visitChildren(ctx)
 
 

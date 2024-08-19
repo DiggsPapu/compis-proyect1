@@ -14,23 +14,8 @@ class CompiScriptLanguageVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CompiScriptLanguageParser#classDeclaration.
-    def visitClassDeclaration(self, ctx:CompiScriptLanguageParser.ClassDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#functionDeclaration.
-    def visitFunctionDeclaration(self, ctx:CompiScriptLanguageParser.FunctionDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#variableDeclaration.
-    def visitVariableDeclaration(self, ctx:CompiScriptLanguageParser.VariableDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#statementDeclaration.
-    def visitStatementDeclaration(self, ctx:CompiScriptLanguageParser.StatementDeclarationContext):
+    # Visit a parse tree produced by CompiScriptLanguageParser#declaration.
+    def visitDeclaration(self, ctx:CompiScriptLanguageParser.DeclarationContext):
         return self.visitChildren(ctx)
 
 
@@ -49,38 +34,8 @@ class CompiScriptLanguageVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CompiScriptLanguageParser#expressionStatement.
-    def visitExpressionStatement(self, ctx:CompiScriptLanguageParser.ExpressionStatementContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#forStatement.
-    def visitForStatement(self, ctx:CompiScriptLanguageParser.ForStatementContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#ifStatement.
-    def visitIfStatement(self, ctx:CompiScriptLanguageParser.IfStatementContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#printStatement.
-    def visitPrintStatement(self, ctx:CompiScriptLanguageParser.PrintStatementContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#returnStatement.
-    def visitReturnStatement(self, ctx:CompiScriptLanguageParser.ReturnStatementContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#whileStatement.
-    def visitWhileStatement(self, ctx:CompiScriptLanguageParser.WhileStatementContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#blockStatement.
-    def visitBlockStatement(self, ctx:CompiScriptLanguageParser.BlockStatementContext):
+    # Visit a parse tree produced by CompiScriptLanguageParser#statement.
+    def visitStatement(self, ctx:CompiScriptLanguageParser.StatementContext):
         return self.visitChildren(ctx)
 
 
@@ -121,11 +76,6 @@ class CompiScriptLanguageVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#expression.
     def visitExpression(self, ctx:CompiScriptLanguageParser.ExpressionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#assignment.
-    def visitAssignment(self, ctx:CompiScriptLanguageParser.AssignmentContext):
         return self.visitChildren(ctx)
 
 

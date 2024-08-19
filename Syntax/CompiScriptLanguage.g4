@@ -3,10 +3,10 @@ grammar CompiScriptLanguage;
 program: declaration* EOF ;
 
 declaration: 
-    classDecl # classDeclaration
-    |   funDecl # functionDeclaration
-    |   varDecl # variableDeclaration
-    |   statement # statementDeclaration
+    classDecl
+    |   funDecl
+    |   varDecl
+    |   statement
     ;
 
 classDecl: 'class' IDENTIFIER ('<' IDENTIFIER)? '{' function* '}'
@@ -19,13 +19,13 @@ varDecl: 'var' IDENTIFIER ('=' expression)? ';'
 ;
 
 statement: 
-    exprStmt # expressionStatement
-    | forStmt # forStatement
-    | ifStmt # ifStatement
-    | printStmt # printStatement
-    | returnStmt # returnStatement
-    | whileStmt # whileStatement
-    | block # blockStatement
+    exprStmt
+    | forStmt
+    | ifStmt
+    | printStmt
+    | returnStmt
+    | whileStmt
+    | block
     ;
 
 exprStmt: expression ';' ;
@@ -42,9 +42,7 @@ whileStmt: 'while' '(' expression ')' statement ;
 
 block: '{' declaration* '}' ;
 
-expression: assignment ;
-
-assignment: (call '.')? IDENTIFIER '=' assignment | logic_or ;
+expression: (call '.')? IDENTIFIER '=' expression | logic_or ;
 
 logic_or: logic_and ('or' logic_and)* ;
 
