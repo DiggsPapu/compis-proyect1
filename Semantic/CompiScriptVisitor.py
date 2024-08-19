@@ -3,6 +3,7 @@ from Syntax.CompiScriptLanguageParser import *
 from Structures.HashMap import *
 from Structures.Ambito import *
 from Structures.Tipos.Tipo import *
+from Structures.Simbolos.Simbolo import *
 from Structures.Simbolos.Variable import *
 from Structures.Tipos.Numero import *
 from Structures.Tipos.Nil import *
@@ -17,7 +18,15 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         self.TablaDeTipos = HashMap()
         self.TablaDeAmbitos = HashMap()
         self.ambitoActual = 0
-        
+    
+    def imprimirTablaDeSimbolos(self):
+        llaves = self.TablaDeSimbolos.keys()
+        symbol:Simbolo
+        for llave in llaves:
+            symbol = self.TablaDeSimbolos.get(llave)
+            print(f'''
+                  nombre simbolo: {symbol.nombreSimbolo}    ambito del simbolo: {symbol.ambito}     tipo del simbolo: {symbol.tipo}
+                  ''')
     # Visit a parse tree produced by CompiScriptLanguageParser#program.
     def visitProgram(self, ctx:CompiScriptLanguageParser.ProgramContext):
         # Crear el contexto main que seria el contexto 0

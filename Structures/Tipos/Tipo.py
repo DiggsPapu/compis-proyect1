@@ -5,7 +5,8 @@ class Tipo():
     def __init__(self, nombreTipo="tipo", valor="tipo") -> None:
         self.nombreTipo = nombreTipo
         self.valor = valor
-    
+    def __str__(self) -> str:
+        return "tipo"
 # Operadores universales que todos los tipos usan
     # Comparacion
     # >

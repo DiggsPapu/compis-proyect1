@@ -4,7 +4,7 @@ from Structures.Tipos.Tipo import Tipo
 # Funcion es una clase para definir las funciones
 # Esta funcion sera construida a partir del visitor
 class Funcion(Simbolo):
-    def __init__(self, nombreSimbolo: str = "var1", tipo: Tipo = ..., ambito: int = 0, parametros=[]) -> None:
+    def __init__(self, nombreSimbolo: str = "var1", tipo: Tipo = Tipo(), ambito: int = 0, parametros=[]) -> None:
         super().__init__(nombreSimbolo, tipo, ambito)
         # Tendran los id's de los parametros para la ejecucion, por lo que es una lista con str's
         self.parametros = parametros 
