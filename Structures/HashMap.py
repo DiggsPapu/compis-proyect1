@@ -1,3 +1,4 @@
+import copy
 # Esta es la estructura basica para hacer las tablas, de tipos, de simbolos y de contextos
 
 # Tabla de Simbolos
@@ -16,7 +17,7 @@ class HashMap:
         self.map = {}
     
     def replaceMap(self, map:dict):
-        self.map = map
+        self.map = copy.deepcopy(map)
     
     def put(self, key, value):
         """Agrega un par clave-valor al HashMap."""

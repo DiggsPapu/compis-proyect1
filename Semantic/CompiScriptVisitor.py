@@ -2,15 +2,24 @@ from Syntax.CompiScriptLanguageVisitor import *
 from Syntax.CompiScriptLanguageParser import *
 from Structures.HashMap import *
 from Structures.Ambito import *
-from Structures.Tipos.Tipo import *
 from Structures.Simbolos.Simbolo import *
 from Structures.Simbolos.Variable import *
+from Structures.Simbolos.Funcion import *
+from Structures.Simbolos.Parametro import *
+from Structures.Tipos.Tipo import *
+from Structures.Tipos.TipoFuncion import *
 from Structures.Tipos.Numero import *
 from Structures.Tipos.Nil import *
 from Structures.Tipos.Cadena import *
 from Structures.Tipos.Booleano import *
 from Structures.Ambito import *
 
+class ParsingError(Exception):
+    def __init__(self, message, line, column):
+        super().__init__(f"{message} at line {line}, column {column}")
+        self.line = line
+        self.column = column
+        
 # Implementacion
 class CompiScriptVisitor(CompiScriptLanguageVisitor):
     def __init__(self) -> None:
@@ -19,6 +28,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # Tabla de simbolos por ambito entonces por cada ambito (contexto) habra una tabla de simbolos
         self.TablaDeAmbitos = HashMap()
         self.ambitoActual = 0
+        self.cantidadDeParametrosDefinidos = 0
     
     def imprimirTablaDeSimbolos(self):
         llaves = self.TablaDeAmbitos.keys()
@@ -46,7 +56,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#funDecl.
     def visitFunDecl(self, ctx:CompiScriptLanguageParser.FunDeclContext):
-        return self.visitChildren(ctx)
+        self.visit(ctx.function())
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#varDecl.
@@ -199,6 +209,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                     return self.visit(child)
             else:
                 return self.visit(ctx.primary())
+            
         return self.visitChildren(ctx)
 
 
@@ -208,7 +219,13 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # Es una variable o es un super.IDENTIFIER hay que buscarlo en la tabla de simbolos
         if ctx.IDENTIFIER():
             id = ctx.IDENTIFIER().symbol.text
-            symbol = self.TablaDeAmbitos.get(self.ambitoActual).tablaDeSimbolos.get(id)
+            ambitoActual:Ambito = self.TablaDeAmbitos.get(self.ambitoActual)
+            tablaDeSimbolosActual:HashMap = ambitoActual.tablaDeSimbolos
+            # Chequear que la variable exista en el ambito actual
+            if tablaDeSimbolosActual.contains_key(id):
+                
+                tablaDeSimbolosActual.get(id)
+                
             
         # Tipo numero
         elif ctx.NUMBER():
@@ -228,14 +245,52 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#function.
     def visitFunction(self, ctx:CompiScriptLanguageParser.FunctionContext):
-        return self.visitChildren(ctx)
+        ambitoActual:Ambito = self.TablaDeAmbitos.get(self.ambitoActual)
+        nombreFuncion = ctx.IDENTIFIER().symbol.text
+        funcion = Funcion(nombreFuncion, TipoFuncion(), self.ambitoActual)
+        # Si la funcion tiene parametros
+        if ctx.parameters():
+            # Obtener los parametros y meterlos en la tabla de simbolos actual no la de la funcion para desglosar la funcion
+            parametros = self.visit(ctx.parameters())
+            for parametro in parametros:
+                ambitoActual.tablaDeSimbolos.put(f"parametro{self.cantidadDeParametrosDefinidos}", Parametro(parametro, ambito=self.ambitoActual, funcionPertenece=nombreFuncion))
+                funcion.aniadirParametro(f"parametro{self.cantidadDeParametrosDefinidos}")
+                self.cantidadDeParametrosDefinidos+=1
+            ambitoActual.tablaDeSimbolos.put(nombreFuncion, funcion)
+        # previo a que se visiten los nodos hijos que definen el ambito de la funcion se creara un nuevo ambito para la funcion con todos los simbolos de la tabla de simbolos pasada
+        self.ambitoActual=self.TablaDeAmbitos.size()
+        ambitoDeLaFuncion:Ambito = Ambito(self.TablaDeAmbitos.size(), tablaDeSimbolos=HashMap())
+        ambitoDeLaFuncion.tablaDeSimbolos.replaceMap(ambitoActual.tablaDeSimbolos)
+        self.TablaDeAmbitos.put(self.ambitoActual, ambitoDeLaFuncion)
+        # Ahora hay que visitar al bloque que define la funcion
+        self.visit(ctx.block())
+        # Se retorna al ambito superior antes del ambito de la funcion
+        self.ambitoActual = ambitoActual.identificadorAmbito
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#parameters.
     def visitParameters(self, ctx:CompiScriptLanguageParser.ParametersContext):
+        # Esta visita de parametros solo se puede hacer cuando se instancia la funcion
+        if ctx.IDENTIFIER():
+            if ctx.getChildCount()>1:
+                if type(ctx.IDENTIFIER()) == list:
+                    parametros = []
+                    for parametro in ctx.IDENTIFIER():
+                        # Aniadir el parametro a la lista para instanciarlo en el contexto superior de funcion
+                        parametros.append(parametro.symbol.text)
+                    # retornar el array con los parametros
+                    return parametros
+                else:
+                    # retornar un array con el unico parametro
+                    return [parametro.symbol.text]
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#arguments.
     def visitArguments(self, ctx:CompiScriptLanguageParser.ArgumentsContext):
         return self.visitChildren(ctx)
+    
+    # Encontrar nodos de error
+    def visitErrorNode(self, node: ErrorNode):
+        # Lanzar errores
+        raise ParsingError(f"Syntax error, encountered: {node.getText()}", node.symbol.line, node.symbol.column)
