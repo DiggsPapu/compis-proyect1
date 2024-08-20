@@ -25,7 +25,9 @@ class ParsingError(Exception):
         super().__init__(f"{message} at line {line}, column {column}")
         self.line = line
         self.column = column
-        
+class SemanticError(Exception):
+    def __init__(self, message):
+        super().__init__(message)      
 # Implementacion
 class CompiScriptVisitor(CompiScriptLanguageVisitor):
     def __init__(self) -> None:
@@ -34,7 +36,10 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # Tabla de simbolos por ambito entonces por cada ambito (contexto) habra una tabla de simbolos
         self.TablaDeAmbitos = HashMap()
         self.ambitoActual = 0
+        self.ambitoPasado = 0
         self.cantidadDeParametrosDefinidos = 0
+        self.cantidadDeVariablesDeRetorno = 0
+        self.currentFuncion = None
     
     def imprimirTablaDeSimbolos(self):
         llaves = self.TablaDeAmbitos.keys()
@@ -50,10 +55,16 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                   ''')
     # Visit a parse tree produced by CompiScriptLanguageParser#program.
     def visitProgram(self, ctx:CompiScriptLanguageParser.ProgramContext):
-        # Crear el contexto main que seria el contexto 0
-        self.TablaDeAmbitos.put(0, Ambito(0, HashMap()))
-        for child in ctx.declaration():
-            self.visit(child)
+        if (self.TablaDeAmbitos.size()==0):
+            # Crear el contexto main que seria el contexto 0
+            self.TablaDeAmbitos.put(0, Ambito(0, HashMap()))
+            for child in ctx.declaration():
+                self.visit(child)
+        # En cualquier otro caso es que se esta dentro de un block que  puede ser declarado como un bloque o como una funcion
+        else:
+            # De manera que recorrer la declaracion sirve para declarar parametros o demas cosas dentro del ambito del bloque o funcion
+            for child in ctx.declaration():
+                self.visit(child)
 
     # Visit a parse tree produced by CompiScriptLanguageParser#classDecl.
     def visitClassDecl(self, ctx:CompiScriptLanguageParser.ClassDeclContext):
@@ -84,6 +95,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#exprStmt.
     def visitExprStmt(self, ctx:CompiScriptLanguageParser.ExprStmtContext):
+        # Se hace la visita de los hijos completos porque se realiza un chequeo sintactico para verificar que el ; existe
         return self.visitChildren(ctx)
 
 
@@ -114,7 +126,9 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#block.
     def visitBlock(self, ctx:CompiScriptLanguageParser.BlockContext):
-        return self.visitChildren(ctx)
+        # Lo unico que puede haber en un bloque es una declaracion
+        for declarations in ctx.declaration():
+            self.visit(declarations)
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#expression.
@@ -182,6 +196,16 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                     return self.visit(child)
             else:
                 return self.visit(ctx.factor())
+        # En caso de que sea mas de un hijo probablemente sea una operacion aritmetica o un string
+        # Averiguar el tipo de operacion es imperativo por lo que son los pares
+        currentOperation = ''
+        for index in range(0, ctx.getChildCount()):
+            # Es operacion
+            if (index%2==1):
+                currentOperation = self.visitChildren(ctx.getChild(index))
+            else:
+                # variable o valor
+                variable = self.visitChildren(ctx.getChild(index))
         return self.visitChildren(ctx)
 
 
@@ -201,6 +225,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     def visitUnary(self, ctx:CompiScriptLanguageParser.UnaryContext):
         # En caso de que sea una call que retorne solo el call
         if ctx.call():
+            call = ctx.call()
             return self.visit(ctx.call())
                 
         return self.visitChildren(ctx)
@@ -214,8 +239,11 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 for child in ctx.primary():
                     return self.visit(child)
             else:
+                primary = ctx.primary()
                 return self.visit(ctx.primary())
-            
+        # En caso de que sean argumentos puede que haya algo como funcion().otrafuncion().otrafuncion2() o algo como funcion().identificador
+        else:
+            pass   
         return self.visitChildren(ctx)
 
 
@@ -227,10 +255,19 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             id = ctx.IDENTIFIER().symbol.text
             ambitoActual:Ambito = self.TablaDeAmbitos.get(self.ambitoActual)
             tablaDeSimbolosActual:HashMap = ambitoActual.tablaDeSimbolos
-            # Chequear que la variable exista en el ambito actual
-            if tablaDeSimbolosActual.contains_key(id):
+            # # Esto implica que esta llevandose a cabo dentro del bloque de la funcion
+            # if self.currentFuncion != None:
+            #     # Para averiguar si es un parametro esta definido en la funcion
+            #     for parametro in self.TablaDeAmbitos.get(self.ambitoPasado).get(self.currentFuncion):
+            #         if parametro.nombreSimbolo == id:
+            #             return True
+            #     # Si no lo encontre entonces tal vez es una variable global y estaria definida en el contexto actual
+            #     if tablaDeSimbolosActual.contains_key(id):
+            #         return True
+            #     # Si no es variable global entonces error semantico
+            #     else:
+            #         raise SemanticError(f"Error Semantico, variable o parametro {id} no existe en la funcion")
                 
-                tablaDeSimbolosActual.get(id)
                 
             
         # Tipo numero
@@ -253,27 +290,21 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     def visitFunction(self, ctx:CompiScriptLanguageParser.FunctionContext):
         ambitoActual:Ambito = self.TablaDeAmbitos.get(self.ambitoActual)
         nombreFuncion = ctx.IDENTIFIER().symbol.text
+        self.currentFuncion = nombreFuncion
         funcion = Funcion(nombreFuncion, TipoFuncion(), self.ambitoActual)
         # Si la funcion tiene parametros
         if ctx.parameters():
             # Obtener los parametros y meterlos en la tabla de simbolos actual no la de la funcion para desglosar la funcion
             parametros = self.visit(ctx.parameters())
             for parametro in parametros:
-                ambitoActual.tablaDeSimbolos.put(f"parametro{self.cantidadDeParametrosDefinidos}", Parametro(parametro, ambito=self.ambitoActual, funcionPertenece=nombreFuncion))
-                funcion.aniadirParametro(f"parametro{self.cantidadDeParametrosDefinidos}")
-                self.cantidadDeParametrosDefinidos+=1
-            ambitoActual.tablaDeSimbolos.put(nombreFuncion, funcion)
-        # previo a que se visiten los nodos hijos que definen el ambito de la funcion se creara un nuevo ambito para la funcion con todos los simbolos de la tabla de simbolos pasada
-        self.ambitoActual=self.TablaDeAmbitos.size()
-        ambitoDeLaFuncion:Ambito = Ambito(self.TablaDeAmbitos.size(), tablaDeSimbolos=HashMap())
-        ambitoDeLaFuncion.tablaDeSimbolos.replaceMap(ambitoActual.tablaDeSimbolos)
-        self.TablaDeAmbitos.put(self.ambitoActual, ambitoDeLaFuncion)
-        # Ahora hay que visitar al bloque que define la funcion
-        self.visit(ctx.block())
-        # Se retorna al ambito superior antes del ambito de la funcion
-        self.ambitoActual = ambitoActual.identificadorAmbito
-
-
+                # Solamente almacenar el parametro en la funcion
+                funcion.aniadirParametro(parametro)
+            
+        # Solamente se va a almacenar el contexto de la ejecucion de la funcion
+        funcion.aniadirContexto(ctx.block())
+        # Agregar la funcion al ambito actual de la tabla de simbolos
+        ambitoActual.tablaDeSimbolos.put(nombreFuncion, funcion)
+        
     # Visit a parse tree produced by CompiScriptLanguageParser#parameters.
     def visitParameters(self, ctx:CompiScriptLanguageParser.ParametersContext):
         # Esta visita de parametros solo se puede hacer cuando se instancia la funcion
@@ -308,6 +339,16 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             line = node.symbol.line
             column = node.symbol.column
             raise LexicalError(f"Unrecognized token '{node.getText()}'", line, column)
-
+        # Averiguar la operacion que es
+        elif node.symbol.text == '-':
+            return '-'
+        elif node.symbol.text == '+':
+            return '+'
+        elif node.symbol.text == '*':
+            return '*'
+        elif node.symbol.text == '/':
+            return '/'
+        elif node.symbol.text == '%':
+            return '%'
         # Continua con la visita normal
         return self.visitChildren(node)
