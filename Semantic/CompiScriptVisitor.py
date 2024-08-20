@@ -13,7 +13,13 @@ from Structures.Tipos.Nil import *
 from Structures.Tipos.Cadena import *
 from Structures.Tipos.Booleano import *
 from Structures.Ambito import *
-
+# Manejo de errores lexicos
+class LexicalError(Exception):
+    def __init__(self, message, line, column):
+        super().__init__(f"{message} at line {line}, column {column}")
+        self.line = line
+        self.column = column
+# Manejo de errores Sintacticos
 class ParsingError(Exception):
     def __init__(self, message, line, column):
         super().__init__(f"{message} at line {line}, column {column}")
@@ -294,3 +300,14 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     def visitErrorNode(self, node: ErrorNode):
         # Lanzar errores
         raise ParsingError(f"Syntax error, encountered: {node.getText()}", node.symbol.line, node.symbol.column)
+    
+    # Chequeo para verificar si es o no un nodo malformado
+    def visitTerminal(self, node):
+        # Verifica si el token es malformado
+        if node.symbol.type == CompiScriptLanguageParser.MALFORMED:
+            line = node.symbol.line
+            column = node.symbol.column
+            raise LexicalError(f"Unrecognized token '{node.getText()}'", line, column)
+
+        # Continua con la visita normal
+        return self.visitChildren(node)

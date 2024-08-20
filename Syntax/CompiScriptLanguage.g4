@@ -79,3 +79,6 @@ fragment ALPHA: [a-zA-Z_] ;
 fragment DIGIT: [0-9] ;
 
 WS: [ \t\r\n]+ -> skip ;
+
+// Captura cualquier otro carácter no válido
+MALFORMED: . ;

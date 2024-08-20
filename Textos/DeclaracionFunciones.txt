@@ -1,4 +1,7 @@
-fun funcion1(param1, param2):
-    param1 + param2
+fun funcion1(param1, param2)
+{
+    param1 + param2;
+}
+    
 
 funcion1(1, 2)
