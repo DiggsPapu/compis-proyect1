@@ -14,14 +14,17 @@
 class HashMap:
     def __init__(self):
         self.map = {}
-
+    
+    def replaceMap(self, map:dict):
+        self.map = map
+    
     def put(self, key, value):
         """Agrega un par clave-valor al HashMap."""
         self.map[key] = value
 
     def get(self, key):
         """Obtiene el valor asociado a la clave especificada."""
-        return self.map.get(key, None)
+        return self.map.get(key)
 
     def remove(self, key):
         """Elimina la clave y su valor asociado del HashMap."""

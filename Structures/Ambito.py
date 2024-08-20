@@ -1,22 +1,22 @@
 # Contexto
 # Id que identifique al contexto
-# set de parent context para que se tengan los parent contexts
-# set de child context para tener todos los contextos hijos
+# ambitosHijos, para saber cuales son los ambitos hijos
+from  Structures.HashMap import *
+
 class Ambito():
     def __init__(
         self, 
         identificador:int, 
-        # contextoPadre:int, 
+        tablaDeSimbolos:HashMap
         ) -> None:
-        self.identificadorContexto = identificador
-        # Es redundante
-        # self.parentContext = set(contextoPadre)
-        self.contextosHijos = set()
+        self.identificadorAmbito = identificador
+        self.tablaDeSimbolos = tablaDeSimbolos
+        self.ambitosHijos = set()
     
     # Aniadir contextos hijos
     def aniadirContextoHijo(self, hijo:int):
-        self.contextosHijos.add(hijo)
+        self.ambitosHijos.add(hijo)
         
     # Eliminar contextos hijos, por ejemplo, cuando se termina de ejecutar
     def eliminarContextoHijo(self, hijo:int):
-        self.contextosHijos.remove(hijo)
+        self.ambitosHijos.remove(hijo)

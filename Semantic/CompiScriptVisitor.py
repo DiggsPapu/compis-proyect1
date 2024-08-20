@@ -9,28 +9,33 @@ from Structures.Tipos.Numero import *
 from Structures.Tipos.Nil import *
 from Structures.Tipos.Cadena import *
 from Structures.Tipos.Booleano import *
+from Structures.Ambito import *
 
 # Implementacion
 class CompiScriptVisitor(CompiScriptLanguageVisitor):
     def __init__(self) -> None:
         super().__init__()
-        self.TablaDeSimbolos = HashMap()
         self.TablaDeTipos = HashMap()
+        # Tabla de simbolos por ambito entonces por cada ambito (contexto) habra una tabla de simbolos
         self.TablaDeAmbitos = HashMap()
         self.ambitoActual = 0
     
     def imprimirTablaDeSimbolos(self):
-        llaves = self.TablaDeSimbolos.keys()
-        symbol:Simbolo
+        llaves = self.TablaDeAmbitos.keys()
         for llave in llaves:
-            symbol = self.TablaDeSimbolos.get(llave)
-            print(f'''
+            ambito:Ambito = self.TablaDeAmbitos.get(llave)
+            print(f'''ambito: {ambito.identificadorAmbito}''')
+            keys = ambito.tablaDeSimbolos.keys()
+            for key in keys:
+                symbol:Simbolo
+                symbol = ambito.tablaDeSimbolos.get(key)
+                print(f'''
                   nombre simbolo: {symbol.nombreSimbolo}    ambito del simbolo: {symbol.ambito}     tipo del simbolo: {symbol.tipo}
                   ''')
     # Visit a parse tree produced by CompiScriptLanguageParser#program.
     def visitProgram(self, ctx:CompiScriptLanguageParser.ProgramContext):
         # Crear el contexto main que seria el contexto 0
-        self.TablaDeAmbitos.put(0, Ambito(identificador=0))
+        self.TablaDeAmbitos.put(0, Ambito(0, HashMap()))
         for child in ctx.declaration():
             self.visit(child)
 
@@ -48,13 +53,15 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     def visitVarDecl(self, ctx:CompiScriptLanguageParser.VarDeclContext):
         id = ctx.IDENTIFIER().symbol.text
         # Averiguaremos el tipo despues y la inicializacion despues
-        self.TablaDeSimbolos.put(id, Variable(nombreSimbolo=id, ambito=self.ambitoActual))
+        ambito:Ambito = self.TablaDeAmbitos.get(self.ambitoActual)
+        ambito.tablaDeSimbolos.put(id, Variable(nombreSimbolo=id, ambito=self.ambitoActual))
         # En caso de que tenga una expresion, porque puede que sea una variable solo definida sin inicializar
         if ctx.expression():
             # Obtener tipo
             variableTipo = self.visit(ctx.expression())
             # Inicializar la variable y definir el tipo porque al principio es nil
-            simbolo:Variable = self.TablaDeSimbolos.get(id) 
+            ambito:Ambito= self.TablaDeAmbitos.get(self.ambitoActual)
+            simbolo:Variable = ambito.tablaDeSimbolos.get(id) 
             simbolo.definirInicializador(variableTipo)
             simbolo.redefinirTipo(variableTipo)
             
@@ -201,7 +208,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # Es una variable o es un super.IDENTIFIER hay que buscarlo en la tabla de simbolos
         if ctx.IDENTIFIER():
             id = ctx.IDENTIFIER().symbol.text
-            symbol = self.TablaDeSimbolos.get(id)
+            symbol = self.TablaDeAmbitos.get(self.ambitoActual).tablaDeSimbolos.get(id)
             
         # Tipo numero
         elif ctx.NUMBER():
