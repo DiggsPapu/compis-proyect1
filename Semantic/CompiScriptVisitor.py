@@ -1,18 +1,9 @@
 from Syntax.CompiScriptLanguageVisitor import *
 from Syntax.CompiScriptLanguageParser import *
-from Structures.HashMap import *
+from Structures.BasicStructures import *
 from Structures.Ambito import *
-from Structures.Simbolos.Simbolo import *
-from Structures.Simbolos.Variable import *
-from Structures.Simbolos.Funcion import *
-from Structures.Simbolos.Parametro import *
-from Structures.Tipos.Tipo import *
-from Structures.Tipos.TipoFuncion import *
-from Structures.Tipos.Numero import *
-from Structures.Tipos.Nil import *
-from Structures.Tipos.Cadena import *
-from Structures.Tipos.Booleano import *
-from Structures.Ambito import *
+from Structures.Simbolos import *
+from Structures.Tipos import *
 from antlr4.tree.Tree import TerminalNodeImpl
 # Manejo de errores lexicos
 class LexicalError(Exception):
@@ -33,7 +24,6 @@ class SemanticError(Exception):
 class CompiScriptVisitor(CompiScriptLanguageVisitor):
     def __init__(self) -> None:
         super().__init__()
-        self.TablaDeTipos = HashMap()
         # Tabla de simbolos por ambito entonces por cada ambito (contexto) habra una tabla de simbolos
         self.TablaDeAmbitos = HashMap()
         self.ambitoActual = 0
@@ -58,7 +48,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     def visitProgram(self, ctx:CompiScriptLanguageParser.ProgramContext):
         if (self.TablaDeAmbitos.size()==0):
             # Crear el contexto main que seria el contexto 0
-            self.TablaDeAmbitos.put(0, Ambito(0, HashMap()))
+            self.TablaDeAmbitos.put(0, Ambito(0, HashMap(), HashMap()))
             for child in ctx.declaration():
                 self.visit(child)
         # En cualquier otro caso es que se esta dentro de un block que  puede ser declarado como un bloque o como una funcion
@@ -69,8 +59,14 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#classDecl.
     def visitClassDecl(self, ctx:CompiScriptLanguageParser.ClassDeclContext):
+        # Primero voy a hacer sin herencia y sin instanciacion, solo crear el tipo
         className = ctx.IDENTIFIER().symbol.text
-        
+        ambito:Ambito = self.TablaDeAmbitos.get(self.ambitoActual)
+        # Se crea en la tabla de simbolos del ambito
+        ambito.tablaDeSimbolos.put(className, DefinidoPorUsuario(className, valor="clase"))
+        # Va a visitar todas las funciones
+        for child in ctx.function():
+            self.visit(child)
         return self.visitChildren(ctx)
 
 

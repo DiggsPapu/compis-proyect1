@@ -1,16 +1,21 @@
 # Contexto
 # Id que identifique al contexto
 # ambitosHijos, para saber cuales son los ambitos hijos
-from  Structures.HashMap import *
+from .BasicStructures import *
+from .Tipos import *
 
 class Ambito():
     def __init__(
         self, 
         identificador:int, 
-        tablaDeSimbolos:HashMap
+        tablaDeSimbolos:HashMap,
+        tablaDeTipos: HashMap
         ) -> None:
         self.identificadorAmbito = identificador
         self.tablaDeSimbolos = tablaDeSimbolos
+        self.tablaDeTipos = tablaDeTipos
+        # Poner los tipos basicos
+        self.tablaDeTipos.replaceMap({"numero": Numero(), "booleano":Booleano(), "cadena": Cadena(), "nil":Nil(), "definidoPorUsuario":DefinidoPorUsuario(), "tipo":Tipo(), "tipoFuncion":TipoFuncion()})
         self.ambitosHijos = set()
     
     # Aniadir contextos hijos
