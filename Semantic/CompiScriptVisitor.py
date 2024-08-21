@@ -294,6 +294,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             ambitoActual:Ambito = self.TablaDeAmbitos.get(self.ambitoActual)
             tablaDeSimbolosActual:HashMap = ambitoActual.tablaDeSimbolos
             # Puede retornar una variable o el nombre de una funcion
+            if (tablaDeSimbolosActual.get(id)== None):
+                raise SemanticError("Error semantico la variable o la funcion no existe")
             return tablaDeSimbolosActual.get(id)
             # # Esto implica que esta llevandose a cabo dentro del bloque de la funcion
             # if self.currentFuncion != None:
