@@ -1,6 +1,9 @@
 # Key -> Nombre del tipo por ejemplo INT para entero
 # Value -> Clase del tipo por ejemplo la clase int que defina que puede o que no puede hacer el tipo
 
+from Structures.BasicStructures import HashMap
+
+
 class Tipo():
     def __init__(self, nombreTipo="tipo", valor="tipo") -> None:
         self.nombreTipo = nombreTipo
@@ -118,6 +121,15 @@ class Cadena(Tipo):
 class DefinidoPorUsuario(Tipo):
     def __init__(self, nombreTipo="tipo", valor="tipo") -> None:
         super().__init__(nombreTipo, valor)
+        self.metodosCtx = HashMap()
+        
+    def initContext(self, parametros,ctx):
+        self.initParams = parametros
+        self.init = ctx
+    
+    # Se aniade el contexto del metodo para que se genere cada vez que se quiera ejecutar
+    def aniadirMetodos(self, metodoNombre, ctx):
+        self.metodosCtx.put(metodoNombre, ctx)
         
 class Nil(Tipo):
     def __init__(self, nombreTipo="nil", valor="nil") -> None:

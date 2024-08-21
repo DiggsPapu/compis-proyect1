@@ -31,6 +31,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         self.cantidadDeParametrosDefinidos = 0
         self.cantidadDeVariablesDeRetorno = 0
         self.currentFuncion = None
+        self.insideClassDeclaration = False
+        self.classInInit = False
     
     def imprimirTablaDeSimbolos(self):
         llaves = self.TablaDeAmbitos.keys()
@@ -60,14 +62,16 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     # Visit a parse tree produced by CompiScriptLanguageParser#classDecl.
     def visitClassDecl(self, ctx:CompiScriptLanguageParser.ClassDeclContext):
         # Primero voy a hacer sin herencia y sin instanciacion, solo crear el tipo
-        className = ctx.IDENTIFIER().symbol.text
+        className = ctx.IDENTIFIER()[0].symbol.text
+        # className = ctx.IDENTIFIER().symbol.text
         ambito:Ambito = self.TablaDeAmbitos.get(self.ambitoActual)
         # Se crea en la tabla de simbolos del ambito
-        ambito.tablaDeSimbolos.put(className, DefinidoPorUsuario(className, valor="clase"))
+        ambito.tablaDeTipos.put(className, DefinidoPorUsuario(className, valor="clase"))
+        self.classDeclarationName = className
         # Va a visitar todas las funciones
         for child in ctx.function():
             self.visit(child)
-        return self.visitChildren(ctx)
+        self.classDeclarationName = None
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#funDecl.
@@ -131,6 +135,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#block.
     def visitBlock(self, ctx:CompiScriptLanguageParser.BlockContext):
+        
         # Lo unico que puede haber en un bloque es una declaracion
         for declarations in ctx.declaration():
             self.visit(declarations)
@@ -141,6 +146,19 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # Solo es una comparacion logica
         if ctx.logic():
             return self.visit(ctx.logic())
+        # No es comparacion logica, probablemente sea
+        # elif self.classDeclarationName != None and self.classInInit:
+        #     # Se esta declarando una variable
+        #     if self.visit(ctx.call())=="this":
+        #         # Crear un nuevo campo
+        #         identificadorCampo = self.visit(ctx.IDENTIFIER())
+        #         ambito:Ambito = self.TablaDeAmbitos.get(self.ambitoActual)
+        #         ambito.tablaDeSimbolos.put(self.classDeclarationName+"."+identificadorCampo,Campo(self.classDeclarationName+"."+identificadorCampo,Nil(), self.ambitoActual, nombreVariable=self.classDeclarationName))
+        #         # Ocurre la asignacion, se obtiene el parametro al que se asigna
+        #         self.visit(ctx.expression())
+                
+        # else:
+            
         return self.visitChildren(ctx)
 
 
@@ -276,6 +294,9 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                     return self.visit(child)
             else:
                 return self.visit(ctx.primary())
+        # Instanciacion de clase como new Perrito()
+        elif self.visit(ctx.getChild(0))=="new":
+            return self.visitChildren(ctx)
         # En caso de que sean argumentos puede que haya algo como funcion().otrafuncion().otrafuncion2() o algo como funcion().identificador o identificadores
         else:
             idSimbolo = ""
@@ -305,10 +326,11 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         if ctx.IDENTIFIER():
             id = ctx.IDENTIFIER().symbol.text
             ambitoActual:Ambito = self.TablaDeAmbitos.get(self.ambitoActual)
+            tablaDeTiposActual:HashMap = ambitoActual.tablaDeTipos
             tablaDeSimbolosActual:HashMap = ambitoActual.tablaDeSimbolos
             # Puede retornar una variable o el nombre de una funcion
-            if (tablaDeSimbolosActual.get(id)== None):
-                raise SemanticError("Error semantico la variable o la funcion no existe")
+            if (tablaDeSimbolosActual.get(id)== None or tablaDeTiposActual.get(id)):
+                raise SemanticError("Error semantico la variable, la clase o la funcion no existe")
             return tablaDeSimbolosActual.get(id)
             # # Esto implica que esta llevandose a cabo dentro del bloque de la funcion
             # if self.currentFuncion != None:
@@ -340,6 +362,13 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # Expresion a resolver
         elif ctx.expression():
             return self.visit(ctx.expression())
+        # Acceder a un valor para asignarlo o desde un metodo para hacer algo con el
+        elif ctx.getText() == "this":
+            return "this"
+        # elif self.classInInit:
+        #     ambito:Ambito = self.TablaDeAmbitos.get(self.ambitoActual)
+        #     metodoInicializacion:Metodo = ambito.tablaDeSimbolos.get(self.classDeclarationName+".init")
+        #     if ctx.getText() == metodoInicializacion.parametros
         return self.visitChildren(ctx)
 
 
@@ -347,20 +376,42 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     def visitFunction(self, ctx:CompiScriptLanguageParser.FunctionContext):
         ambitoActual:Ambito = self.TablaDeAmbitos.get(self.ambitoActual)
         nombreFuncion = ctx.IDENTIFIER().symbol.text
-        self.currentFuncion = nombreFuncion
-        funcion = Funcion(nombreFuncion, TipoFuncion(), self.ambitoActual)
-        # Si la funcion tiene parametros
-        if ctx.parameters():
-            # Obtener los parametros y meterlos en la tabla de simbolos actual no la de la funcion para desglosar la funcion
-            parametros = self.visit(ctx.parameters())
-            for parametro in parametros:
-                # Solamente almacenar el parametro en la funcion
-                funcion.aniadirParametro(parametro)
+        # En caso de que no se este declarando una clase
+        if (self.classDeclarationName==None):
+            self.currentFuncion = nombreFuncion
+            funcion = Funcion(nombreFuncion, TipoFuncion(), self.ambitoActual)
+            # Si la funcion tiene parametros
+            if ctx.parameters():
+                # Obtener los parametros y meterlos en la tabla de simbolos actual no la de la funcion para desglosar la funcion
+                parametros = self.visit(ctx.parameters())
+                for parametro in parametros:
+                    # Solamente almacenar el parametro en la funcion
+                    funcion.aniadirParametro(parametro)
+                
+            # Solamente se va a almacenar el contexto de la ejecucion de la funcion
+            funcion.aniadirContexto(ctx.block())
+            # Agregar la funcion al ambito actual de la tabla de simbolos
+            ambitoActual.tablaDeSimbolos.put(nombreFuncion, funcion)
+        # Metodos de una clase
+        else:
+            nombreFuncion = self.classDeclarationName+"."+nombreFuncion
+            # en este caso basicamente solo hay que obtener los fields de la clase
+            metodo = Metodo(nombreSimbolo=nombreFuncion, tipo=TipoFuncion(), ambito=self.ambitoActual)
+            # Si la funcion tiene parametros
+            if ctx.parameters():
+                parametros = self.visit(ctx.parameters())
+                # Obtener los parametros y meterlos en la tabla de simbolos actual no la de la funcion para desglosar la funcion
+                for parametro in parametros:
+                    # Solamente almacenar el parametro en la funcion
+                    metodo.aniadirParametro(parametro)
+            # if ctx.block():
+            #     self.visit(ctx.block())
+            # En vez de visitarlo solo aniadir el ctx para la ejecucion cuando encuentre una nueva instancia
+            metodo.aniadirContexto(ctx.block())
+            # Agregar la funcion al ambito actual de la tabla de simbolos
+            ambitoActual.tablaDeSimbolos.put(nombreFuncion, metodo)
             
-        # Solamente se va a almacenar el contexto de la ejecucion de la funcion
-        funcion.aniadirContexto(ctx.block())
-        # Agregar la funcion al ambito actual de la tabla de simbolos
-        ambitoActual.tablaDeSimbolos.put(nombreFuncion, funcion)
+            
         
     # Visit a parse tree produced by CompiScriptLanguageParser#parameters.
     def visitParameters(self, ctx:CompiScriptLanguageParser.ParametersContext):
@@ -374,9 +425,9 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                         parametros.append(parametro.symbol.text)
                     # retornar el array con los parametros
                     return parametros
-                else:
-                    # retornar un array con el unico parametro
-                    return [parametro.symbol.text]
+            else:
+                # retornar un array con el unico parametro
+                return [ctx.getChild(0).symbol.text]
         return self.visitChildren(ctx)
 
 
@@ -425,5 +476,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             return 'and'
         elif node.symbol.text == 'or':
             return 'or'
+        elif node.symbol.text == 'new':
+            return 'new'
+        
         # Continua con la visita normal
         return self.visitChildren(node)

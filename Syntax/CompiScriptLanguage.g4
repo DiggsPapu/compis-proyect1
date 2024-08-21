@@ -52,7 +52,7 @@ term: unary (( '-' | '+' | '/' | '*' | '%' ) unary)* ;
 
 unary: ( '!' | '-' ) unary | call ;
 
-call: primary ( '(' arguments? ')' | '.' IDENTIFIER )* ;
+call: 'new'? primary ( '(' arguments? ')' | '.' IDENTIFIER )* ;
 
 primary: 'true' | 'false' | 'nil' | 'this' | NUMBER | STRING | IDENTIFIER | '(' expression ')' | 'super' '.' IDENTIFIER ;
 

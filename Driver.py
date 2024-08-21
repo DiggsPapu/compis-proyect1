@@ -23,7 +23,7 @@ def create_visual_tree(tree, parser):
 
     
 def main(argv):
-    input_stream = FileStream('./Textos/Operaciones.txt')
+    input_stream = FileStream('./Textos/DeclaracionDeClases.txt')
     lexer = CompiScriptLanguageLexer(input_stream)
     stream = CommonTokenStream(lexer)
     parser = CompiScriptLanguageParser(stream)

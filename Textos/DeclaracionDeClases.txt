@@ -1,0 +1,8 @@
+class Perrito{
+    init(nombre){
+        this.nombre = nombre;
+    }
+    caminar(){
+        this.nombre = this.nombre + 1;
+    }
+}
