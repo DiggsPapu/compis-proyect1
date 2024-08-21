@@ -1,4 +1,5 @@
 import copy
+import re
 # Esta es la estructura basica para hacer las tablas, de tipos, de simbolos y de contextos
 
 # Tabla de Simbolos
@@ -16,8 +17,8 @@ class HashMap:
     def __init__(self):
         self.map = {}
     
-    def replaceMap(self, map:dict):
-        self.map = copy.deepcopy(map)
+    def replaceMap(self, map: dict):
+        self.map = map 
     
     def put(self, key, value):
         """Agrega un par clave-valor al HashMap."""
@@ -55,6 +56,14 @@ class HashMap:
     def clear(self):
         """Elimina todos los elementos del HashMap."""
         self.map.clear()
+    
+    def search(self, pattern, search_in_values=False):
+        """Busca claves o valores que coincidan con el patrón regex."""
+        compiled_pattern = re.compile(pattern)
+        if search_in_values:
+            return [value for value in self.map.values() if compiled_pattern.match(value)]
+        else:
+            return [key for key in self.map.keys() if compiled_pattern.match(key)]
 
 class Stack:
     def __init__(self, items=[]):

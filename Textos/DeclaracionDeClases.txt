@@ -6,3 +6,4 @@ class Perrito{
         this.nombre = this.nombre + 1;
     }
 }
+var variable = new Perrito();

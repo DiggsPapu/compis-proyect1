@@ -122,6 +122,9 @@ class DefinidoPorUsuario(Tipo):
     def __init__(self, nombreTipo="tipo", valor="tipo") -> None:
         super().__init__(nombreTipo, valor)
         self.metodosCtx = HashMap()
+    
+    def __str__(self) -> str:
+        return self.nombreTipo
         
     def initContext(self, parametros,ctx):
         self.initParams = parametros
