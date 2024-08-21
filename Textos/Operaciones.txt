@@ -1,2 +1,2 @@
-var variable = true;
-!!!!variable;
+var variable = 1;
+true < false;

@@ -189,7 +189,29 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                     return self.visit(child)
             else:
                 return self.visit(ctx.term())
-        return self.visitChildren(ctx)
+        currentOperation = ''
+        variable = None
+        for index in range(0, ctx.getChildCount()):
+            # variable o valor
+            variableTemp = self.visit(ctx.getChild(index))
+            # Es una variable
+            if isinstance(variableTemp, Variable):
+                variable = variableTemp.tipo
+            # Es operacion
+            if isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='>' or variableTemp=='<' or variableTemp=='>=' or variableTemp=='<=':
+                currentOperation = variableTemp
+            # Siempre devolvera o generar un booleano al ser comparacion, tienen que ser del mismo tipo
+            elif (type(variableTemp)==type(variable)) and (currentOperation=='>' or currentOperation=='<' or currentOperation=='>=' or currentOperation=='<='):
+                variable = Booleano()
+            elif currentOperation == '' and variable == None:
+                variable = variableTemp
+            elif currentOperation == '':
+                pass
+            else:
+                raise SemanticError(f'Error semantico, operacion invalida no se pueden comparar diferentes tipos')
+        # Retorna el ultimo valor que obtiene la variable luego de operar
+        return variable
+
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#term.
@@ -437,5 +459,13 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             return '%'
         elif node.symbol.text == '!':
             return '!'
+        elif node.symbol.text == '>=':
+            return '>='
+        elif node.symbol.text == '<=':
+            return '<='
+        elif node.symbol.text == '<':
+            return '<'
+        elif node.symbol.text == '>':
+            return '>'
         # Continua con la visita normal
         return self.visitChildren(node)
