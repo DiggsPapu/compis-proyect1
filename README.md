@@ -13,3 +13,7 @@
 3. Generate ANTLR Syntax Analysis and visitor:
     
     antlr -Dlanguage=Python3 -visitor CompiScriptLanguage.g4 
+
+
+## Puntos importantes
+var es una palabra reservada por ende si se escribiera var var = 20; esto es ilegal.

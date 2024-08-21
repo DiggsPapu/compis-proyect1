@@ -78,6 +78,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#varDecl.
     def visitVarDecl(self, ctx:CompiScriptLanguageParser.VarDeclContext):
+        id = ctx.IDENTIFIER()
         # Esta mal escrito y no se puede obtener la variable en la definicion de la variable
         if ctx.IDENTIFIER() == None:
             raise SemanticError(f'Error semantico, declaracion de variable invalida')
@@ -207,6 +208,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             # Si es el primer hijo
             if index == 0:
                 variable = self.visit(ctx.getChild(index))
+                if isinstance(variable, Variable):
+                    variable = variable.tipo
             # Es operacion
             elif (index%2==1):
                 child = ctx.getChild(index)
