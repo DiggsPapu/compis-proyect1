@@ -1,2 +1,2 @@
 var variable1 = 20;
-variable1 + 1 - 2 + 3 - variable1;
++variable1 + 1 - 2 / -3 * 1;

@@ -212,8 +212,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             if isinstance(variableTemp, Variable):
                 variable = variableTemp.tipo
             # Es operacion
-            if isinstance(variableTemp, TerminalNodeImpl):
-                currentOperation = self.visit(ctx.getChild(index))
+            if isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='+' or variableTemp=='-' or variableTemp=='*' or variableTemp=='/' or variableTemp=='%':
+                currentOperation = variableTemp
             # Si es suma y es cadena o numero, casteo implicito en caso de que sea string + numero
             elif (isinstance(variable, Numero) or isinstance(variable, Cadena)) and (isinstance(variableTemp, Numero) or isinstance(variableTemp, Cadena)) and currentOperation=='+':
                 # Se asigna el valor de numero o cadena
@@ -240,7 +240,31 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                     return self.visit(child)
             else:
                 return self.visit(ctx.unary())
-        return self.visitChildren(ctx)
+        # En caso de que sea mas de un hijo probablemente sea una operacion aritmetica o un string
+        # Averiguar el tipo de operacion es imperativo por lo que son los pares
+        currentOperation = ''
+        variable = None
+        for index in range(0, ctx.getChildCount()):
+            # variable o valor
+            variableTemp = self.visit(ctx.getChild(index))
+            # Es una variable
+            if isinstance(variableTemp, Variable):
+                variable = variableTemp.tipo
+            elif currentOperation=='' and variable == None and isinstance(variableTemp, Numero) :
+                variable = variableTemp
+            # Es operacion
+            if isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='+' or variableTemp=='-' or variableTemp=='*' or variableTemp=='/' or variableTemp=='%':
+                currentOperation = variableTemp
+            # Si es suma y es cadena o numero, casteo implicito en caso de que sea string + numero
+            elif isinstance(variable, Numero) and isinstance(variableTemp, Numero) and (currentOperation=='/' or currentOperation=='*' or currentOperation=='%'):
+                # Se asigna el valor de numero
+                variable = Numero()
+            elif currentOperation == '':
+                pass
+            else:
+                raise SemanticError(f'Error semantico, operacion invalida en multiplicacion, division o modulo, tipo invalido')
+        # Retorna el ultimo valor que obtiene la variable luego de operar
+        return variable
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#unary.
