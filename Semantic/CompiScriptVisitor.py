@@ -78,6 +78,9 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#varDecl.
     def visitVarDecl(self, ctx:CompiScriptLanguageParser.VarDeclContext):
+        # Esta mal escrito y no se puede obtener la variable en la definicion de la variable
+        if ctx.IDENTIFIER() == None:
+            raise SemanticError(f'Error semantico, declaracion de variable invalida')
         id = ctx.IDENTIFIER().symbol.text
         # Averiguaremos el tipo despues y la inicializacion despues
         ambito:Ambito = self.TablaDeAmbitos.get(self.ambitoActual)
