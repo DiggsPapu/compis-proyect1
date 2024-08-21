@@ -69,6 +69,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#classDecl.
     def visitClassDecl(self, ctx:CompiScriptLanguageParser.ClassDeclContext):
+        className = ctx.IDENTIFIER().symbol.text
+        
         return self.visitChildren(ctx)
 
 

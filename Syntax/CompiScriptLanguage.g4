@@ -9,7 +9,7 @@ declaration:
     |   statement
     ;
 
-classDecl: 'class' IDENTIFIER ('<' IDENTIFIER)? '{' function* '}'
+classDecl: 'class' IDENTIFIER ('extends' IDENTIFIER)? '{' function* '}'
 ;
 
 funDecl: 'fun' function
