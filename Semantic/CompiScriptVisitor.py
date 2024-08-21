@@ -140,39 +140,15 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#expression.
     def visitExpression(self, ctx:CompiScriptLanguageParser.ExpressionContext):
-        # Solo es un logic_or
-        if ctx.logic_or():
-            return self.visit(ctx.logic_or())
-        return self.visitChildren(ctx)
-    
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#logic_or.
-    def visitLogic_or(self, ctx:CompiScriptLanguageParser.Logic_orContext):
-        # En caso de que sea solo un hijo entonces solo sera un logic_and
-        if ctx.getChildCount() == 1:
-            if type(ctx.logic_and())==list:
-                for child in ctx.logic_and():
-                    return self.visit(child)
-            else:
-                return self.visit(ctx.logic_and())
+        # Solo es una comparacion logica
+        if ctx.logic():
+            return self.visit(ctx.logic())
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CompiScriptLanguageParser#logic_and.
-    def visitLogic_and(self, ctx:CompiScriptLanguageParser.Logic_andContext):
+    # Visit a parse tree produced by CompiScriptLanguageParser#logic.
+    def visitLogic(self, ctx:CompiScriptLanguageParser.LogicContext):
         # En caso de que sea solo un hijo entonces solo sera un equality
-        if ctx.getChildCount() == 1:
-            if type(ctx.equality())==list:
-                for child in ctx.equality():
-                    return self.visit(child)
-            else:
-                return self.visit(ctx.equality())
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#equality.
-    def visitEquality(self, ctx:CompiScriptLanguageParser.EqualityContext):
-        # En caso de que sea solo un hijo entonces solo sera un comparison
         if ctx.getChildCount() == 1:
             if type(ctx.comparison())==list:
                 for child in ctx.comparison():
@@ -214,50 +190,9 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # Retorna el ultimo valor que obtiene la variable luego de operar
         return variable
 
-
-
     # Visit a parse tree produced by CompiScriptLanguageParser#term.
     def visitTerm(self, ctx:CompiScriptLanguageParser.TermContext):
         # En caso de que sea solo un hijo entonces solo sera un factor
-        if ctx.getChildCount() == 1:
-            if type(ctx.factor())==list:
-                for child in ctx.factor():
-                    return self.visit(child)
-            else:
-                return self.visit(ctx.factor())
-        # En caso de que sea mas de un hijo probablemente sea una operacion aritmetica o un string
-        # Averiguar el tipo de operacion es imperativo por lo que son los pares
-        currentOperation = ''
-        variable = None
-        for index in range(0, ctx.getChildCount()):
-            # variable o valor
-            variableTemp = self.visit(ctx.getChild(index))
-            # Es una variable
-            if isinstance(variableTemp, Variable):
-                variable = variableTemp.tipo
-            # Es operacion
-            if isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='+' or variableTemp=='-' or variableTemp=='*' or variableTemp=='/' or variableTemp=='%':
-                currentOperation = variableTemp
-            # Si es suma y es cadena o numero, casteo implicito en caso de que sea string + numero
-            elif (isinstance(variable, Numero) or isinstance(variable, Cadena)) and (isinstance(variableTemp, Numero) or isinstance(variableTemp, Cadena)) and currentOperation=='+':
-                # Se asigna el valor de numero o cadena
-                if isinstance(variable, Cadena) or isinstance(variableTemp, Cadena): 
-                    variable = Cadena()
-                else:
-                    variable = Numero()
-            # Si es resta es numero
-            elif  isinstance(variable, Numero) and isinstance(variableTemp, Numero) and (currentOperation=='-'):
-                variable = Numero()
-            elif currentOperation == '':
-                pass
-            else:
-                raise SemanticError(f'Error semantico, operacion invalida en suma o resta, tipo invalido')
-        # Retorna el ultimo valor que obtiene la variable luego de operar
-        return variable
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#factor.
-    def visitFactor(self, ctx:CompiScriptLanguageParser.FactorContext):
-        # En caso de que sea solo un hijo entonces solo sera un unary
         if ctx.getChildCount() == 1:
             if type(ctx.unary())==list:
                 for child in ctx.unary():
@@ -273,23 +208,26 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             variableTemp = self.visit(ctx.getChild(index))
             # Es una variable
             if isinstance(variableTemp, Variable):
-                variable = variableTemp.tipo
-            elif currentOperation=='' and variable == None and isinstance(variableTemp, Numero) :
-                variable = variableTemp
+                variableTemp = variableTemp.tipo
             # Es operacion
             if isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='+' or variableTemp=='-' or variableTemp=='*' or variableTemp=='/' or variableTemp=='%':
                 currentOperation = variableTemp
             # Si es suma y es cadena o numero, casteo implicito en caso de que sea string + numero
-            elif isinstance(variable, Numero) and isinstance(variableTemp, Numero) and (currentOperation=='/' or currentOperation=='*' or currentOperation=='%'):
-                # Se asigna el valor de numero
+            elif (isinstance(variable, Numero) or isinstance(variable, Cadena)) and (isinstance(variableTemp, Numero) or isinstance(variableTemp, Cadena)) and currentOperation=='+':
+                # Se asigna el valor de numero o cadena
+                if isinstance(variable, Cadena) or isinstance(variableTemp, Cadena): 
+                    variable = Cadena()
+                else:
+                    variable = Numero()
+            # Si es resta, division, multiplicacion o modulo es numero
+            elif  isinstance(variable, Numero) and isinstance(variableTemp, Numero) and (currentOperation=='-' or currentOperation=='/' or currentOperation=='*' or currentOperation=='%'):
                 variable = Numero()
-            elif currentOperation == '':
-                pass
+            elif currentOperation == '' and variable == None:
+                variable = variableTemp
             else:
-                raise SemanticError(f'Error semantico, operacion invalida en multiplicacion, division o modulo, tipo invalido')
+                raise SemanticError(f'Error semantico, operacion aritmetica invalida (suma, resta, multiplicacion, division), tipo invalido')
         # Retorna el ultimo valor que obtiene la variable luego de operar
         return variable
-
 
     # Visit a parse tree produced by CompiScriptLanguageParser#unary.
     def visitUnary(self, ctx:CompiScriptLanguageParser.UnaryContext):

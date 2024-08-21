@@ -79,18 +79,8 @@ class CompiScriptLanguageVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CompiScriptLanguageParser#logic_or.
-    def visitLogic_or(self, ctx:CompiScriptLanguageParser.Logic_orContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#logic_and.
-    def visitLogic_and(self, ctx:CompiScriptLanguageParser.Logic_andContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#equality.
-    def visitEquality(self, ctx:CompiScriptLanguageParser.EqualityContext):
+    # Visit a parse tree produced by CompiScriptLanguageParser#logic.
+    def visitLogic(self, ctx:CompiScriptLanguageParser.LogicContext):
         return self.visitChildren(ctx)
 
 
@@ -101,11 +91,6 @@ class CompiScriptLanguageVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#term.
     def visitTerm(self, ctx:CompiScriptLanguageParser.TermContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#factor.
-    def visitFactor(self, ctx:CompiScriptLanguageParser.FactorContext):
         return self.visitChildren(ctx)
 
 

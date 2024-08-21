@@ -42,19 +42,13 @@ whileStmt: 'while' '(' expression ')' statement ;
 
 block: '{' declaration* '}' ;
 
-expression: (call '.')? IDENTIFIER '=' expression | logic_or ;
+expression: (call '.')? IDENTIFIER '=' expression | logic  ;
 
-logic_or: logic_and ('or' logic_and)* ;
+logic: comparison (( 'and'| 'or' ) comparison)* ;
 
-logic_and: equality ('and' equality)* ;
+comparison: term (( '>' | '>=' | '<' | '<='| '!=' | '==' ) term)* ;
 
-equality: comparison (( '!=' | '==' ) comparison)* ;
-
-comparison: term (( '>' | '>=' | '<' | '<=' ) term)* ;
-
-term: factor (( '-' | '+' ) factor)* ;
-
-factor: unary (( '/' | '*' | '%' ) unary)* ;
+term: unary (( '-' | '+' | '/' | '*' | '%' ) unary)* ;
 
 unary: ( '!' | '-' ) unary | call ;
 

@@ -134,30 +134,12 @@ class CompiScriptLanguageListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CompiScriptLanguageParser#logic_or.
-    def enterLogic_or(self, ctx:CompiScriptLanguageParser.Logic_orContext):
+    # Enter a parse tree produced by CompiScriptLanguageParser#logic.
+    def enterLogic(self, ctx:CompiScriptLanguageParser.LogicContext):
         pass
 
-    # Exit a parse tree produced by CompiScriptLanguageParser#logic_or.
-    def exitLogic_or(self, ctx:CompiScriptLanguageParser.Logic_orContext):
-        pass
-
-
-    # Enter a parse tree produced by CompiScriptLanguageParser#logic_and.
-    def enterLogic_and(self, ctx:CompiScriptLanguageParser.Logic_andContext):
-        pass
-
-    # Exit a parse tree produced by CompiScriptLanguageParser#logic_and.
-    def exitLogic_and(self, ctx:CompiScriptLanguageParser.Logic_andContext):
-        pass
-
-
-    # Enter a parse tree produced by CompiScriptLanguageParser#equality.
-    def enterEquality(self, ctx:CompiScriptLanguageParser.EqualityContext):
-        pass
-
-    # Exit a parse tree produced by CompiScriptLanguageParser#equality.
-    def exitEquality(self, ctx:CompiScriptLanguageParser.EqualityContext):
+    # Exit a parse tree produced by CompiScriptLanguageParser#logic.
+    def exitLogic(self, ctx:CompiScriptLanguageParser.LogicContext):
         pass
 
 
@@ -176,15 +158,6 @@ class CompiScriptLanguageListener(ParseTreeListener):
 
     # Exit a parse tree produced by CompiScriptLanguageParser#term.
     def exitTerm(self, ctx:CompiScriptLanguageParser.TermContext):
-        pass
-
-
-    # Enter a parse tree produced by CompiScriptLanguageParser#factor.
-    def enterFactor(self, ctx:CompiScriptLanguageParser.FactorContext):
-        pass
-
-    # Exit a parse tree produced by CompiScriptLanguageParser#factor.
-    def exitFactor(self, ctx:CompiScriptLanguageParser.FactorContext):
         pass
 
 
