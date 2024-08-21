@@ -13,6 +13,7 @@ from Structures.Tipos.Nil import *
 from Structures.Tipos.Cadena import *
 from Structures.Tipos.Booleano import *
 from Structures.Ambito import *
+from antlr4.tree.Tree import TerminalNodeImpl
 # Manejo de errores lexicos
 class LexicalError(Exception):
     def __init__(self, message, line, column):
@@ -205,30 +206,28 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         currentOperation = ''
         variable = None
         for index in range(0, ctx.getChildCount()):
-            # Si es el primer hijo
-            if index == 0:
-                variable = self.visit(ctx.getChild(index))
-                if isinstance(variable, Variable):
-                    variable = variable.tipo
+            # variable o valor
+            variableTemp = self.visit(ctx.getChild(index))
+            # Es una variable
+            if isinstance(variableTemp, Variable):
+                variable = variableTemp.tipo
             # Es operacion
-            elif (index%2==1):
-                child = ctx.getChild(index)
-                currentOperation = self.visit(child)
-            else:
-                # variable o valor
-                variableTemp = self.visit(ctx.getChild(index))
-                # Si es suma y es cadena o numero, casteo implicito en caso de que sea string + numero
-                if (isinstance(variable, Numero) or isinstance(variable, Cadena)) and (isinstance(variableTemp, Numero) or isinstance(variableTemp, Cadena)) and currentOperation=='+':
-                    # Se asigna el valor de numero o cadena
-                    if isinstance(variable, Cadena) or isinstance(variableTemp, Cadena): 
-                        variable = Cadena()
-                    else:
-                        variable = Numero()
-                # Si es resta es numero
-                elif  isinstance(variable, Numero) and isinstance(variableTemp, Numero) and (currentOperation=='-'):
-                    variable = Numero()
+            if isinstance(variableTemp, TerminalNodeImpl):
+                currentOperation = self.visit(ctx.getChild(index))
+            # Si es suma y es cadena o numero, casteo implicito en caso de que sea string + numero
+            elif (isinstance(variable, Numero) or isinstance(variable, Cadena)) and (isinstance(variableTemp, Numero) or isinstance(variableTemp, Cadena)) and currentOperation=='+':
+                # Se asigna el valor de numero o cadena
+                if isinstance(variable, Cadena) or isinstance(variableTemp, Cadena): 
+                    variable = Cadena()
                 else:
-                    raise SemanticError(f'Error semantico, operacion invalida en suma o resta, tipo invalido')
+                    variable = Numero()
+            # Si es resta es numero
+            elif  isinstance(variable, Numero) and isinstance(variableTemp, Numero) and (currentOperation=='-'):
+                variable = Numero()
+            elif currentOperation == '':
+                pass
+            else:
+                raise SemanticError(f'Error semantico, operacion invalida en suma o resta, tipo invalido')
         # Retorna el ultimo valor que obtiene la variable luego de operar
         return variable
 
