@@ -1,3 +1,23 @@
 var variable = 1;
 var variable2 = 4;
 var variable3 = 1 * 2 + 3 - 7 / 4 + variable * variable2;
+67890>789;
+567<7890;
+variable>variable3;
+variable<=variable2;
+789<=1344;
+890>=98765;
+variable2>=23456;
+
+var variable0 = true;
+var variable5 = true;
+true>false;
+false<true;
+true>=false;
+false<=true;
+variable0>false;
+variable0<true;
+variable5>=false;
+false<=variable5;
+
+var string = "string"+variable2;
