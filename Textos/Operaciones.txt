@@ -1,6 +1,6 @@
 var variable = 1;
 var variable2 = 4;
-var variable3 = 1 * 2 + 3 - 7 / 4 + variable * variable2;
+var variable3 = 1 * 2 + 3 - 7 / 4 + variable * variable2 % 4;
 67890>789;
 567<7890;
 variable>variable3;
