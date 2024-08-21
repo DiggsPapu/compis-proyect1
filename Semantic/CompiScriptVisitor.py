@@ -271,9 +271,29 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     def visitUnary(self, ctx:CompiScriptLanguageParser.UnaryContext):
         # En caso de que sea una call que retorne solo el call
         if ctx.call():
-            call = ctx.call()
             return self.visit(ctx.call())
-                
+        # Esto implica que puede negarse el valor o puede volverse negativo
+        elif ctx.unary():
+            operation = ''
+            variable = None
+            for child in ctx.getChildren():
+                variableTemp = self.visit(child)
+                if isinstance(variableTemp, Variable):
+                    variableTemp = variableTemp.tipo
+                if isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='-':
+                    operation = '-'
+                elif isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='!':
+                    operation = '!'
+                elif variable == None and isinstance(variableTemp, Numero) and operation == '-':
+                    variable = Numero() 
+                elif variable == None and isinstance(variableTemp, Booleano) and operation == '!':
+                    variable = Booleano()
+                elif isinstance(variable, Numero) and isinstance(variableTemp, Numero) and operation == '-':
+                    variable = Numero() 
+                elif isinstance(variable, Booleano) and isinstance(variableTemp, Booleano) and operation == '!':
+                    variable = Booleano()
+                else:
+                    raise  SemanticError(f'Error semantico, no se puede negar un no booleano o no se puede poner en negativo un no numero')
         return self.visitChildren(ctx)
 
 
@@ -415,5 +435,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             return '/'
         elif node.symbol.text == '%':
             return '%'
+        elif node.symbol.text == '!':
+            return '!'
         # Continua con la visita normal
         return self.visitChildren(node)
