@@ -199,15 +199,32 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # En caso de que sea mas de un hijo probablemente sea una operacion aritmetica o un string
         # Averiguar el tipo de operacion es imperativo por lo que son los pares
         currentOperation = ''
+        variable = None
         for index in range(0, ctx.getChildCount()):
+            # Si es el primer hijo
+            if index == 0:
+                variable = self.visit(ctx.getChild(index))
             # Es operacion
-            if (index%2==1):
-                currentOperation = self.visitChildren(ctx.getChild(index))
+            elif (index%2==1):
+                child = ctx.getChild(index)
+                currentOperation = self.visit(child)
             else:
                 # variable o valor
-                variable = self.visitChildren(ctx.getChild(index))
-        return self.visitChildren(ctx)
-
+                variableTemp = self.visit(ctx.getChild(index))
+                # Si es suma y es cadena o numero, casteo implicito en caso de que sea string + numero
+                if (isinstance(variable, Numero) or isinstance(variable, Cadena)) and (isinstance(variableTemp, Numero) or isinstance(variableTemp, Cadena)) and currentOperation=='+':
+                    # Se asigna el valor de numero o cadena
+                    if isinstance(variable, Cadena) or isinstance(variableTemp, Cadena): 
+                        variable = Cadena()
+                    else:
+                        variable = Numero()
+                # Si es resta es numero
+                elif  isinstance(variable, Numero) and isinstance(variableTemp, Numero) and (currentOperation=='-'):
+                    variable = Numero()
+                else:
+                    raise SemanticError(f'Error semantico, operacion invalida en suma o resta, tipo invalido')
+        # Retorna el ultimo valor que obtiene la variable luego de operar
+        return variable
 
     # Visit a parse tree produced by CompiScriptLanguageParser#factor.
     def visitFactor(self, ctx:CompiScriptLanguageParser.FactorContext):
@@ -233,17 +250,32 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#call.
     def visitCall(self, ctx:CompiScriptLanguageParser.CallContext):
-        # en caso de que la cantidad de hijos sea 1 entonces solo es un primary
+        # en caso de que la cantidad de hijos sea 1 entonces solo es un primary lo que significa que no es una llamada a una funcion
         if ctx.getChildCount() == 1:
             if type(ctx.primary())==list:
                 for child in ctx.primary():
                     return self.visit(child)
             else:
-                primary = ctx.primary()
                 return self.visit(ctx.primary())
-        # En caso de que sean argumentos puede que haya algo como funcion().otrafuncion().otrafuncion2() o algo como funcion().identificador
+        # En caso de que sean argumentos puede que haya algo como funcion().otrafuncion().otrafuncion2() o algo como funcion().identificador o identificadores
         else:
-            pass   
+            idSimbolo = ""
+            # Es necesario visitar los nodos en orden ya que puede que sean secuenciales como los ejemplos de arriba
+            for index in range(0, ctx.getChildCount()):
+                child = ctx.getChild(index)
+                # El primero siempre sera un identifier entonces ese es el unico que se ignora
+                if index == 0:
+                    idSimbolo = self.visit(child)
+                # Son argumentos, parametros a pasarle a la funcion
+                elif isinstance(child, CompiScriptLanguageParser.ArgumentsContext):
+                    self.visit(child)
+                # Es un identifier, una propiedad
+                elif isinstance(child, CompiScriptLanguageParser.PrimaryContext):
+                    pass
+                # Este es para verificar sintacticamente que todo bien
+                else:
+                    self.visit(child)
+                    
         return self.visitChildren(ctx)
 
 
@@ -255,6 +287,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             id = ctx.IDENTIFIER().symbol.text
             ambitoActual:Ambito = self.TablaDeAmbitos.get(self.ambitoActual)
             tablaDeSimbolosActual:HashMap = ambitoActual.tablaDeSimbolos
+            # Puede retornar una variable o el nombre de una funcion
+            return tablaDeSimbolosActual.get(id)
             # # Esto implica que esta llevandose a cabo dentro del bloque de la funcion
             # if self.currentFuncion != None:
             #     # Para averiguar si es un parametro esta definido en la funcion

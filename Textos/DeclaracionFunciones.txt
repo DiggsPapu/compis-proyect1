@@ -4,4 +4,4 @@ fun funcion1(param1, param2)
 }
     
 
-funcion1(1, 2);
+funcion1(1, 2).funcion1(1,2);
