@@ -21,3 +21,10 @@ variable5>=false;
 false<=variable5;
 
 var string = "string"+variable2;
+
+string == variable;
+variable != 20;
+50==0;
+"hola"!=10;
+true==false;
+true!="demonios";

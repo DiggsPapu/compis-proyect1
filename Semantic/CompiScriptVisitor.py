@@ -176,10 +176,13 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             if isinstance(variableTemp, Variable):
                 variableTemp = variableTemp.tipo
             # Es operacion
-            if isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='>' or variableTemp=='<' or variableTemp=='>=' or variableTemp=='<=':
+            if isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='>' or variableTemp=='<' or variableTemp=='>=' or variableTemp=='<=' or variableTemp=='==' or variableTemp=='!=':
                 currentOperation = variableTemp
             # Siempre devolvera o generar un booleano al ser comparacion, tienen que ser del mismo tipo
             elif (type(variableTemp)==type(variable)) and (currentOperation=='>' or currentOperation=='<' or currentOperation=='>=' or currentOperation=='<='):
+                variable = Booleano()
+            # Puede comparar cualquier tipo para ver si son iguales o no
+            elif currentOperation=='!=' or currentOperation == '==':
                 variable = Booleano()
             elif currentOperation == '' and variable == None:
                 variable = variableTemp
@@ -403,6 +406,10 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             return '>='
         elif node.symbol.text == '<=':
             return '<='
+        elif node.symbol.text == '==':
+            return '=='
+        elif node.symbol.text == '!=':
+            return '!='
         elif node.symbol.text == '<':
             return '<'
         elif node.symbol.text == '>':
