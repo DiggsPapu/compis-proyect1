@@ -148,14 +148,21 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#logic.
     def visitLogic(self, ctx:CompiScriptLanguageParser.LogicContext):
-        # En caso de que sea solo un hijo entonces solo sera un equality
+        # En caso de que sea solo un hijo entonces solo sera una comparacion, es decir no es logico la operacion
         if ctx.getChildCount() == 1:
             if type(ctx.comparison())==list:
                 for child in ctx.comparison():
                     return self.visit(child)
             else:
                 return self.visit(ctx.comparison())
-        return self.visitChildren(ctx)
+        variable = Booleano()
+        for child in ctx.getChildren():
+            variableTemp = self.visit(child)
+            if variableTemp == 'and' or variableTemp == 'or':
+                pass
+            elif not isinstance(variableTemp, Booleano) or not isinstance(variable, Booleano):
+                raise SemanticError(f'Error semantico, las comparaciones no generan valores booleanos para operar logicamente')
+        return variable
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#comparison.
@@ -332,7 +339,9 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # Tipo booleano
         elif ctx.getText() == "nil":
             return Nil()
-        
+        # Expresion a resolver
+        elif ctx.expression():
+            return self.visit(ctx.expression())
         return self.visitChildren(ctx)
 
 
@@ -414,5 +423,9 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             return '<'
         elif node.symbol.text == '>':
             return '>'
+        elif node.symbol.text == 'and':
+            return 'and'
+        elif node.symbol.text == 'or':
+            return 'or'
         # Continua con la visita normal
         return self.visitChildren(node)

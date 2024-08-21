@@ -28,3 +28,6 @@ variable != 20;
 "hola"!=10;
 true==false;
 true!="demonios";
+
+variable2>2 and false;
+(20>2) and false or true and ("yellow">="black");
