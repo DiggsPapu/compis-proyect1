@@ -86,6 +86,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         id = ctx.IDENTIFIER().symbol.text
         # Averiguaremos el tipo despues y la inicializacion despues
         ambito:Ambito = self.TablaDeAmbitos.get(self.ambitoActual)
+        if ambito.tablaDeSimbolos.contains_key(id):
+            raise SemanticError(f"Error semantico, no se puede re declarar una variable ya creada en el ambito")
         ambito.tablaDeSimbolos.put(id, Variable(nombreSimbolo=id, ambito=self.ambitoActual))
         # En caso de que tenga una expresion, porque puede que sea una variable solo definida sin inicializar
         if ctx.expression():
@@ -196,7 +198,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             variableTemp = self.visit(ctx.getChild(index))
             # Es una variable
             if isinstance(variableTemp, Variable):
-                variable = variableTemp.tipo
+                variableTemp = variableTemp.tipo
             # Es operacion
             if isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='>' or variableTemp=='<' or variableTemp=='>=' or variableTemp=='<=':
                 currentOperation = variableTemp
