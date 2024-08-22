@@ -103,12 +103,56 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#forStmt.
     def visitForStmt(self, ctx:CompiScriptLanguageParser.ForStmtContext):
-        return self.visitChildren(ctx)
+        # Verificar si hay una inicialización de variable en el for
+        if ctx.varDecl():
+            self.visit(ctx.varDecl())
+        elif ctx.exprStmt():
+            self.visit(ctx.exprStmt())
+
+        # Evaluar la condición del bucle for
+        condicion = self.visit(ctx.expression())
+        
+        # Verificar que la condición sea un booleano
+        if not isinstance(condicion, Booleano):
+            raise SemanticError(f"Error semántico: la condición del for no es un valor booleano.")
+    
+        # Ejecutar el bloque del for mientras la condición sea verdadera
+        while condicion.valor:  # Asumiendo que `Booleano` tiene un atributo `valor`
+            # Visitar el cuerpo del for
+            self.visit(ctx.statement())
+            
+            # Actualizar la expresión de incremento (la tercera parte del for)
+            if ctx.expression(1):  # Verifica si hay una expresión de actualización
+                self.visit(ctx.expression(1))
+            
+            # Volver a evaluar la condición después de cada iteración
+            condicion = self.visit(ctx.expression())
+            
+            # Verificar nuevamente que la condición sea un booleano
+            if not isinstance(condicion, Booleano):
+                raise SemanticError(f"Error semántico: la condición del for no es un valor booleano.")
+        
+        return None
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#ifStmt.
     def visitIfStmt(self, ctx:CompiScriptLanguageParser.IfStmtContext):
-        return self.visitChildren(ctx)
+        # Evaluar la expresión condicional
+        condicion = self.visit(ctx.expression())
+        
+        # Verificar que la condición sea un booleano
+        if not isinstance(condicion, Booleano):
+            raise SemanticError(f"Error semántico: la condición del if no es un valor booleano.")
+        
+        # Si la condición es verdadera, visitar el bloque del if
+        if condicion.valor:  # Asumiendo que `Booleano` tiene un atributo `valor`
+            self.visit(ctx.statement(0))
+        # Si hay un bloque else y la condición es falsa, visitar el bloque else
+        elif ctx.ELSE() is not None:
+            self.visit(ctx.statement(1))
+        
+        # Retornar un valor o continuar la ejecución
+        return None
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#printStmt.
@@ -123,7 +167,27 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#whileStmt.
     def visitWhileStmt(self, ctx:CompiScriptLanguageParser.WhileStmtContext):
-        return self.visitChildren(ctx)
+        # Evaluar la expresión condicional del while
+        condicion = self.visit(ctx.expression())
+        
+        # Verificar que la condición sea un booleano
+        if not isinstance(condicion, Booleano):
+            raise SemanticError(f"Error semántico: la condición del while no es un valor booleano.")
+        
+        # Ejecutar el bloque del while mientras la condición sea verdadera
+        while condicion.valor:  # Asumiendo que `Booleano` tiene un atributo `valor`
+            # Visitar el bloque del while
+            self.visit(ctx.statement())
+            
+            # Volver a evaluar la condición después de cada iteración
+            condicion = self.visit(ctx.expression())
+            
+            # Verificar nuevamente que la condición sea un booleano
+            if not isinstance(condicion, Booleano):
+                raise SemanticError(f"Error semántico: la condición del while no es un valor booleano.")
+        
+        # Retornar None al final de la ejecución del while
+        return None
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#block.
