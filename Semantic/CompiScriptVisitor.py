@@ -25,6 +25,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         self.TablaDeAmbitos = HashMap()
         self.stackAmbitos = Stack([0])
         self.currentFuncion = None
+        self.classDeclarationName = None
     
     def imprimirTablaDeSimbolos(self):
         llaves = self.TablaDeAmbitos.keys()
@@ -117,7 +118,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#returnStmt.
     def visitReturnStmt(self, ctx:CompiScriptLanguageParser.ReturnStmtContext):
-        return self.visitChildren(ctx)
+        return self.visit(ctx.expression())
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#whileStmt.
@@ -127,10 +128,11 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#block.
     def visitBlock(self, ctx:CompiScriptLanguageParser.BlockContext):
-        
         # Lo unico que puede haber en un bloque es una declaracion
+        lastDeclaration = None
         for declarations in ctx.declaration():
-            self.visit(declarations)
+            lastDeclaration = self.visit(declarations)
+        return lastDeclaration
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#expression.
@@ -330,22 +332,34 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             return self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(nombreClase)
         # En caso de que sean argumentos puede que haya algo como funcion().otrafuncion().otrafuncion2() o algo como funcion().identificador o identificadores
         else:
-            idSimbolo = ""
-            # Es necesario visitar los nodos en orden ya que puede que sean secuenciales como los ejemplos de arriba
-            for index in range(0, ctx.getChildCount()):
-                child = ctx.getChild(index)
-                # El primero siempre sera un identifier entonces ese es el unico que se ignora
-                if index == 0:
-                    idSimbolo = self.visit(child)
-                # Son argumentos, parametros a pasarle a la funcion
-                elif isinstance(child, CompiScriptLanguageParser.ArgumentsContext):
-                    self.visit(child)
-                # Es un identifier, una propiedad
-                elif isinstance(child, CompiScriptLanguageParser.PrimaryContext):
-                    pass
-                # Este es para verificar sintacticamente que todo bien
-                else:
-                    self.visit(child)
+            # El primary indicara si es una funcion o un IDENTIFIER
+            funcionIdentifier = self.visit(ctx.getChild(0))
+            # En caso de que sea funcion
+            if isinstance(funcionIdentifier, Funcion):
+                newTablaSimbolos = HashMap()
+                mapa = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.map
+                newTablaSimbolos.replaceMap(mapa)
+                arguments = []
+                if len(ctx.arguments())>0:
+                    arguments = self.visit(ctx.arguments()[0])
+                # Meter los parametros que se usan en esa inicializacion, si no son de igual length entonces raise error
+                if len(arguments) != len(funcionIdentifier.parametros):
+                    raise SemanticError(f"Error Semantico, se esperaban {len(funcionIdentifier.parametros)} parametros, {len(arguments)} fueron recibidos")
+                index = 0
+                for argument in arguments:
+                    parametro = funcionIdentifier.parametros[index]
+                    tempP = self.visit(argument)
+                    newTablaSimbolos.put(parametro, Parametro(parametro, tempP, self.TablaDeAmbitos.size()+1, funcionPertenece=funcionIdentifier.nombreSimbolo))
+                    index+=1
+                # Crear un nuevo ambito solo para almacenar los parametros de la funcion
+                newAmbito:Ambito = Ambito(self.TablaDeAmbitos.size(), newTablaSimbolos)
+                newAmbito.tablaDeTipos.replaceMap(self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.map)
+                self.stackAmbitos.insert(self.TablaDeAmbitos.size())
+                self.TablaDeAmbitos.put(self.TablaDeAmbitos.size(), newAmbito)
+                # Visitar el contexto del ambito y generar el retorno en caso tenga
+                retorno = self.visit(funcionIdentifier.contexto)
+                self.stackAmbitos.remove_first()
+                return retorno if retorno!=None else Nil()
                     
         return self.visitChildren(ctx)
 
