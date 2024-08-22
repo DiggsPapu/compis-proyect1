@@ -103,7 +103,7 @@ class Funcion(Simbolo):
         self.parametros.append(parametro)
 
 class Metodo(Funcion):
-    def __init__(self, nombreSimbolo: str = "var1", tipo: Tipo = Tipo(), ambito: int = 0, parametros=[]) -> None:
+    def __init__(self, nombreSimbolo: str = "var1", tipo: Tipo = Tipo(), ambito: int = 0) -> None:
         super().__init__(nombreSimbolo, tipo, ambito)
         # Tendran los id's de los parametros para la ejecucion, por lo que es una lista con str's
         self.parametros = [] 

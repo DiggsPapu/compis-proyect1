@@ -5,6 +5,9 @@ class Perrito{
         this.macho = sexo;
         this.edadPerruna = (edadHumana * variable1)+4;
     }
+    getNombre(){
+        this.nombre;
+    }
 }
 var variable = new Perrito("pedro", true, 20);
 

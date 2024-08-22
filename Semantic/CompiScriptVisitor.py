@@ -24,13 +24,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # Tabla de simbolos por ambito entonces por cada ambito (contexto) habra una tabla de simbolos
         self.TablaDeAmbitos = HashMap()
         self.stackAmbitos = Stack([0])
-        self.ambitoActual = 0
-        self.ambitoPasado = 0
-        self.cantidadDeParametrosDefinidos = 0
-        self.cantidadDeVariablesDeRetorno = 0
         self.currentFuncion = None
-        self.insideClassDeclaration = False
-        self.classInInit = False
     
     def imprimirTablaDeSimbolos(self):
         llaves = self.TablaDeAmbitos.keys()
@@ -144,9 +138,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # Solo es una comparacion logica
         if ctx.logic():
             return self.visit(ctx.logic())
-        # No es comparacion logica, probablemente sea
-        # elif self.classDeclarationName != None and self.classInInit:
-        #     # Se esta declarando una variable
+        # Se esta declarando una variable
         elif self.visit(ctx.call())=="this":
             # Crear un nuevo campo
             identificadorCampo = ctx.getChild(2).symbol.text
@@ -371,21 +363,6 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             if (tablaDeSimbolosActual.get(id)== None and tablaDeTiposActual.get(id)==None):
                 raise SemanticError("Error semantico la variable, la clase o la funcion no existe")
             return tablaDeSimbolosActual.get(id)
-            # # Esto implica que esta llevandose a cabo dentro del bloque de la funcion
-            # if self.currentFuncion != None:
-            #     # Para averiguar si es un parametro esta definido en la funcion
-            #     for parametro in self.TablaDeAmbitos.get(self.ambitoPasado).get(self.currentFuncion):
-            #         if parametro.nombreSimbolo == id:
-            #             return True
-            #     # Si no lo encontre entonces tal vez es una variable global y estaria definida en el contexto actual
-            #     if tablaDeSimbolosActual.contains_key(id):
-            #         return True
-            #     # Si no es variable global entonces error semantico
-            #     else:
-            #         raise SemanticError(f"Error Semantico, variable o parametro {id} no existe en la funcion")
-                
-                
-            
         # Tipo numero
         elif ctx.NUMBER():
             return Numero()
@@ -404,52 +381,33 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # Acceder a un valor para asignarlo o desde un metodo para hacer algo con el
         elif ctx.getText() == "this":
             return "this"
-        # elif self.classInInit:
-        #     ambito:Ambito = self.TablaDeAmbitos.get(self.ambitoActual)
-        #     metodoInicializacion:Metodo = ambito.tablaDeSimbolos.get(self.classDeclarationName+".init")
-        #     if ctx.getText() == metodoInicializacion.parametros
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#function.
     def visitFunction(self, ctx:CompiScriptLanguageParser.FunctionContext):
-        ambitoActual:Ambito = self.TablaDeAmbitos.get(self.stackAmbitos.first())
         nombreFuncion = ctx.IDENTIFIER().symbol.text
+        funcion = None
         # En caso de que no se este declarando una clase
         if (self.classDeclarationName==None):
             self.currentFuncion = nombreFuncion
             funcion = Funcion(nombreFuncion, TipoFuncion(), self.stackAmbitos.first())
-            # Si la funcion tiene parametros
-            if ctx.parameters():
-                # Obtener los parametros y meterlos en la tabla de simbolos actual no la de la funcion para desglosar la funcion
-                parametros = self.visit(ctx.parameters())
-                for parametro in parametros:
-                    # Solamente almacenar el parametro en la funcion
-                    funcion.aniadirParametro(parametro)
-                
-            # Solamente se va a almacenar el contexto de la ejecucion de la funcion
-            funcion.aniadirContexto(ctx.block())
-            # Agregar la funcion al ambito actual de la tabla de simbolos
-            ambitoActual.tablaDeSimbolos.put(nombreFuncion, funcion)
         # Metodos de una clase
         else:
             nombreFuncion = self.classDeclarationName+"."+nombreFuncion
             # en este caso basicamente solo hay que obtener los fields de la clase
-            metodo = Metodo(nombreSimbolo=nombreFuncion, tipo=TipoFuncion(), ambito=self.stackAmbitos.first())
-            # Si la funcion tiene parametros
-            if ctx.parameters():
-                parametros = self.visit(ctx.parameters())
-                # Obtener los parametros y meterlos en la tabla de simbolos actual no la de la funcion para desglosar la funcion
-                for parametro in parametros:
-                    # Solamente almacenar el parametro en la funcion
-                    metodo.aniadirParametro(parametro)
-            # if ctx.block():
-            #     self.visit(ctx.block())
-            # En vez de visitarlo solo aniadir el ctx para la ejecucion cuando encuentre una nueva instancia
-            metodo.aniadirContexto(ctx.block())
-            # Agregar la funcion al ambito actual de la tabla de simbolos
-            ambitoActual.tablaDeSimbolos.put(nombreFuncion, metodo)
-            
+            funcion = Metodo(nombreSimbolo=nombreFuncion, tipo=TipoFuncion(), ambito=self.stackAmbitos.first())
+        # Si la funcion/metodo tiene parametros
+        if ctx.parameters():
+            # Obtener los parametros y meterlos en la tabla de simbolos actual no la de la funcion para desglosar la funcion
+            parametros = self.visit(ctx.parameters())
+            for parametro in parametros:
+                # Solamente almacenar el parametro en la funcion
+                funcion.aniadirParametro(parametro)
+        # Solamente se va a almacenar el contexto de la ejecucion de la funcion
+        funcion.aniadirContexto(ctx.block())
+        # Agregar la funcion al ambito actual de la tabla de simbolos
+        self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(nombreFuncion, funcion)
             
         
     # Visit a parse tree produced by CompiScriptLanguageParser#parameters.
@@ -487,46 +445,11 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     
     # Chequeo para verificar si es o no un nodo malformado
     def visitTerminal(self, node):
-        variable = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(node.symbol.text)
         # Verifica si el token es malformado
         if node.symbol.type == CompiScriptLanguageParser.MALFORMED:
             line = node.symbol.line
             column = node.symbol.column
             raise LexicalError(f"Unrecognized token '{node.getText()}'", line, column)
-        # Averiguar la operacion que es
-        elif node.symbol.text == '-':
-            return '-'
-        elif node.symbol.text == '+':
-            return '+'
-        elif node.symbol.text == '*':
-            return '*'
-        elif node.symbol.text == '/':
-            return '/'
-        elif node.symbol.text == '%':
-            return '%'
-        elif node.symbol.text == '!':
-            return '!'
-        elif node.symbol.text == '>=':
-            return '>='
-        elif node.symbol.text == '<=':
-            return '<='
-        elif node.symbol.text == '==':
-            return '=='
-        elif node.symbol.text == '!=':
-            return '!='
-        elif node.symbol.text == '<':
-            return '<'
-        elif node.symbol.text == '>':
-            return '>'
-        elif node.symbol.text == 'and':
-            return 'and'
-        elif node.symbol.text == 'or':
-            return 'or'
-        elif node.symbol.text == 'new':
-            return 'new'
-        # Verificar que sea una variable
-        elif variable != None:
-            return variable
-            
         # Continua con la visita normal
-        return self.visitChildren(node)
+        self.visitChildren(node)
+        return node.symbol.text
