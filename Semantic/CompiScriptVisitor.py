@@ -155,9 +155,13 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             newCampo = Campo(self.variableEnDefinicion+"."+identificadorCampo,Nil(), self.stackAmbitos.first(), nombreVariable=self.variableEnDefinicion)
             # Ocurre la asignacion, se obtiene el parametro al que se asigna y su tipo
             retorno = self.visit(ctx.expression())
-            if isinstance(retorno, Parametro):
+            if isinstance(retorno, Parametro) or isinstance(retorno, Variable) or isinstance(retorno, Campo):
                 newCampo.definirInicializador(retorno.tipo)
+                newCampo.redefinirTipo(retorno.tipo)
+            elif isinstance(retorno, Booleano) or isinstance(retorno, Numero) or isinstance(retorno, Cadena) or isinstance(retorno, Nil) or isinstance(retorno, DefinidoPorUsuario):
+                newCampo.definirInicializador(retorno.nombreTipo)
                 newCampo.redefinirTipo(newCampo.inicializador)
+            
             # Se almacena el campo en la tabla de simbolos
             self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(newCampo.nombreSimbolo, newCampo)
         else:
@@ -198,7 +202,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             # variable o valor
             variableTemp = self.visit(ctx.getChild(index))
             # Es una variable
-            if isinstance(variableTemp, Variable):
+            if isinstance(variableTemp, Variable) or isinstance(variableTemp, Parametro) or isinstance(variableTemp, Campo):
                 variableTemp = variableTemp.tipo
             # Es operacion
             if isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='>' or variableTemp=='<' or variableTemp=='>=' or variableTemp=='<=' or variableTemp=='==' or variableTemp=='!=':
@@ -235,7 +239,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             # variable o valor
             variableTemp = self.visit(ctx.getChild(index))
             # Es una variable
-            if isinstance(variableTemp, Variable):
+            if isinstance(variableTemp, Variable) or isinstance(variableTemp, Parametro) or isinstance(variableTemp, Campo):
                 variableTemp = variableTemp.tipo
             # Es operacion
             if isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='+' or variableTemp=='-' or variableTemp=='*' or variableTemp=='/' or variableTemp=='%':
@@ -268,7 +272,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             variable = None
             for child in ctx.getChildren():
                 variableTemp = self.visit(child)
-                if isinstance(variableTemp, Variable):
+                if isinstance(variableTemp, Variable) or isinstance(variableTemp, Parametro) or isinstance(variableTemp, Campo):
                     variableTemp = variableTemp.tipo
                 if isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='-':
                     operation = '-'

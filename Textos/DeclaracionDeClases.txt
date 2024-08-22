@@ -1,6 +1,11 @@
+var variable1 = 3;
 class Perrito{
-    init(){
-        this.macho = false;
+    init(nombre, sexo, edadHumana){
+        this.nombre = nombre;
+        this.macho = sexo;
+        this.edadPerruna = (edadHumana * variable1)+4;
     }
 }
-var variable = new Perrito();
+var variable = new Perrito("pedro", true, 20);
+
+var perrito2 = new Perrito("pedro2", false, 50);
