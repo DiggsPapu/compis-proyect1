@@ -331,6 +331,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             for nombreAtributo in atributos:
                 atributo = newAmbito.tablaDeSimbolos.get(nombreAtributo)
                 self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(nombreAtributo, atributo)
+            return self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(nombreClase)
         # En caso de que sean argumentos puede que haya algo como funcion().otrafuncion().otrafuncion2() o algo como funcion().identificador o identificadores
         else:
             idSimbolo = ""

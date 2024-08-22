@@ -1,11 +1,6 @@
 class Perrito{
-    init(nombre, edad, anios){
-        this.nombre = nombre;
-        this.edad = edad;
-        this.siglo = anios;
-    }
-    caminar(){
-        this.nombre = this.nombre + 1;
+    init(){
+        this.macho = false;
     }
 }
-var variable = new Perrito("raul", 20, 50);
+var variable = new Perrito();
