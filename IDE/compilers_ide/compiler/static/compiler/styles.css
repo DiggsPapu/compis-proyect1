@@ -1,0 +1,73 @@
+body{
+    background-color: #c1d9cd;
+
+    width: 100%;
+    height: 950%;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.containerPrincipal{
+    width: 1000px;
+    height: 580px;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.areasContainer{
+    display: flex;
+    justify-content: space-between;
+}
+
+.textArea{
+    width: 750px;
+    height: 500px;
+
+    border: solid;
+
+    background-color: #f7eadc;
+}
+
+.errorArea{
+    width: 230px;
+    height: 500px;
+
+    border: solid;
+
+    background-color: #f7eadc;
+}
+
+.bttnContainer{
+    width: 100%;
+
+    display: flex;
+    gap: 25px;
+    justify-content: center;
+}
+
+.cleanBttn{
+    width: 150px;
+    height: 50px;
+
+    border-radius: 15px;
+
+    background-color: #eb613b;
+    color: white;
+    font-weight: bold;
+}
+
+.excecuteBttn{
+    width: 150px;
+    height: 50px;
+
+    border-radius: 15px;
+
+    background-color: #4d3b36;
+    color: white;
+    font-weight: bold;
+}
