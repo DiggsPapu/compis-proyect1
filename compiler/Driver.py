@@ -6,6 +6,7 @@ from Semantic.CompiScriptVisitor import *
 from Syntax.CompiScriptLanguageVisitor import *
 from antlr4.tree.Trees import Trees
 import graphviz
+
 def create_visual_tree(tree, parser):
     # Generate the DOT format string
     tree_dot = Trees.toStringTree(tree, None, parser)
@@ -21,20 +22,23 @@ def create_visual_tree(tree, parser):
     dot = graphviz.Source.from_file("parse_tree.dot")
     dot.render("parse_tree", format="png", cleanup=True)
 
-    
 def main(argv):
-    input_stream = FileStream('./Textos/pruebasIf.txt')
+    # Leer el código desde stdin (el código que se envía desde Django)
+    input_stream = InputStream(sys.stdin.read())
+    
     lexer = CompiScriptLanguageLexer(input_stream)
     stream = CommonTokenStream(lexer)
     parser = CompiScriptLanguageParser(stream)
-    tree = parser.program()  # We are using 'program' since this is the starting rule based on our CompiScriptLanguage grammar, yay!
+    tree = parser.program()  # Usar 'program' como regla inicial según la gramática CompiScript
     
     visitor = CompiScriptVisitor()
     
-    # Genera el árbol como texto
+    # Generar el árbol como texto
     tree_str = Trees.toStringTree(tree, None, parser)
     print(tree_str)
     print(tree)
+    
+    # Descomenta si deseas generar la visualización del árbol
     # create_visual_tree(tree, parser)
 
     visitor.visit(tree)

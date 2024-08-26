@@ -30,12 +30,38 @@
             const codeArea = document.getElementById('codeArea');
             const errorArea = document.getElementById('errorArea');
             const clearBtn = document.getElementById('clearBtn');
+            const executeBtn = document.getElementById('executeBtn');
         
-            // Añadir un evento de clic al botón de limpiar
+            // Función para limpiar las áreas
             clearBtn.addEventListener('click', function() {
-                // Limpiar el contenido de las áreas
                 codeArea.value = '';
                 errorArea.innerText = '';
+            });
+        
+            // Función para ejecutar el código
+            executeBtn.addEventListener('click', function() {
+                const code = codeArea.value;  // Obtener el código escrito por el usuario
+        
+                // Realizar una solicitud POST al servidor
+                fetch("{% url 'compile_code' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({code: code})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        errorArea.innerText = data.error;  // Mostrar el error si lo hay
+                    } else {
+                        errorArea.innerText = data.result;  // Mostrar el resultado si no hay error
+                    }
+                })
+                .catch(error => {
+                    errorArea.innerText = 'Error al procesar la solicitud.';
+                });
             });
         </script>
     </body>

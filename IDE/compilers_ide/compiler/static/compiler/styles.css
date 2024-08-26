@@ -42,11 +42,15 @@ body{
 
 .errorArea{
     width: 230px;
-    height: 500px;
+    height: 504px;
 
     border: solid;
 
     background-color: #f7eadc;
+
+    padding: 10px;
+    box-sizing: border-box;
+    overflow: auto;
 }
 
 .bttnContainer{
