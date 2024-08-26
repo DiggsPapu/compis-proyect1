@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Compilers IDE</title>
+</head>
+<body>
+    <h1>Compilers IDE</h1>
+    <form id="compile-form" method="post">
+        <textarea name="code" rows="10" cols="50"></textarea><br>
+        <button type="submit">Compile</button>
+    </form>
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('compile-form').onsubmit = function(event) {
+            event.preventDefault();
+            let formData = new FormData(this);
+            fetch("{% url 'compile_code' %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('result').innerText = data.result;
+            });
+        }
+    </script>
+</body>
+</html>
