@@ -12,19 +12,31 @@
         
         <div class="containerPrincipal">
             <div class="areasContainer">
-                <div class="textArea">
-                    
-                </div>
+                <textarea id="codeArea" class="textArea"></textarea>
         
-                <div class="errorArea">
+                <div id="errorArea" class="errorArea">
                     
                 </div>
             </div>
             
             <div class="bttnContainer">
-                <button class="excecuteBttn">Ejecutar</button>
-                <button class="cleanBttn">Limpiar</button>
+                <button id="executeBtn" class="excecuteBttn">Ejecutar</button>
+                <button id="clearBtn" class="cleanBttn">Limpiar</button>
             </div>
         </div>
+
+        <script>
+            // Obtener los elementos por su id
+            const codeArea = document.getElementById('codeArea');
+            const errorArea = document.getElementById('errorArea');
+            const clearBtn = document.getElementById('clearBtn');
+        
+            // Añadir un evento de clic al botón de limpiar
+            clearBtn.addEventListener('click', function() {
+                // Limpiar el contenido de las áreas
+                codeArea.value = '';
+                errorArea.innerText = '';
+            });
+        </script>
     </body>
 </html>
