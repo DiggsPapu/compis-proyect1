@@ -26,6 +26,42 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         self.stackAmbitos = Stack([0])
         self.currentFuncion = None
         self.classDeclarationName = None
+        
+    def instanciarUnaClase(self, ctx, nombreClase):
+        # Chequear en la tabla de tipos en el context y si no existe generar error
+        if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(nombreClase) == None:
+            raise SemanticError(f"Error semantico, no existe la clase {nombreClase}")
+        metodoInit:Metodo = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(nombreClase+".init")
+        newTablaSimbolos = HashMap()
+        mapa = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.map
+        newTablaSimbolos.replaceMap(mapa)
+        arguments = []
+        if len(ctx.arguments())>0:
+            arguments = self.visit(ctx.arguments()[0])
+        # Meter los parametros que se usan en esa inicializacion, si no son de igual length entonces raise error
+        if len(arguments) != len(metodoInit.parametros):
+            raise SemanticError(f"Error Semantico, se esperaban {len(metodoInit.parametros)} parametros, {len(arguments)} fueron recibidos")
+        index = 0
+        for argument in arguments:
+            parametro = metodoInit.parametros[index]
+            tempP = self.visit(argument)
+            newTablaSimbolos.put(parametro, Parametro(parametro, tempP, self.TablaDeAmbitos.size()+1, funcionPertenece=nombreClase+".init"))
+            index+=1
+        # Crear un nuevo ambito solo para crear los tipos de la clase
+        newAmbito:Ambito = Ambito(self.TablaDeAmbitos.size(), newTablaSimbolos)
+        newAmbito.tablaDeTipos.replaceMap(self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.map)
+        self.stackAmbitos.insert(self.TablaDeAmbitos.size())
+        self.TablaDeAmbitos.put(self.TablaDeAmbitos.size(), newAmbito)
+        # Visitar el contexto del ambito
+        self.visit(metodoInit.contexto)
+        # Ahora hay que meter los valores generados en el contexto original
+        atributos = newAmbito.tablaDeSimbolos.search(f"{self.variableEnDefinicion}.")
+        self.stackAmbitos.remove_first()
+        for nombreAtributo in atributos:
+            atributo = newAmbito.tablaDeSimbolos.get(nombreAtributo)
+            self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(nombreAtributo, atributo)
+        self.classDeclarationName = None
+        return self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(nombreClase)
     
     def imprimirTablaDeSimbolos(self):
         llaves = self.TablaDeAmbitos.keys()
@@ -56,7 +92,23 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     def visitClassDecl(self, ctx:CompiScriptLanguageParser.ClassDeclContext):
         # Primero voy a hacer sin herencia y sin instanciacion, solo crear el tipo
         className = ctx.IDENTIFIER()[0].symbol.text
-        # className = ctx.IDENTIFIER().symbol.text
+        # Significa que hay un extends
+        classNameExtends = None
+        if (len(ctx.IDENTIFIER())>1):
+            claseExtendida = ctx.IDENTIFIER()[1].symbol.text
+            # Verificar que existe la clase
+            # Ir a buscar la clase y verificar que existe, si no existe lanzara error
+            classNameExtends = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(claseExtendida)
+            # Es un tipo definido por usuario si es una clase, si no para ese contexto es otra cosa y se debe lanzar error
+            if isinstance(classNameExtends, DefinidoPorUsuario):
+                # Obtener el contexto de la funcion de init de la clase extendida y ponerla dentro de la clase definida por el usuario
+                # Obtener los metodos de la clase heredada y meterla como metodos de la clase extendida
+                metodos = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.search(classNameExtends.nombreTipo)
+                for method in metodos:
+                    if method.split('.')[1]!='init':
+                        self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(f'{className}.{method.split('.')[1]}', self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(method))
+            else:
+                raise SemanticError(f'Error semantico, clase heredada no existe')
         # Se crea en la tabla de simbolos del ambito
         self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.put(className, DefinidoPorUsuario(className, valor="clase"))
         self.classDeclarationName = className
@@ -220,7 +272,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         if ctx.logic():
             return self.visit(ctx.logic())
         # Se esta declarando una variable, pero el this solo puede estar en el contexto de un metodo de una clase
-        elif self.visit(ctx.call())=="this":
+        elif self.classDeclarationName!= None and ctx.call() and self.visit(ctx.call())=="this":
             # Crear un nuevo campo
             identificadorCampo = ctx.getChild(2).symbol.text
             if identificadorCampo == None:
@@ -237,8 +289,13 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             
             # Se almacena el campo en la tabla de simbolos
             self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(newCampo.nombreSimbolo, newCampo)
+        elif ctx.call():
+            pass
+        # Si no tiene un call y no es logic entonces solo es una reasignacion de variables
         else:
-            return self.visitChildren(ctx)
+            variableName = self.visit(ctx.IDENTIFIER())
+            variableValue = self.visit(ctx.expression())
+            self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(variableName, Simbolo(nombreSimbolo=variableValue, tipo=variableValue, ambito=self.stackAmbitos.first()))
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#logic.
@@ -376,39 +433,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # Instanciacion de clase como new Perrito()
         elif self.visit(ctx.getChild(0))=="new":
             nombreClase = ctx.getChild(1).getChild(0).symbol.text
-            # Chequear en la tabla de tipos en el context y si no existe generar error
-            if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(nombreClase) == None:
-                raise SemanticError(f"Error semantico, no existe la clase {nombreClase}")
-            metodoInit:Metodo = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(nombreClase+".init")
-            newTablaSimbolos = HashMap()
-            mapa = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.map
-            newTablaSimbolos.replaceMap(mapa)
-            arguments = []
-            if len(ctx.arguments())>0:
-                arguments = self.visit(ctx.arguments()[0])
-            # Meter los parametros que se usan en esa inicializacion, si no son de igual length entonces raise error
-            if len(arguments) != len(metodoInit.parametros):
-                raise SemanticError(f"Error Semantico, se esperaban {len(metodoInit.parametros)} parametros, {len(arguments)} fueron recibidos")
-            index = 0
-            for argument in arguments:
-                parametro = metodoInit.parametros[index]
-                tempP = self.visit(argument)
-                newTablaSimbolos.put(parametro, Parametro(parametro, tempP, self.TablaDeAmbitos.size()+1, funcionPertenece=nombreClase+".init"))
-                index+=1
-            # Crear un nuevo ambito solo para crear los tipos de la clase
-            newAmbito:Ambito = Ambito(self.TablaDeAmbitos.size(), newTablaSimbolos)
-            newAmbito.tablaDeTipos.replaceMap(self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.map)
-            self.stackAmbitos.insert(self.TablaDeAmbitos.size())
-            self.TablaDeAmbitos.put(self.TablaDeAmbitos.size(), newAmbito)
-            # Visitar el contexto del ambito
-            self.visit(metodoInit.contexto)
-            # Ahora hay que meter los valores generados en el contexto original
-            atributos = newAmbito.tablaDeSimbolos.search(f"{self.variableEnDefinicion}.")
-            self.stackAmbitos.remove_first()
-            for nombreAtributo in atributos:
-                atributo = newAmbito.tablaDeSimbolos.get(nombreAtributo)
-                self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(nombreAtributo, atributo)
-            return self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(nombreClase)
+            self.classDeclarationName = nombreClase
+            return self.instanciarUnaClase(ctx, nombreClase)
         # En caso de que sean argumentos puede que haya algo como funcion().otrafuncion().otrafuncion2() o algo como funcion().identificador o identificadores
         else:
             # El primary indicara si es una funcion o un IDENTIFIER
@@ -474,6 +500,10 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # Acceder a un valor para asignarlo o desde un metodo para hacer algo con el
         elif ctx.getText() == "this":
             return "this"
+        elif ctx.getText() == "super":
+            # instanciate the super method in the class, searching the inheritance 
+            
+            return "super"
         return self.visitChildren(ctx)
 
 

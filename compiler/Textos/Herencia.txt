@@ -1,0 +1,28 @@
+var variable1 = 3;
+class Mascota{
+    init(duenio, conCollar){
+        this.duenio = duenio;
+        this.conCollar = conCollar;
+    }
+    imprimirDuenio(){
+        print this.duenio;
+    }
+    tieneCollar(){
+        return this.conCollar;
+    }
+}
+class Perrito extends Mascota{
+    init(nombre, sexo, edadHumana){
+        super.
+        this.nombre = nombre;
+        this.macho = sexo;
+        this.edadPerruna = (edadHumana * variable1)+4;
+        super.init(nombre, false);
+    }
+    getNombre(){
+        this.nombre;
+    }
+}
+var variable = new Perrito("pedro", true, 20);
+
+var perrito2 = new Perrito("pedro2", false, 50);

@@ -38,7 +38,8 @@ class DefinidoPorUsuario(Tipo):
     def initContext(self, parametros,ctx):
         self.initParams = parametros
         self.init = ctx
-    
+    def setInheritance(self, functionName):
+        self.inheritance = functionName
     # Se aniade el contexto del metodo para que se genere cada vez que se quiera ejecutar
     def aniadirMetodos(self, metodoNombre, ctx):
         self.metodosCtx.put(metodoNombre, ctx)
