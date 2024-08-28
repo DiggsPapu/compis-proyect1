@@ -54,7 +54,7 @@ unary: ( '!' | '-' ) unary | call ;
 
 call: 'new'? primary ( '(' arguments? ')' | '.' IDENTIFIER )* ;
 
-primary: 'true' | 'false' | 'nil' | 'this' | NUMBER | STRING | IDENTIFIER | '(' expression ')' | 'super' '.' IDENTIFIER ;
+primary: 'true' | 'false' | 'nil' | 'this' | 'break' | NUMBER | STRING | IDENTIFIER | '(' expression ')' | 'super' '.' IDENTIFIER ;
 
 function : IDENTIFIER '(' parameters? ')' block ;
 

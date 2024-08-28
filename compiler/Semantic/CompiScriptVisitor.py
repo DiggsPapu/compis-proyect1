@@ -157,12 +157,16 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#printStmt.
     def visitPrintStmt(self, ctx:CompiScriptLanguageParser.PrintStmtContext):
-        return self.visitChildren(ctx)
+        # Just visiting it
+        self.visit(ctx.expression())
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#returnStmt.
     def visitReturnStmt(self, ctx:CompiScriptLanguageParser.ReturnStmtContext):
-        return self.visit(ctx.expression())
+        if (ctx.expression()):
+            return self.visit(ctx.expression())
+        # Un return solo retorna un nulo
+        return Nil(valor=None)
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#whileStmt.
@@ -192,11 +196,22 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#block.
     def visitBlock(self, ctx:CompiScriptLanguageParser.BlockContext):
-        # Lo unico que puede haber en un bloque es una declaracion
+        # Lo unico que puede haber en un bloque es una declaracion pero se tiene que crear un nuevo ambito
         lastDeclaration = None
+        # Crear nuevo ambito
+        newTablaSimbolos = HashMap()
+        mapa = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.map
+        newTablaSimbolos.replaceMap(mapa)
+        newAmbito:Ambito = Ambito(self.TablaDeAmbitos.size(), newTablaSimbolos)
+        newAmbito.tablaDeTipos.replaceMap(self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.map)
+        self.stackAmbitos.insert(self.TablaDeAmbitos.size())
+        self.TablaDeAmbitos.put(self.TablaDeAmbitos.size(), newAmbito)
         for declarations in ctx.declaration():
             lastDeclaration = self.visit(declarations)
-        return lastDeclaration
+        # Sale del ambito creado, en caso de una funcion se crean dos ambitos, el externo con la funcion y el interno que es el del bloque
+        self.stackAmbitos.remove_first()
+        # En caso de que no haya nada retorna un Nil
+        return Nil(valor=None) if lastDeclaration == None else lastDeclaration
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#expression.
@@ -204,7 +219,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # Solo es una comparacion logica
         if ctx.logic():
             return self.visit(ctx.logic())
-        # Se esta declarando una variable
+        # Se esta declarando una variable, pero el this solo puede estar en el contexto de un metodo de una clase
         elif self.visit(ctx.call())=="this":
             # Crear un nuevo campo
             identificadorCampo = ctx.getChild(2).symbol.text
