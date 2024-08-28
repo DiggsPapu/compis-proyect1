@@ -140,6 +140,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         if ctx.expression():
             # Obtener tipo
             variableTipo = self.visit(ctx.expression())
+            if isinstance(variableTipo, Simbolo):
+                variableTipo = variableTipo.tipo
             # Inicializar la variable y definir el tipo porque al principio es nil
             simbolo:Variable = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(id) 
             simbolo.definirInicializador(variableTipo)
@@ -368,8 +370,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         for index in range(0, ctx.getChildCount()):
             # variable o valor
             variableTemp = self.visit(ctx.getChild(index))
-            # Es una variable
-            if isinstance(variableTemp, Variable) or isinstance(variableTemp, Parametro) or isinstance(variableTemp, Campo):
+            # Es un simbolo
+            if isinstance(variableTemp, Simbolo):
                 variableTemp = variableTemp.tipo
             # Es operacion
             if isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='+' or variableTemp=='-' or variableTemp=='*' or variableTemp=='/' or variableTemp=='%':
@@ -385,7 +387,12 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             elif  isinstance(variable, Numero) and isinstance(variableTemp, Numero) and (currentOperation=='-' or currentOperation=='/' or currentOperation=='*' or currentOperation=='%'):
                 variable = Numero()
             elif currentOperation == '' and variable == None:
-                variable = variableTemp
+                # Es un tipo
+                if isinstance(variableTemp, Tipo):
+                    variable = variableTemp
+                # Es un simbolo
+                elif isinstance(variableTemp, Simbolo):
+                    variable = variableTemp.tipo
             else:
                 raise SemanticError(f'Error semantico, operacion aritmetica invalida (suma, resta, multiplicacion, division), tipo invalido')
         # Retorna el ultimo valor que obtiene la variable luego de operar
@@ -454,6 +461,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 for argument in arguments:
                     parametro = funcionIdentifier.parametros[index]
                     tempP = self.visit(argument)
+                    if isinstance(tempP, Simbolo):
+                        tempP = tempP.tipo
                     newTablaSimbolos.put(parametro, Parametro(parametro, tempP, self.TablaDeAmbitos.size()+1, funcionPertenece=funcionIdentifier.nombreSimbolo))
                     index+=1
                 # Crear un nuevo ambito solo para almacenar los parametros de la funcion

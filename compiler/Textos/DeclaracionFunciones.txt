@@ -1,7 +1,10 @@
 fun funcion1(param1, param2)
 {
-    var retorno = param1*param2;
-    return retorno == true;
+    fun funcion2(param1, param2){
+        return param1+param2;
+    }
+    var retorno = funcion2(param1, param2) * 3;
+    return retorno;
 }
     
 
