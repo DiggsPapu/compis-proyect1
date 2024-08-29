@@ -1,0 +1,73 @@
+true;
+false;
+1234;
+12.34;
+"I am a string";
+"";
+"123";
+nil;
+1+2;
+3 - 1;
+4 * 2;
+8 / 2;
+3 < 5;
+10 >= 10;
+1 == 1;
+"a" != "b";
+true and false;
+true or false;
+!true;
+(50 + 100) /2;
+
+var suma = 1 + 2;
+var resta = 5 - 3;
+var producto = 4 * 2;
+var division = 8 / 2;
+print "Hola mundo!";
+{
+    var a = "dentro del bloque";
+    print a;
+}
+
+fun saludar(nombre) {
+    print "Hola, " + nombre;
+}
+var saludo = saludar(suma);
+
+var nombre;
+var edad = 25;
+
+var globalVar = "soy global";
+
+fun miFuncion() {
+    var localVar = "soy local";
+    print globalVar;
+    print localVar;
+}
+miFuncion();
+print globalVar;
+
+var miVariable;
+miVariable = "Ahora tengo un valor";
+print miVariable;
+
+fun obtenerConstante() {
+    var constante = "No modificar";
+    return constante;
+}
+var const = obtenerConstante();
+print const;
+const = "Intento de modificacion";
+
+if (1>2){
+    break;
+}
+
+fun CrearContador(){
+    var contador = 0;
+    return fun() {
+        contador = contador +1;
+        return contador;
+    }
+}
+var contar = CrearContador();

@@ -30,7 +30,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     def instanciarUnaClase(self, ctx, nombreClase):
         # Chequear en la tabla de tipos en el context y si no existe generar error
         if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(nombreClase) == None:
-            raise SemanticError(f"Error semantico, no existe la clase {nombreClase}")
+            raise SemanticError(f"Error semantico, no existe la clase \"{nombreClase}\"")
         metodoInit:Metodo = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(nombreClase+".init")
         newTablaSimbolos = HashMap()
         mapa = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.map
@@ -108,7 +108,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                     if method.split('.')[1]!='init':
                         self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(f'{className}.{method.split('.')[1]}', self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(method))
             else:
-                raise SemanticError(f'Error semantico, clase heredada no existe')
+                raise SemanticError(f'Error semantico, la clase heredada \"{claseExtendida}\" no existe')
         # Se crea en la tabla de simbolos del ambito
         self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.put(className, DefinidoPorUsuario(className, valor="clase"))
         self.classDeclarationName = className
@@ -134,7 +134,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         self.variableEnDefinicion = id
         # Averiguaremos el tipo despues y la inicializacion despues
         if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.contains_key(id):
-            raise SemanticError(f"Error semantico, no se puede re declarar una variable ya creada en el ambito")
+            raise SemanticError(f"Error semantico, no se puede re declarar una variable ya creada en el ambito, \"{id}\"")
         self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(id, Variable(nombreSimbolo=id, ambito=self.stackAmbitos.first()))
         # En caso de que tenga una expresion, porque puede que sea una variable solo definida sin inicializar
         if ctx.expression():
@@ -211,7 +211,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#printStmt.
     def visitPrintStmt(self, ctx:CompiScriptLanguageParser.PrintStmtContext):
-        # Just visiting it
+        # Just visiting it to make sure it works correctly
         self.visit(ctx.expression())
 
 
@@ -489,7 +489,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             tablaDeSimbolosActual:HashMap = ambitoActual.tablaDeSimbolos
             # Puede retornar una variable o el nombre de una funcion
             if (tablaDeSimbolosActual.get(id)== None and tablaDeTiposActual.get(id)==None):
-                raise SemanticError("Error semantico la variable, la clase o la funcion no existe")
+                raise SemanticError(f"Error semantico la variable, la clase o la funcion \"{id}\" no existe")
             return tablaDeSimbolosActual.get(id)
         # Tipo numero
         elif ctx.NUMBER():
