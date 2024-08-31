@@ -13,7 +13,7 @@ class Mascota{
 }
 class Perrito extends Mascota{
     init(nombre, sexo, edadHumana){
-        super.
+        super.init(nombre, false);
         this.nombre = nombre;
         this.macho = sexo;
         this.edadPerruna = (edadHumana * variable1)+4;

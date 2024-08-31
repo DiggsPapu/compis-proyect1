@@ -6,9 +6,9 @@ class Perrito{
         this.edadPerruna = (edadHumana * variable1)+4;
     }
     getNombre(){
-        this.nombre;
+        print this.nombre;
     }
 }
 var variable = new Perrito("pedro", true, 20);
-
+variable.getNombre();
 var perrito2 = new Perrito("pedro2", false, 50);

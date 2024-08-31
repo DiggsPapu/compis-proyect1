@@ -2,6 +2,7 @@ from Syntax.CompiScriptLanguageVisitor import *
 from Syntax.CompiScriptLanguageParser import *
 from .Structures import HashMap, Ambito, Variable, Numero, Nil, Simbolo, Tipo, TipoFuncion, Funcion, Booleano, DefinidoPorUsuario, Stack, Campo, Parametro, Cadena, Metodo
 from antlr4.tree.Tree import TerminalNodeImpl
+import re
 # Manejo de errores lexicos
 class LexicalError(Exception):
     def __init__(self, message, line, column):
@@ -26,12 +27,50 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         self.stackAmbitos = Stack([0])
         self.currentFuncion = None
         self.classDeclarationName = None
+        self.insideVariable = None
         
     def instanciarUnaClase(self, ctx, nombreClase):
         # Chequear en la tabla de tipos en el context y si no existe generar error
         if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(nombreClase) == None:
             raise SemanticError(f"Error semantico, no existe la clase \"{nombreClase}\"")
         metodoInit:Metodo = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(nombreClase+".init")
+        # Puede que no tengan init por lo que se cheque y en caso de que no tenga init entonces solo se pasa
+        if metodoInit!= None:
+            newTablaSimbolos = HashMap()
+            mapa = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.map
+            newTablaSimbolos.replaceMap(mapa)
+            arguments = []
+            if len(ctx.arguments())>0:
+                arguments = self.visit(ctx.arguments()[0])
+            # Meter los parametros que se usan en esa inicializacion, si no son de igual length entonces raise error
+            if len(arguments) != len(metodoInit.parametros):
+                raise SemanticError(f"Error Semantico, se esperaban {len(metodoInit.parametros)} parametros, {len(arguments)} fueron recibidos")
+            index = 0
+            for argument in arguments:
+                parametro = metodoInit.parametros[index]
+                tempP = self.visit(argument)
+                newTablaSimbolos.put(parametro, Parametro(parametro, tempP, self.TablaDeAmbitos.size()+1, funcionPertenece=nombreClase+".init"))
+                index+=1
+            # Crear un nuevo ambito solo para crear los tipos de la clase
+            newAmbito:Ambito = Ambito(self.TablaDeAmbitos.size(), newTablaSimbolos)
+            newAmbito.tablaDeTipos.replaceMap(self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.map)
+            self.stackAmbitos.insert(self.TablaDeAmbitos.size())
+            self.TablaDeAmbitos.put(self.TablaDeAmbitos.size(), newAmbito)
+            # Visitar el contexto del ambito
+            self.visit(metodoInit.contexto)
+            # Ahora hay que meter los valores generados en el contexto original
+            atributos = newAmbito.tablaDeSimbolos.search(
+                r'^' + re.escape(self.variableEnDefinicion) + r'\..*'
+            )
+            self.stackAmbitos.remove_first()
+            for nombreAtributo in atributos:
+                atributo = newAmbito.tablaDeSimbolos.get(nombreAtributo)
+                self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(nombreAtributo, atributo)
+        self.classDeclarationName = None
+        self.insideVariable = None
+        return self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(nombreClase)
+        
+    def ejecutarFuncionOMetodo(self, ctx, funcionIdentifier):
         newTablaSimbolos = HashMap()
         mapa = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.map
         newTablaSimbolos.replaceMap(mapa)
@@ -39,29 +78,25 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         if len(ctx.arguments())>0:
             arguments = self.visit(ctx.arguments()[0])
         # Meter los parametros que se usan en esa inicializacion, si no son de igual length entonces raise error
-        if len(arguments) != len(metodoInit.parametros):
-            raise SemanticError(f"Error Semantico, se esperaban {len(metodoInit.parametros)} parametros, {len(arguments)} fueron recibidos")
+        if len(arguments) != len(funcionIdentifier.parametros):
+            raise SemanticError(f"Error Semantico, se esperaban {len(funcionIdentifier.parametros)} parametros, {len(arguments)} fueron recibidos")
         index = 0
         for argument in arguments:
-            parametro = metodoInit.parametros[index]
+            parametro = funcionIdentifier.parametros[index]
             tempP = self.visit(argument)
-            newTablaSimbolos.put(parametro, Parametro(parametro, tempP, self.TablaDeAmbitos.size()+1, funcionPertenece=nombreClase+".init"))
+            if isinstance(tempP, Simbolo):
+                tempP = tempP.tipo
+            newTablaSimbolos.put(parametro, Parametro(parametro, tempP, self.TablaDeAmbitos.size()+1, funcionPertenece=funcionIdentifier.nombreSimbolo))
             index+=1
-        # Crear un nuevo ambito solo para crear los tipos de la clase
+        # Crear un nuevo ambito solo para almacenar los parametros de la funcion
         newAmbito:Ambito = Ambito(self.TablaDeAmbitos.size(), newTablaSimbolos)
         newAmbito.tablaDeTipos.replaceMap(self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.map)
         self.stackAmbitos.insert(self.TablaDeAmbitos.size())
         self.TablaDeAmbitos.put(self.TablaDeAmbitos.size(), newAmbito)
-        # Visitar el contexto del ambito
-        self.visit(metodoInit.contexto)
-        # Ahora hay que meter los valores generados en el contexto original
-        atributos = newAmbito.tablaDeSimbolos.search(f"{self.variableEnDefinicion}.")
+        # Visitar el contexto del ambito y generar el retorno en caso tenga
+        retorno = self.visit(funcionIdentifier.contexto)
         self.stackAmbitos.remove_first()
-        for nombreAtributo in atributos:
-            atributo = newAmbito.tablaDeSimbolos.get(nombreAtributo)
-            self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(nombreAtributo, atributo)
-        self.classDeclarationName = None
-        return self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(nombreClase)
+        return retorno if retorno!=None else Nil()
     
     def imprimirTablaDeSimbolos(self):
         llaves = self.TablaDeAmbitos.keys()
@@ -92,6 +127,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     def visitClassDecl(self, ctx:CompiScriptLanguageParser.ClassDeclContext):
         # Primero voy a hacer sin herencia y sin instanciacion, solo crear el tipo
         className = ctx.IDENTIFIER()[0].symbol.text
+        # Se crea en la tabla de simbolos del ambito
+        self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.put(className, DefinidoPorUsuario(className, valor="clase"))
         # Significa que hay un extends
         classNameExtends = None
         if (len(ctx.IDENTIFIER())>1):
@@ -101,6 +138,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             classNameExtends = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(claseExtendida)
             # Es un tipo definido por usuario si es una clase, si no para ese contexto es otra cosa y se debe lanzar error
             if isinstance(classNameExtends, DefinidoPorUsuario):
+                self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(className).setInheritance(claseExtendida)
                 # Obtener el contexto de la funcion de init de la clase extendida y ponerla dentro de la clase definida por el usuario
                 # Obtener los metodos de la clase heredada y meterla como metodos de la clase extendida
                 metodos = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.search(classNameExtends.nombreTipo)
@@ -109,8 +147,6 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                         self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(f'{className}.{method.split('.')[1]}', self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(method))
             else:
                 raise SemanticError(f'Error semantico, la clase heredada \"{claseExtendida}\" no existe')
-        # Se crea en la tabla de simbolos del ambito
-        self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.put(className, DefinidoPorUsuario(className, valor="clase"))
         self.classDeclarationName = className
         # Va a visitar todas las funciones
         for child in ctx.function():
@@ -261,9 +297,28 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         self.stackAmbitos.insert(self.TablaDeAmbitos.size())
         self.TablaDeAmbitos.put(self.TablaDeAmbitos.size(), newAmbito)
         for declarations in ctx.declaration():
-            lastDeclaration = self.visit(declarations)
+            lastDeclaration = self.visit(declarations)            
         # Sale del ambito creado, en caso de una funcion se crean dos ambitos, el externo con la funcion y el interno que es el del bloque
-        self.stackAmbitos.remove_first()
+        lastAmbito = self.stackAmbitos.remove_first()
+        # Probablemente se este llamando algun metodo
+        if self.insideVariable!=None:
+            # Copiar los valores definidos en la variable al ambito actual
+            names = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.search(
+                r'^' + re.escape(self.insideVariable) + r'\..*'
+            )
+            for name in names:
+                value:Simbolo = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.get(f'{self.insideVariable}.{name}')
+                self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(value.nombreSimbolo, value)
+        elif self.variableEnDefinicion!=None:
+            # Copiar los valores definidos en la variable al ambito actual
+            names = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.search(
+                r'^' + re.escape(self.variableEnDefinicion) + r'\..*'
+            )
+            for name in names:
+                value:Simbolo = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.get(name)
+                self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(value.nombreSimbolo, value)
+        else:
+            pass
         # En caso de que no haya nada retorna un Nil
         return Nil(valor=None) if lastDeclaration == None else lastDeclaration
 
@@ -431,20 +486,22 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     # Visit a parse tree produced by CompiScriptLanguageParser#call.
     def visitCall(self, ctx:CompiScriptLanguageParser.CallContext):
         # en caso de que la cantidad de hijos sea 1 entonces solo es un primary lo que significa que no es una llamada a una funcion
+        
         if ctx.getChildCount() == 1:
             if type(ctx.primary())==list:
                 for child in ctx.primary():
                     return self.visit(child)
             else:
                 return self.visit(ctx.primary())
+        
         # Instanciacion de clase como new Perrito()
-        elif self.visit(ctx.getChild(0))=="new":
+        elif  self.visit(ctx.getChild(0))=="new":
             nombreClase = ctx.getChild(1).getChild(0).symbol.text
             self.classDeclarationName = nombreClase
             return self.instanciarUnaClase(ctx, nombreClase)
         # En caso de que sean argumentos puede que haya algo como funcion().otrafuncion().otrafuncion2() o algo como funcion().identificador o identificadores
-        else:
-            # El primary indicara si es una funcion o un IDENTIFIER
+        else:                    
+            # El primary indicara si el primero es una funcion o una variable
             funcionIdentifier = self.visit(ctx.getChild(0))
             # En caso de que sea funcion
             if isinstance(funcionIdentifier, Funcion):
@@ -471,16 +528,89 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 self.stackAmbitos.insert(self.TablaDeAmbitos.size())
                 self.TablaDeAmbitos.put(self.TablaDeAmbitos.size(), newAmbito)
                 # Visitar el contexto del ambito y generar el retorno en caso tenga
-                retorno = self.visit(funcionIdentifier.contexto)
+                funcionIdentifier = self.visit(funcionIdentifier.contexto)
                 self.stackAmbitos.remove_first()
-                return retorno if retorno!=None else Nil()
-                    
-        return self.visitChildren(ctx)
+            # En caso de que sea algo como funcion().algo o de que sea variable.algo entonces se hace un for para recorrer lo que no es el primary
+            if ctx.arguments() or ctx.IDENTIFIER():
+                # vamos a obtener el valor, puede ser un atributo de la clase, o puede ser un metodo
+                # De manera que lo mejor es hacer un while para recorrer child por child e ir decidiendo que ocurre
+                # Los casos son: .metodo(), .atributo, no puede haber .funcion() porque tiene que ser si o si una funcion dado que se retorna algo, y no puede ser variable porque se obtiene algo por lo que es un atributo
+                lastWasInstance = False
+                lastVariableValue = None 
+                index = 1
+                if funcionIdentifier!="this":
+                    self.insideVariable = funcionIdentifier
+                while index < ctx.getChildCount():
+                    child = ctx.getChild(index)
+                    lastVariableValue = self.visit(child)
+                    if isinstance(lastVariableValue, str) and not lastVariableValue == ".":
+                        # Si retorna this chequear que tiene un . la definicion
+                        if funcionIdentifier == "this":
+                            variable = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{self.insideVariable.nombreSimbolo}.{lastVariableValue}')
+                            pass
+                        # Buscar si existe el coso .variable
+                        elif isinstance(funcionIdentifier.tipo, DefinidoPorUsuario):
+                            lastVariableValue = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{funcionIdentifier.tipo.nombreTipo}.{lastVariableValue}')
+                        pass
+                    # Si el token es un punto se ignora
+                    if isinstance(lastVariableValue, TerminalNodeImpl) and lastVariableValue.getText() == "." or lastVariableValue == ".":
+                        pass
+                    # Si es un metodo se ejecuta el metodo
+                    elif isinstance(lastVariableValue, Metodo):
+                        newTablaSimbolos = HashMap()
+                        mapa = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.map
+                        newTablaSimbolos.replaceMap(mapa)
+                        arguments = []
+                        # Obtener los argumentos
+                        # sumarle 1 al index para obtener los argumentos
+                        index+=1
+                        hijo = ctx.getChild(index)
+                        while self.visit(hijo)!=')':
+                            index+=1
+                            # Si es un argumento lo que se obtiene
+                            if isinstance(hijo, CompiScriptLanguageParser.ArgumentsContext):
+                                arguments.extend(self.visitArguments(hijo))
+                            hijo = ctx.getChild(index)                            
+                        # Meter los parametros que se usan en esa inicializacion, si no son de igual length entonces raise error
+                        if len(arguments) != len(lastVariableValue.parametros):
+                            raise SemanticError(f"Error Semantico, se esperaban {len(funcionIdentifier.parametros)} parametros, {len(arguments)} fueron recibidos")
+                        index = 0
+                        for argument in arguments:
+                            parametro = funcionIdentifier.parametros[index]
+                            tempP = self.visit(argument)
+                            if isinstance(tempP, Simbolo):
+                                tempP = tempP.tipo
+                            newTablaSimbolos.put(parametro, Parametro(parametro, tempP, self.TablaDeAmbitos.size()+1, funcionPertenece=lastVariableValue.nombreSimbolo))
+                            index+=1
+                        # Crear un nuevo ambito solo para almacenar los parametros de la funcion
+                        newAmbito:Ambito = Ambito(self.TablaDeAmbitos.size(), newTablaSimbolos)
+                        newAmbito.tablaDeTipos.replaceMap(self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.map)
+                        self.stackAmbitos.insert(self.TablaDeAmbitos.size())
+                        self.TablaDeAmbitos.put(self.TablaDeAmbitos.size(), newAmbito)
+                        # Visitar el contexto del ambito y generar el retorno en caso tenga
+                        retorno = self.visit(lastVariableValue.contexto)
+                        self.stackAmbitos.remove_first()
+                        funcionIdentifier = retorno
+                        # return retorno if retorno!=None else Nil()
+                    # En caso de que sea una variable hay que chequear los siguientes
+                    elif isinstance(funcionIdentifier, Variable):
+                        lastVariableValue = funcionIdentifier
+                    index+=1
+            return funcionIdentifier if funcionIdentifier!=None else Nil()
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#primary.
     def visitPrimary(self, ctx:CompiScriptLanguageParser.PrimaryContext):
         # Primary es el tipo basico, puede ser casi cualquier cosa, una expresion, una definicion de variable, etc
+        # En este caso puede ser una expresion, o super.IDENTIFIER entonces este se tiene que encargar del identifier
+        if not ctx.expression() and ctx.getChildCount()>1:
+            # Es un super, hay que chequear que se esta inicializando o se esta trabajando dentro de una clase
+            if self.classDeclarationName!= None and self.visit(ctx.getChild(0)) == "super":
+                # Ejecutar la funcion del super
+                # Buscar la clase que se esta inicializando
+                claseInicializando:DefinidoPorUsuario = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(self.classDeclarationName)
+                # Retornar la funcion a ejecutar -> heredada
+                return self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{claseInicializando.inheritance}.{ctx.getChild(2)}')
         # Es una variable o es un super.IDENTIFIER hay que buscarlo en la tabla de simbolos
         if ctx.IDENTIFIER():
             id = ctx.IDENTIFIER().symbol.text
@@ -511,7 +641,6 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             return "this"
         elif ctx.getText() == "super":
             # instanciate the super method in the class, searching the inheritance 
-            
             return "super"
         return self.visitChildren(ctx)
 

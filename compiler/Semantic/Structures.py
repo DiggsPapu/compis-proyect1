@@ -31,15 +31,18 @@ class DefinidoPorUsuario(Tipo):
     def __init__(self, nombreTipo="tipo", valor="tipo") -> None:
         super().__init__(nombreTipo, valor)
         self.metodosCtx = HashMap()
-    
+        self.init = None
+        self.initParams = None
+        self.inheritance = None
+        
     def __str__(self) -> str:
         return self.nombreTipo
         
     def initContext(self, parametros,ctx):
         self.initParams = parametros
         self.init = ctx
-    def setInheritance(self, functionName):
-        self.inheritance = functionName
+    def setInheritance(self, className):
+        self.inheritance = className
     # Se aniade el contexto del metodo para que se genere cada vez que se quiera ejecutar
     def aniadirMetodos(self, metodoNombre, ctx):
         self.metodosCtx.put(metodoNombre, ctx)
@@ -97,6 +100,7 @@ class Funcion(Simbolo):
         self.parametros = [] 
         # La variable de retorno en caso de que no tenga return retorna un Nil por ende se va a ir generando un nil default que sera actualizado en tiempo de ejecucion
         self.variableRetorno = Nil()
+        self.contexto = None
     # Aniadir el contexto o el arbol es necesario para recorrer en tiempo de ejecucion
     def aniadirContexto(self, ctx):
         self.contexto = ctx
@@ -187,8 +191,6 @@ class HashMap:
                 mapCopy[key] = Cadena(nombreTipo=value.nombreTipo, valor=value.valor)
             elif isinstance(value, Nil):
                 mapCopy[key] = Nil(nombreTipo=value.nombreTipo, valor=value.valor)
-            elif isinstance(value, Tipo):
-                mapCopy[key] = Tipo(nombreTipo=value.nombreTipo, valor=value.valor)
             elif isinstance(value, TipoFuncion):
                 newValue = TipoFuncion(nombreTipo=value.nombreTipo, valor=value.valor)
             elif isinstance(value, DefinidoPorUsuario):
@@ -196,7 +198,10 @@ class HashMap:
                 newValue.init = value.init
                 newValue.initParams = value.initParams
                 newValue.metodosCtx = value.metodosCtx
+                newValue.setInheritance(value.inheritance)
                 mapCopy[key] = newValue
+            elif isinstance(value, Tipo):
+                mapCopy[key] = Tipo(nombreTipo=value.nombreTipo, valor=value.valor)
         self.map = mapCopy
     
     def put(self, key, value):
