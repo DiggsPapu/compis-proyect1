@@ -9,6 +9,6 @@ class Perrito{
         this.nombre = nuevoNombre;
     }
 }
-var variable = new Perrito("pedro", true, 20)("hola", "soy", "german");
+var variable = new Perrito("pedro", true, 20);
 variable.cambiarNombre(true);
 var perrito2 = new Perrito("pedro2", false, 50);

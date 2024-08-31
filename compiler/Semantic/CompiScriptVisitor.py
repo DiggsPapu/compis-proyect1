@@ -500,13 +500,12 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     # Visit a parse tree produced by CompiScriptLanguageParser#call.
     def visitCall(self, ctx:CompiScriptLanguageParser.CallContext):
         # en caso de que la cantidad de hijos sea 1 entonces solo es un primary lo que significa que no es una llamada a una funcion
-        if ctx.getChildCount() == 1:
+        if ctx.getChildCount() == 1 and isinstance(ctx.getChild(0), CompiScriptLanguageParser.PrimaryContext):
             if type(ctx.primary())==list:
                 for child in ctx.primary():
                     return self.visit(child)
             else:
                 return self.visit(ctx.primary())
-        
         # Instanciacion de clase como new Perrito()
         elif  self.visit(ctx.getChild(0))=="new":
             # Chequear que no haya IDENTIFIER
@@ -549,8 +548,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 # Visitar el contexto del ambito y generar el retorno en caso tenga
                 funcionIdentifier = self.visit(funcionIdentifier.contexto)
                 self.stackAmbitos.remove_first()
-            # En caso de que sea algo como funcion().algo o de que sea variable.algo entonces se hace un for para recorrer lo que no es el primary
-            if ctx.arguments() or ctx.IDENTIFIER():
+            # En caso de que sea algo como funcion().algo o de que sea variable.algo entonces se hace un for para recorrer lo que no es el primary ni el primer set de argumentos
+            if len(ctx.arguments())>1 or ctx.IDENTIFIER():
                 # vamos a obtener el valor, puede ser un atributo de la clase, o puede ser un metodo
                 # De manera que lo mejor es hacer un while para recorrer child por child e ir decidiendo que ocurre
                 # Los casos son: .metodo(), .atributo, no puede haber .funcion() porque tiene que ser si o si una funcion dado que se retorna algo, y no puede ser variable porque se obtiene algo por lo que es un atributo
