@@ -352,6 +352,14 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             
             # Se almacena el campo en la tabla de simbolos
             self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(newCampo.nombreSimbolo, newCampo)
+        # Re asignacion de una variable dentro de el contexto de un metodo
+        elif self.insideVariable!= None and ctx.call() and self.visit(ctx.call())=="this":
+            variableName = self.visit(ctx.IDENTIFIER())
+            variableValue = self.visit(ctx.expression())
+            if isinstance(variableValue, Simbolo):
+                variableValue = variableValue
+            self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(f'{self.insideVariable.nombreSimbolo}.{variableName}', Simbolo(nombreSimbolo=f'{self.insideVariable.nombreSimbolo}.{variableName}', tipo=variableValue, ambito=self.stackAmbitos.first()))
+            pass
         elif ctx.call():
             pass
         # Si no tiene un call y no es logic entonces solo es una reasignacion de variables
@@ -586,7 +594,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                             raise SemanticError(f"Error Semantico, se esperaban {len(lastVariableValue.parametros)} parametros, {len(arguments)} fueron recibidos")
                         index2 = 0
                         for argument in arguments:
-                            parametro = funcionIdentifier.parametros[index2]
+                            parametro = lastVariableValue.parametros[index2]
                             tempP = self.visit(argument)
                             if isinstance(tempP, Simbolo):
                                 tempP = tempP.tipo
