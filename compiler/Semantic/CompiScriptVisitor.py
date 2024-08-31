@@ -500,7 +500,6 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     # Visit a parse tree produced by CompiScriptLanguageParser#call.
     def visitCall(self, ctx:CompiScriptLanguageParser.CallContext):
         # en caso de que la cantidad de hijos sea 1 entonces solo es un primary lo que significa que no es una llamada a una funcion
-        
         if ctx.getChildCount() == 1:
             if type(ctx.primary())==list:
                 for child in ctx.primary():
@@ -510,6 +509,12 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         
         # Instanciacion de clase como new Perrito()
         elif  self.visit(ctx.getChild(0))=="new":
+            # Chequear que no haya IDENTIFIER
+            if ctx.IDENTIFIER():
+                raise SemanticError("Error semantico, no se pueden buscar metodos o atributos al instanciar una clase")
+            # Chequear que solo haya una llamada a argumentos
+            if ctx.arguments() and len(ctx.arguments())>1:
+                raise SemanticError("Error semantico, no se puede doblar argumentos")
             nombreClase = ctx.getChild(1).getChild(0).symbol.text
             self.classDeclarationName = nombreClase
             return self.instanciarUnaClase(ctx, nombreClase)
