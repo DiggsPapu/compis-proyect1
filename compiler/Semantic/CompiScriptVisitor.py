@@ -302,12 +302,18 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         lastAmbito = self.stackAmbitos.remove_first()
         # Probablemente se este llamando algun metodo
         if self.insideVariable!=None:
+            names = []
+            if isinstance(self.insideVariable, Simbolo):
+                names = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.search(
+                    r'^' + re.escape(self.insideVariable.nombreSimbolo) + r'\..*'
+                )
+            elif isinstance(self.insideVariable, str):
+                names = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.search(
+                    r'^' + re.escape(self.insideVariable) + r'\..*'
+                )                    
             # Copiar los valores definidos en la variable al ambito actual
-            names = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.search(
-                r'^' + re.escape(self.insideVariable) + r'\..*'
-            )
             for name in names:
-                value:Simbolo = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.get(f'{self.insideVariable}.{name}')
+                value:Simbolo = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.get(name)
                 self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(value.nombreSimbolo, value)
         elif self.variableEnDefinicion!=None:
             # Copiar los valores definidos en la variable al ambito actual
@@ -546,12 +552,16 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                     if isinstance(lastVariableValue, str) and not lastVariableValue == ".":
                         # Si retorna this chequear que tiene un . la definicion
                         if funcionIdentifier == "this":
-                            variable = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{self.insideVariable.nombreSimbolo}.{lastVariableValue}')
+                            lastVariableValue = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{self.insideVariable.nombreSimbolo}.{lastVariableValue}')
+                        elif isinstance(funcionIdentifier, Nil):
                             pass
                         # Buscar si existe el coso .variable
                         elif isinstance(funcionIdentifier.tipo, DefinidoPorUsuario):
                             lastVariableValue = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{funcionIdentifier.tipo.nombreTipo}.{lastVariableValue}')
+                            if lastVariableValue == None:
+                                raise SemanticError(f"Error Semantico, no existe el atributo o metodo {lastVariableValue}")
                         pass
+                        
                     # Si el token es un punto se ignora
                     if isinstance(lastVariableValue, TerminalNodeImpl) and lastVariableValue.getText() == "." or lastVariableValue == ".":
                         pass
@@ -573,15 +583,15 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                             hijo = ctx.getChild(index)                            
                         # Meter los parametros que se usan en esa inicializacion, si no son de igual length entonces raise error
                         if len(arguments) != len(lastVariableValue.parametros):
-                            raise SemanticError(f"Error Semantico, se esperaban {len(funcionIdentifier.parametros)} parametros, {len(arguments)} fueron recibidos")
-                        index = 0
+                            raise SemanticError(f"Error Semantico, se esperaban {len(lastVariableValue.parametros)} parametros, {len(arguments)} fueron recibidos")
+                        index2 = 0
                         for argument in arguments:
-                            parametro = funcionIdentifier.parametros[index]
+                            parametro = funcionIdentifier.parametros[index2]
                             tempP = self.visit(argument)
                             if isinstance(tempP, Simbolo):
                                 tempP = tempP.tipo
                             newTablaSimbolos.put(parametro, Parametro(parametro, tempP, self.TablaDeAmbitos.size()+1, funcionPertenece=lastVariableValue.nombreSimbolo))
-                            index+=1
+                            index2+=1
                         # Crear un nuevo ambito solo para almacenar los parametros de la funcion
                         newAmbito:Ambito = Ambito(self.TablaDeAmbitos.size(), newTablaSimbolos)
                         newAmbito.tablaDeTipos.replaceMap(self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.map)
@@ -593,7 +603,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                         funcionIdentifier = retorno
                         # return retorno if retorno!=None else Nil()
                     # En caso de que sea una variable hay que chequear los siguientes
-                    elif isinstance(funcionIdentifier, Variable):
+                    elif isinstance(funcionIdentifier, Variable) or isinstance(funcionIdentifier, Campo) or isinstance(funcionIdentifier, Parametro):
                         lastVariableValue = funcionIdentifier
                     index+=1
             return funcionIdentifier if funcionIdentifier!=None else Nil()
