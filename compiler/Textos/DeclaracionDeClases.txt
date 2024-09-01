@@ -1,9 +1,20 @@
 var variable1 = 3;
-class Perrito{
-    init(nombre, sexo, edadHumana){
+class Persona{
+    init(nombre, sexo, edad, mascota){
         this.nombre = nombre;
         this.macho = sexo;
-        this.edadPerruna = (edadHumana * variable1)+4;
+        this.edadHumana = edad;
+        this.mascota = mascota;
+    }
+    getMascota(){
+        return this.mascota;
+    }
+}
+class Perrito{
+    init(nombre, sexo, edad){
+        this.nombre = nombre;
+        this.macho = sexo;
+        this.edadPerruna = (edad * variable1)+4;
     }
     cambiarNombre(nuevoNombre){
         this.nombre = nuevoNombre;
@@ -12,7 +23,6 @@ class Perrito{
         return this.nombre;
     }
 }
-var variable = new Perrito("pedro", true, 20);
-variable.cambiarNombre(true);
-var nombre = variable.getNombre();
-var perrito2 = new Perrito("pedro2", false, 50);
+var perrito = new Perrito("Pedro", true, 50);
+var persona = new Persona("Raul", false, 20, perrito);
+var nombrePerrito = persona.getMascota().getNombre();

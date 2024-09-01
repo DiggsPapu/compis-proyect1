@@ -49,6 +49,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             for argument in arguments:
                 parametro = metodoInit.parametros[index]
                 tempP = self.visit(argument)
+                if isinstance(tempP, Simbolo):
+                    tempP = tempP.tipo
                 newTablaSimbolos.put(parametro, Parametro(parametro, tempP, self.TablaDeAmbitos.size()+1, funcionPertenece=nombreClase+".init"))
                 index+=1
             # Crear un nuevo ambito solo para crear los tipos de la clase
