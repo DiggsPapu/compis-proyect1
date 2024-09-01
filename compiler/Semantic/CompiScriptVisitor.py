@@ -44,7 +44,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 arguments = self.visit(ctx.arguments()[0])
             # Meter los parametros que se usan en esa inicializacion, si no son de igual length entonces raise error
             if len(arguments) != len(metodoInit.parametros):
-                raise SemanticError(f"Error Semantico, se esperaban {len(metodoInit.parametros)} parametros, {len(arguments)} fueron recibidos")
+                raise SemanticError(f"Error Semantico, para el metodo {metodoInit.nombreSimbolo} se esperaban {len(metodoInit.parametros)} parametros, {len(arguments)} fueron recibidos")
             index = 0
             for argument in arguments:
                 parametro = metodoInit.parametros[index]
@@ -129,6 +129,9 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     def visitClassDecl(self, ctx:CompiScriptLanguageParser.ClassDeclContext):
         # Primero voy a hacer sin herencia y sin instanciacion, solo crear el tipo
         className = ctx.IDENTIFIER()[0].symbol.text
+        # Verificar que el nombre de la clase sea unico
+        if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(className)!=None:
+            raise SemanticError(f"Clase {className} ya declarado")
         # Se crea en la tabla de simbolos del ambito
         self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.put(className, DefinidoPorUsuario(className, valor="clase"))
         # Significa que hay un extends
@@ -567,7 +570,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                         # Si retorna this chequear que tiene un . la definicion
                         if funcionIdentifier == "this":
                             lastVariableValue = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{self.insideVariable.nombreSimbolo}.{lastVariableValue}')
-                            pass
+                            if lastVariableValue==None:
+                                raise SemanticError(f"No hay propiedad o metodo {self.visit(child)}")
                         elif isinstance(funcionIdentifier, Nil):
                             pass
                         # Buscar si existe el coso .variable

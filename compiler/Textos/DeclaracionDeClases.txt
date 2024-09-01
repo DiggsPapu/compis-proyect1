@@ -22,8 +22,20 @@ class Perrito{
     getNombre(){
         return this.nombre;
     }
+    suma(variable1, variable2){
+        return variable1+variable2;
+    }
 }
 var perrito = new Perrito("Pedro", true, 50);
 var persona = new Persona("Raul", false, 20, perrito);
 var nombrePerrito = persona.getMascota().getNombre();
 var cosa = persona.mascota.getNombre();
+var suma = persona.mascota.suma(789, 21);
+class Persona{
+    saludar(){
+        this.nombre = "hola";
+        print this.nombre;
+    }
+}
+var persona2 = new Persona();
+persona2.saludar();
