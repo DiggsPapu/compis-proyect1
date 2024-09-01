@@ -17,12 +17,6 @@ class Perrito extends Mascota{
         this.nombre = nombre;
         this.macho = sexo;
         this.edadPerruna = (edadHumana * variable1)+4;
-        super.init(nombre, false);
-    }
-    getNombre(){
-        this.nombre;
     }
 }
-var variable = new Perrito("pedro", true, 20);
-
 var perrito2 = new Perrito("pedro2", false, 50);

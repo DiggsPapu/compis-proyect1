@@ -44,7 +44,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 arguments = self.visit(ctx.arguments()[0])
             # Meter los parametros que se usan en esa inicializacion, si no son de igual length entonces raise error
             if len(arguments) != len(metodoInit.parametros):
-                raise SemanticError(f"Error Semantico, para el metodo {metodoInit.nombreSimbolo} se esperaban {len(metodoInit.parametros)} parametros, {len(arguments)} fueron recibidos")
+                raise SemanticError(f"Error Semantico, para el metodo \"{metodoInit.nombreSimbolo}\" se esperaban {len(metodoInit.parametros)} parametros, {len(arguments)} fueron recibidos")
             index = 0
             for argument in arguments:
                 parametro = metodoInit.parametros[index]
@@ -72,34 +72,6 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         self.insideVariable = None
         return self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(nombreClase)
         
-    def ejecutarFuncionOMetodo(self, ctx, funcionIdentifier):
-        newTablaSimbolos = HashMap()
-        mapa = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.map
-        newTablaSimbolos.replaceMap(mapa)
-        arguments = []
-        if len(ctx.arguments())>0:
-            arguments = self.visit(ctx.arguments()[0])
-        # Meter los parametros que se usan en esa inicializacion, si no son de igual length entonces raise error
-        if len(arguments) != len(funcionIdentifier.parametros):
-            raise SemanticError(f"Error Semantico, se esperaban {len(funcionIdentifier.parametros)} parametros, {len(arguments)} fueron recibidos")
-        index = 0
-        for argument in arguments:
-            parametro = funcionIdentifier.parametros[index]
-            tempP = self.visit(argument)
-            if isinstance(tempP, Simbolo):
-                tempP = tempP.tipo
-            newTablaSimbolos.put(parametro, Parametro(parametro, tempP, self.TablaDeAmbitos.size()+1, funcionPertenece=funcionIdentifier.nombreSimbolo))
-            index+=1
-        # Crear un nuevo ambito solo para almacenar los parametros de la funcion
-        newAmbito:Ambito = Ambito(self.TablaDeAmbitos.size(), newTablaSimbolos)
-        newAmbito.tablaDeTipos.replaceMap(self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.map)
-        self.stackAmbitos.insert(self.TablaDeAmbitos.size())
-        self.TablaDeAmbitos.put(self.TablaDeAmbitos.size(), newAmbito)
-        # Visitar el contexto del ambito y generar el retorno en caso tenga
-        retorno = self.visit(funcionIdentifier.contexto)
-        self.stackAmbitos.remove_first()
-        return retorno if retorno!=None else Nil()
-    
     def imprimirTablaDeSimbolos(self):
         llaves = self.TablaDeAmbitos.keys()
         for llave in llaves:
@@ -131,7 +103,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         className = ctx.IDENTIFIER()[0].symbol.text
         # Verificar que el nombre de la clase sea unico
         if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(className)!=None:
-            raise SemanticError(f"Clase {className} ya declarado")
+            raise SemanticError(f"Clase \"{className}\" ya ha sido declarada")
         # Se crea en la tabla de simbolos del ambito
         self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.put(className, DefinidoPorUsuario(className, valor="clase"))
         # Significa que hay un extends
@@ -345,7 +317,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             # Crear un nuevo campo
             identificadorCampo = ctx.getChild(2).symbol.text
             if identificadorCampo == None:
-                raise SemanticError(f"Error semantico, la variable para definir el campo de la clase no existe")
+                raise SemanticError(f"Error semantico, la variable \"{identificadorCampo}\" para definir el campo de la clase no existe")
             newCampo = Campo(self.variableEnDefinicion+"."+identificadorCampo,Nil(), self.stackAmbitos.first(), nombreVariable=self.variableEnDefinicion)
             # Ocurre la asignacion, se obtiene el parametro al que se asigna y su tipo
             retorno = self.visit(ctx.expression())
@@ -536,7 +508,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                     arguments = self.visit(ctx.arguments()[0])
                 # Meter los parametros que se usan en esa inicializacion, si no son de igual length entonces raise error
                 if len(arguments) != len(funcionIdentifier.parametros):
-                    raise SemanticError(f"Error Semantico, se esperaban {len(funcionIdentifier.parametros)} parametros, {len(arguments)} fueron recibidos")
+                    raise SemanticError(f"Error Semantico, para esta funcion \"{funcionIdentifier.nombreSimbolo}\" se esperaban {len(funcionIdentifier.parametros)} parametros, {len(arguments)} fueron recibidos")
                 index = 0
                 for argument in arguments:
                     parametro = funcionIdentifier.parametros[index]
@@ -644,8 +616,11 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 # Ejecutar la funcion del super
                 # Buscar la clase que se esta inicializando
                 claseInicializando:DefinidoPorUsuario = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(self.classDeclarationName)
+                retorno = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{claseInicializando.inheritance}.{ctx.getChild(2)}')
+                if retorno == None:
+                    raise SemanticError(f"La super clase \"{ctx.getChild(2)}\" invocada no existe")
                 # Retornar la funcion a ejecutar -> heredada
-                return self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{claseInicializando.inheritance}.{ctx.getChild(2)}')
+                return retorno
         # Es una variable o es un super.IDENTIFIER hay que buscarlo en la tabla de simbolos
         if ctx.IDENTIFIER():
             id = ctx.IDENTIFIER().symbol.text
@@ -674,9 +649,6 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # Acceder a un valor para asignarlo o desde un metodo para hacer algo con el
         elif ctx.getText() == "this":
             return "this"
-        elif ctx.getText() == "super":
-            # instanciate the super method in the class, searching the inheritance 
-            return "super"
         return self.visitChildren(ctx)
 
 
