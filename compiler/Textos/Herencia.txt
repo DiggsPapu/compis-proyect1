@@ -13,10 +13,14 @@ class Mascota{
 }
 class Perrito extends Mascota{
     init(nombre, sexo, edadHumana){
-        super.init(nombre, false);
+        super.init("Duenio de"+nombre, false);
         this.nombre = nombre;
         this.macho = sexo;
         this.edadPerruna = (edadHumana * variable1)+4;
     }
 }
 var perrito2 = new Perrito("pedro2", false, 50);
+var collar = perrito2.tieneCollar();
+var duenio = perrito2.imprimirDuenio();
+var duenio2 = perrito2.duenio;
+var collar2 = perrito2.conCollar;

@@ -101,6 +101,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     def visitClassDecl(self, ctx:CompiScriptLanguageParser.ClassDeclContext):
         # Primero voy a hacer sin herencia y sin instanciacion, solo crear el tipo
         className = ctx.IDENTIFIER()[0].symbol.text
+        self.classDeclarationName = className
         # Verificar que el nombre de la clase sea unico
         if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(className)!=None:
             raise SemanticError(f"Clase \"{className}\" ya ha sido declarada")
@@ -120,11 +121,15 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 # Obtener los metodos de la clase heredada y meterla como metodos de la clase extendida
                 metodos = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.search(classNameExtends.nombreTipo)
                 for method in metodos:
-                    if method.split('.')[1]!='init':
-                        self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(f'{className}.{method.split('.')[1]}', self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(method))
+                    methodn = method.split('.')
+                    if methodn[1]!='init':
+                        oldMethod:Metodo = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(method)
+                        newMethod:Metodo = Metodo(f'{className}.{methodn[1]}', oldMethod.tipo, self.stackAmbitos.first())
+                        newMethod.contexto = oldMethod.contexto
+                        newMethod.parametros = oldMethod.parametros
+                        self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(f'{className}.{methodn[1]}', newMethod)
             else:
                 raise SemanticError(f'Error semantico, la clase heredada \"{claseExtendida}\" no existe')
-        self.classDeclarationName = className
         # Va a visitar todas las funciones
         for child in ctx.function():
             self.visit(child)
@@ -523,8 +528,20 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 self.stackAmbitos.insert(self.TablaDeAmbitos.size())
                 self.TablaDeAmbitos.put(self.TablaDeAmbitos.size(), newAmbito)
                 # Visitar el contexto del ambito y generar el retorno en caso tenga
-                funcionIdentifier = self.visit(funcionIdentifier.contexto)
-                self.stackAmbitos.remove_first()
+                retorno = self.visit(funcionIdentifier.contexto)
+                # Si es un metodo se deben de copiar todos los atributos del metodo por si se modificaron o se crearon
+                lastAmbito = self.stackAmbitos.remove_first()
+                if isinstance(funcionIdentifier, Metodo):
+                    insV = self.variableEnDefinicion if self.variableEnDefinicion!=None else self.insideVariable
+                    if isinstance(insV, Simbolo):
+                        insV = insV.nombreSimbolo
+                    names = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.search(
+                            r'^' + re.escape(insV) + r'\..*'
+                        )
+                    for name in names:
+                        value:Simbolo = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.get(name)
+                        self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(value.nombreSimbolo, value)
+                funcionIdentifier = retorno
             # En caso de que sea algo como funcion().algo o de que sea variable.algo entonces se hace un for para recorrer lo que no es el primary ni el primer set de argumentos
             if len(ctx.arguments())>1 or ctx.IDENTIFIER():
                 # vamos a obtener el valor, puede ser un atributo de la clase, o puede ser un metodo
@@ -612,7 +629,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # En este caso puede ser una expresion, o super.IDENTIFIER entonces este se tiene que encargar del identifier
         if not ctx.expression() and ctx.getChildCount()>1:
             # Es un super, hay que chequear que se esta inicializando o se esta trabajando dentro de una clase
-            if self.classDeclarationName!= None and self.visit(ctx.getChild(0)) == "super":
+            if (self.classDeclarationName!= None or (self.insideVariable!=None and isinstance(self.insideVariable, DefinidoPorUsuario))) and self.visit(ctx.getChild(0)) == "super":
                 # Ejecutar la funcion del super
                 # Buscar la clase que se esta inicializando
                 claseInicializando:DefinidoPorUsuario = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(self.classDeclarationName)

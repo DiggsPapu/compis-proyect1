@@ -168,15 +168,14 @@ class HashMap:
                 newValue =Campo(nombreSimbolo=value.nombreSimbolo, tipo=value.tipo, ambito=value.ambito, inicializador=value.inicializador) 
                 newValue.perteneceVariable = value.perteneceVariable
                 mapCopy[key] = newValue
-            
-            elif isinstance(value, Funcion):
-                newValue = Funcion(nombreSimbolo=value.nombreSimbolo, tipo=value.tipo, ambito=value.ambito)
+            elif isinstance(value, Metodo):
+                newValue = Metodo(nombreSimbolo=value.nombreSimbolo, tipo=value.tipo, ambito=value.ambito)
                 newValue.contexto = value.contexto
                 newValue.parametros = value.parametros
                 newValue.variableRetorno = value.variableRetorno
                 mapCopy[key] = newValue
-            elif isinstance(value, Metodo):
-                newValue = Metodo(nombreSimbolo=value.nombreSimbolo, tipo=value.tipo, ambito=value.ambito)
+            elif isinstance(value, Funcion):
+                newValue = Funcion(nombreSimbolo=value.nombreSimbolo, tipo=value.tipo, ambito=value.ambito)
                 newValue.contexto = value.contexto
                 newValue.parametros = value.parametros
                 newValue.variableRetorno = value.variableRetorno
