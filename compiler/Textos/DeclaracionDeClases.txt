@@ -8,7 +8,11 @@ class Perrito{
     cambiarNombre(nuevoNombre){
         this.nombre = nuevoNombre;
     }
+    getNombre(){
+        return this.nombre;
+    }
 }
 var variable = new Perrito("pedro", true, 20);
 variable.cambiarNombre(true);
+var nombre = variable.getNombre();
 var perrito2 = new Perrito("pedro2", false, 50);

@@ -359,14 +359,14 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             variableValue = self.visit(ctx.expression())
             if isinstance(variableValue, Simbolo):
                 variableValue = variableValue.tipo
-            self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(f'{self.insideVariable.nombreSimbolo}.{variableName}', Simbolo(nombreSimbolo=f'{self.insideVariable.nombreSimbolo}.{variableName}', tipo=variableValue, ambito=self.stackAmbitos.first()))
+            self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(f'{self.insideVariable.nombreSimbolo}.{variableName}', Campo(nombreSimbolo=f'{self.insideVariable.nombreSimbolo}.{variableName}', tipo=variableValue, ambito=self.stackAmbitos.first()))
         elif ctx.call():
             pass
         # Si no tiene un call y no es logic entonces solo es una reasignacion de variables
         else:
             variableName = self.visit(ctx.IDENTIFIER())
             variableValue = self.visit(ctx.expression())
-            self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(variableName, Simbolo(nombreSimbolo=variableValue, tipo=variableValue, ambito=self.stackAmbitos.first()))
+            self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(variableName, Variable(nombreSimbolo=variableValue, tipo=variableValue, ambito=self.stackAmbitos.first()))
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#logic.
@@ -565,6 +565,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                         # Si retorna this chequear que tiene un . la definicion
                         if funcionIdentifier == "this":
                             lastVariableValue = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{self.insideVariable.nombreSimbolo}.{lastVariableValue}')
+                            pass
                         elif isinstance(funcionIdentifier, Nil):
                             pass
                         # Buscar si existe el coso .variable
@@ -621,8 +622,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                             self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(value.nombreSimbolo, value)
                         funcionIdentifier = retorno
                     # En caso de que sea una variable hay que chequear los siguientes
-                    elif isinstance(funcionIdentifier, Variable) or isinstance(funcionIdentifier, Campo) or isinstance(funcionIdentifier, Parametro):
-                        lastVariableValue = funcionIdentifier
+                    elif isinstance(lastVariableValue, Variable) or isinstance(lastVariableValue, Campo) or isinstance(lastVariableValue, Parametro):
+                        funcionIdentifier = lastVariableValue
                     index+=1
             return funcionIdentifier if funcionIdentifier!=None else Nil()
 
