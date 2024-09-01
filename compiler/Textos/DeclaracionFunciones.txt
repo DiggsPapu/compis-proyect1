@@ -1,0 +1,14 @@
+fun funcion1(param1, param2)
+{
+    fun funcion3(parametro){
+        return parametro=="Hola";
+    }
+    fun funcion2(param1, param2){
+        return param1+param2;
+    }
+    var retorno = funcion2(param1, param2) * 3;
+    return funcion3(retorno);
+}
+    
+
+var variable = funcion1(1, 2);

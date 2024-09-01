@@ -1,0 +1,34 @@
+var variable1 = 3;
+class Persona{
+    init(nombre, sexo, edad, mascota){
+        this.nombre = nombre;
+        this.macho = sexo;
+        this.edadHumana = edad;
+        this.mascota = mascota;
+    }
+    getMascota(){
+        return this.mascota;
+    }
+}
+class Perrito{
+    init(nombre, sexo, edad){
+        this.nombre = nombre;
+        this.macho = sexo;
+        this.edadPerruna = (edad * variable1)+4;
+    }
+    cambiarNombre(nuevoNombre){
+        this.nombre = nuevoNombre;
+    }
+    getNombre(){
+        return this.nombre;
+    }
+    suma(variable1, variable2){
+        return variable1+variable2;
+    }
+}
+var perrito = new Perrito("Pedro", true, 50);
+var persona = new Persona("Raul", false, 20, perrito);
+var nombrePerrito = persona.getMascota().getNombre();
+var cosa = persona.mascota.getNombre();
+var suma = persona.mascota.suma(789, 21)*persona.mascota.suma(200, 21);
+
