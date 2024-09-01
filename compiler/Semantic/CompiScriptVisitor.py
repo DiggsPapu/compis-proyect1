@@ -572,9 +572,9 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                             pass
                         # Buscar si existe el coso .variable
                         elif isinstance(funcionIdentifier.tipo, DefinidoPorUsuario):
-                            lastVariableValue = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{funcionIdentifier.tipo.nombreTipo}.{lastVariableValue}')
+                            lastVariableValue = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{funcionIdentifier.tipo.nombreTipo}.{lastVariableValue}') if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{funcionIdentifier.tipo.nombreTipo}.{lastVariableValue}')!=None else self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{funcionIdentifier.nombreSimbolo}.{lastVariableValue}')
                             if lastVariableValue == None:
-                                raise SemanticError(f"Error Semantico, no existe el atributo o metodo {lastVariableValue}")
+                                    raise SemanticError(f"Error Semantico, no existe el atributo o metodo {lastVariableValue}")
                         pass
                         
                     # Si el token es un punto se ignora
