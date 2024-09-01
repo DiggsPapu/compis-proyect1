@@ -297,7 +297,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         self.stackAmbitos.insert(self.TablaDeAmbitos.size())
         self.TablaDeAmbitos.put(self.TablaDeAmbitos.size(), newAmbito)
         for declarations in ctx.declaration():
-            lastDeclaration = self.visit(declarations)            
+            if self.visit(declarations)!=";":
+                lastDeclaration = self.visit(declarations)            
         # Sale del ambito creado, en caso de una funcion se crean dos ambitos, el externo con la funcion y el interno que es el del bloque
         lastAmbito = self.stackAmbitos.remove_first()
         # Probablemente se este llamando algun metodo
@@ -357,9 +358,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             variableName = self.visit(ctx.IDENTIFIER())
             variableValue = self.visit(ctx.expression())
             if isinstance(variableValue, Simbolo):
-                variableValue = variableValue
+                variableValue = variableValue.tipo
             self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(f'{self.insideVariable.nombreSimbolo}.{variableName}', Simbolo(nombreSimbolo=f'{self.insideVariable.nombreSimbolo}.{variableName}', tipo=variableValue, ambito=self.stackAmbitos.first()))
-            pass
         elif ctx.call():
             pass
         # Si no tiene un call y no es logic entonces solo es una reasignacion de variables
@@ -611,9 +611,15 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                         self.TablaDeAmbitos.put(self.TablaDeAmbitos.size(), newAmbito)
                         # Visitar el contexto del ambito y generar el retorno en caso tenga
                         retorno = self.visit(lastVariableValue.contexto)
-                        self.stackAmbitos.remove_first()
+                        lastAmbito = self.stackAmbitos.remove_first()
+                        # Copiar todos los modificados
+                        names = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.search(
+                            r'^' + re.escape(self.insideVariable.nombreSimbolo) + r'\..*'
+                        )
+                        for name in names:
+                            value:Simbolo = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.get(name)
+                            self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(value.nombreSimbolo, value)
                         funcionIdentifier = retorno
-                        # return retorno if retorno!=None else Nil()
                     # En caso de que sea una variable hay que chequear los siguientes
                     elif isinstance(funcionIdentifier, Variable) or isinstance(funcionIdentifier, Campo) or isinstance(funcionIdentifier, Parametro):
                         lastVariableValue = funcionIdentifier
