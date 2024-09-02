@@ -33,6 +33,10 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # Chequear en la tabla de tipos en el context y si no existe generar error
         if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(nombreClase) == None:
             raise SemanticError(f"Error semantico, no existe la clase \"{nombreClase}\"")
+        # Esto solo significaria que esta siendo un temp algo como new Perrito(cos,sen,tan); por lo que se debe de crear una variable temporal que sera borrada
+        if self.variableEnDefinicion == None:
+            self.variableEnDefinicion = "return"
+            self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.put(self.variableEnDefinicion, Variable("return", self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(nombreClase),self.stackAmbitos.first()))
         metodoInit:Metodo = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(nombreClase+".init")
         # Puede que no tengan init por lo que se cheque y en caso de que no tenga init entonces solo se pasa
         if metodoInit!= None:
@@ -60,10 +64,13 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             self.TablaDeAmbitos.put(self.TablaDeAmbitos.size(), newAmbito)
             # Visitar el contexto del ambito
             self.visit(metodoInit.contexto)
-            # Ahora hay que meter los valores generados en el contexto original
-            atributos = newAmbito.tablaDeSimbolos.search(
-                r'^' + re.escape(self.variableEnDefinicion) + r'\..*'
-            )
+            # En caso de que no sea un temporal
+            atributos = []
+            if self.variableEnDefinicion!="return":
+                # Ahora hay que meter los valores generados en el contexto original
+                atributos = newAmbito.tablaDeSimbolos.search(
+                    r'^' + re.escape(self.variableEnDefinicion) + r'\..*'
+                )
             self.stackAmbitos.remove_first()
             for nombreAtributo in atributos:
                 atributo = newAmbito.tablaDeSimbolos.get(nombreAtributo)
@@ -211,22 +218,17 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     def visitIfStmt(self, ctx:CompiScriptLanguageParser.IfStmtContext):
         # Evaluar la expresión condicional
         condicion = self.visit(ctx.expression())
-        
         # Verificar que la condición sea un booleano
         if not isinstance(condicion, Booleano):
             raise SemanticError(f"Error semántico: la condición del if no es un valor booleano.")
-        
-        # Si la condición es verdadera, visitar el bloque del if
-        if condicion.valor:  # Asumiendo que `Booleano` tiene un atributo `valor`
-            self.visit(ctx.statement(0))
-        # Si hay un bloque else y la condición es falsa, visitar el bloque else
-        elif ctx.ELSE() is not None:
-            self.visit(ctx.statement(1))
-        
-        # Retornar un valor o continuar la ejecución
-        return None
-
-
+        # Visitar el bloque del if y aniadir el retorno que haya
+        retornos = [self.visit(ctx.statement(0))]
+        # Tiene un else y aniadir un retorno si hay
+        if (len(ctx.statement())>1):
+            retornos.append(self.visit(ctx.statement(1)))
+        # Retornar los posibles retornos del if
+        return retornos
+    
     # Visit a parse tree produced by CompiScriptLanguageParser#printStmt.
     def visitPrintStmt(self, ctx:CompiScriptLanguageParser.PrintStmtContext):
         # Just visiting it to make sure it works correctly
