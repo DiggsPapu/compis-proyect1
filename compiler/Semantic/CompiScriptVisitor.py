@@ -24,6 +24,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         super().__init__()
         # Tabla de simbolos por ambito entonces por cada ambito (contexto) habra una tabla de simbolos
         self.TablaDeAmbitos = HashMap()
+        self.TablaDeAmbitos.put(0, Ambito(0, HashMap()))
         self.stackAmbitos = Stack([0])
         self.currentFuncion = None
         self.classDeclarationName = Stack()
@@ -92,18 +93,12 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 print(f'''
                   nombre simbolo: {symbol.nombreSimbolo}    ambito del simbolo: {symbol.ambito}     tipo del simbolo: {symbol.tipo}
                   ''')
+    
     # Visit a parse tree produced by CompiScriptLanguageParser#program.
     def visitProgram(self, ctx:CompiScriptLanguageParser.ProgramContext):
-        if (self.TablaDeAmbitos.size()==0):
-            # Crear el contexto main que seria el contexto 0
-            self.TablaDeAmbitos.put(0, Ambito(0, HashMap()))
-            for child in ctx.declaration():
-                self.visit(child)
-        # En cualquier otro caso es que se esta dentro de un block que  puede ser declarado como un bloque o como una funcion
-        else:
-            # De manera que recorrer la declaracion sirve para declarar parametros o demas cosas dentro del ambito del bloque o funcion
-            for child in ctx.declaration():
-                self.visit(child)
+        # Recorrer el programa
+        for child in ctx.declaration():
+            self.visit(child)
 
     # Visit a parse tree produced by CompiScriptLanguageParser#classDecl.
     def visitClassDecl(self, ctx:CompiScriptLanguageParser.ClassDeclContext):
@@ -152,27 +147,26 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#varDecl.
     def visitVarDecl(self, ctx:CompiScriptLanguageParser.VarDeclContext):
-        id = ctx.IDENTIFIER()
         # Esta mal escrito y no se puede obtener la variable en la definicion de la variable
         if ctx.IDENTIFIER() == None:
             raise SemanticError(f'Error semantico, declaracion de variable invalida')
+        # Obtener el nombre del simbolo
         id = ctx.IDENTIFIER().symbol.text
+        # Setear el tipo de la variable a Nil inicialmente
+        variableTipo = Nil()
+        # La variable en definicion actual es esa, se setea asi porque puede que hayan mas variables en definicion dentro de esta como en clases
         self.variableEnDefinicion.insert(id)
-        # Averiguaremos el tipo despues y la inicializacion despues
+        # Si ya hay una variable definida entonces se lanza un error de redeclaracion de variable
         if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.contains_key(id):
             raise SemanticError(f"Error semantico, no se puede re declarar una variable ya creada en el ambito, \"{id}\"")
-        self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(id, Variable(nombreSimbolo=id, ambito=self.stackAmbitos.first()))
-        # En caso de que tenga una expresion, porque puede que sea una variable solo definida sin inicializar
         if ctx.expression():
             # Obtener tipo
             variableTipo = self.visit(ctx.expression())
             if isinstance(variableTipo, Simbolo):
                 variableTipo = variableTipo.tipo
-            # Inicializar la variable y definir el tipo porque al principio es nil
-            simbolo:Variable = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(id) 
-            simbolo.definirInicializador(variableTipo)
-            simbolo.redefinirTipo(variableTipo)
         self.variableEnDefinicion.remove_first()
+        # Inicializar la variable y definir el tipo, no hay return
+        self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(id,Variable(nombreSimbolo=id,tipo=variableTipo,inicializador=variableTipo))
             
 
     # Visit a parse tree produced by CompiScriptLanguageParser#exprStmt.
@@ -223,16 +217,18 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         if not isinstance(condicion, Booleano):
             raise SemanticError(f"Error semántico: la condición del if no es un valor booleano.")
         # Visitar el bloque del if y aniadir el retorno que haya
-        retornos = [self.visit(ctx.statement(0))]
+        retornos = [self.visit(ctx.block(0))]
         # Tiene un else y aniadir un retorno si hay
-        if (len(ctx.statement())>1):
-            retornos.append(self.visit(ctx.statement(1)))
+        if (len(ctx.block())>1):
+            retornos.append(self.visit(ctx.block(1)))
         # Retornar los posibles retornos del if
-        return retornos
+        if len(retornos)>1 and not isinstance(retornos[0], Nil) and not isinstance(retornos[1], Nil): return retornos
+        elif len(retornos)==1 and not isinstance(retornos[0], Nil): return retornos[0]
+        return Nil()
     
     # Visit a parse tree produced by CompiScriptLanguageParser#printStmt.
     def visitPrintStmt(self, ctx:CompiScriptLanguageParser.PrintStmtContext):
-        # Just visiting it to make sure it works correctly
+        # Visitarlo para ver que todo este correcto
         self.visit(ctx.expression())
 
 
@@ -248,29 +244,17 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     def visitWhileStmt(self, ctx:CompiScriptLanguageParser.WhileStmtContext):
         # Evaluar la expresión condicional del while
         condicion = self.visit(ctx.expression())
-        
         # Verificar que la condición sea un booleano
         if not isinstance(condicion, Booleano):
             raise SemanticError(f"Error semántico: la condición del while no es un valor booleano.")
-        
-        # Ejecutar el bloque del while mientras la condición sea verdadera
-        while condicion.valor:  # Asumiendo que `Booleano` tiene un atributo `valor`
-            # Visitar el bloque del while
-            self.visit(ctx.statement())
-            
-            # Volver a evaluar la condición después de cada iteración
-            condicion = self.visit(ctx.expression())
-            
-            # Verificar nuevamente que la condición sea un booleano
-            if not isinstance(condicion, Booleano):
-                raise SemanticError(f"Error semántico: la condición del while no es un valor booleano.")
-        
-        # Retornar None al final de la ejecución del while
-        return None
+        # Retornar lo que sea que diga el bloque, solo hay que chequear que lo que haya dentro del statement sea un bloque
+        return self.visit(ctx.block())
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#block.
     def visitBlock(self, ctx:CompiScriptLanguageParser.BlockContext):
+        # Chequear que este bien hecha la gramática, {} y eso
+        self.visitChildren(ctx)
         # Lo unico que puede haber en un bloque es una declaracion pero se tiene que crear un nuevo ambito
         lastDeclaration = None
         # Crear nuevo ambito
@@ -484,31 +468,26 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     # Visit a parse tree produced by CompiScriptLanguageParser#unary.
     def visitUnary(self, ctx:CompiScriptLanguageParser.UnaryContext):
         # En caso de que sea una call que retorne solo el call
-        if ctx.call():
-            return self.visit(ctx.call())
+        if ctx.call():return self.visit(ctx.call())
         # Esto implica que puede negarse el valor o puede volverse negativo
-        elif ctx.unary():
-            operation = ''
-            variable = None
+        if ctx.unary():
+            operation, variable = None, None
             for child in ctx.getChildren():
                 variableTemp = self.visit(child)
-                if isinstance(variableTemp, Variable) or isinstance(variableTemp, Parametro) or isinstance(variableTemp, Campo):
-                    variableTemp = variableTemp.tipo
-                if isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='-':
-                    operation = '-'
-                elif isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='!':
-                    operation = '!'
-                elif variable == None and isinstance(variableTemp, Numero) and operation == '-':
-                    variable = Numero() 
-                elif variable == None and isinstance(variableTemp, Booleano) and operation == '!':
-                    variable = Booleano()
-                elif isinstance(variable, Numero) and isinstance(variableTemp, Numero) and operation == '-':
-                    variable = Numero() 
-                elif isinstance(variable, Booleano) and isinstance(variableTemp, Booleano) and operation == '!':
-                    variable = Booleano()
-                else:
-                    raise  SemanticError(f'Error semantico, no se puede negar un no booleano o no se puede poner en negativo un no numero')
-        return self.visitChildren(ctx)
+                # Obtener el tipo del simbolo
+                if isinstance(variableTemp, Variable) or isinstance(variableTemp, Parametro) or isinstance(variableTemp, Campo):variableTemp = variableTemp.tipo
+                # Manejo de las operaciones
+                if not operation == '!' and (isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='-'):operation = '-'
+                elif not operation == '-' and (isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='!'):operation = '!'
+                elif isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='-' or isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='!': raise SemanticError(f'Error semantico, no se puede negar un booleano con \'-\' o negar un número con \'!\'')
+                # Manejo de los tipos
+                elif variable == None and isinstance(variableTemp, Numero) and operation == '-':variable = Numero() 
+                elif variable == None and isinstance(variableTemp, Booleano) and operation == '!':variable = Booleano()
+                elif isinstance(variable, Numero) and isinstance(variableTemp, Numero) and operation == '-':variable = Numero() 
+                elif isinstance(variable, Booleano) and isinstance(variableTemp, Booleano) and operation == '!':variable = Booleano()
+                else: raise  SemanticError(f'Error semantico, no se puede negar un no booleano o no se puede poner en negativo un no numero')
+            # Retornar el tipo de la operacion
+            return variable
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#call.
@@ -575,7 +554,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                     for name in names:
                         value:Simbolo = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.get(name)
                         self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(value.nombreSimbolo, value)
-                if (funcionIdentifier, Metodo):
+                if isinstance(funcionIdentifier, Metodo):
                     self.classDeclarationName.remove_first()
                 funcionIdentifier = retorno
             # En caso de que sea algo como funcion().algo o de que sea variable.algo entonces se hace un for para recorrer lo que no es el primary ni el primer set de argumentos

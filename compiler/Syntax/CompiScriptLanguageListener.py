@@ -71,6 +71,15 @@ class CompiScriptLanguageListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CompiScriptLanguageParser#ifStmt.
+    def enterIfStmt(self, ctx:CompiScriptLanguageParser.IfStmtContext):
+        pass
+
+    # Exit a parse tree produced by CompiScriptLanguageParser#ifStmt.
+    def exitIfStmt(self, ctx:CompiScriptLanguageParser.IfStmtContext):
+        pass
+
+
     # Enter a parse tree produced by CompiScriptLanguageParser#forStmt.
     def enterForStmt(self, ctx:CompiScriptLanguageParser.ForStmtContext):
         pass
@@ -80,12 +89,12 @@ class CompiScriptLanguageListener(ParseTreeListener):
         pass
 
 
-    # Enter a parse tree produced by CompiScriptLanguageParser#ifStmt.
-    def enterIfStmt(self, ctx:CompiScriptLanguageParser.IfStmtContext):
+    # Enter a parse tree produced by CompiScriptLanguageParser#whileStmt.
+    def enterWhileStmt(self, ctx:CompiScriptLanguageParser.WhileStmtContext):
         pass
 
-    # Exit a parse tree produced by CompiScriptLanguageParser#ifStmt.
-    def exitIfStmt(self, ctx:CompiScriptLanguageParser.IfStmtContext):
+    # Exit a parse tree produced by CompiScriptLanguageParser#whileStmt.
+    def exitWhileStmt(self, ctx:CompiScriptLanguageParser.WhileStmtContext):
         pass
 
 
@@ -104,15 +113,6 @@ class CompiScriptLanguageListener(ParseTreeListener):
 
     # Exit a parse tree produced by CompiScriptLanguageParser#returnStmt.
     def exitReturnStmt(self, ctx:CompiScriptLanguageParser.ReturnStmtContext):
-        pass
-
-
-    # Enter a parse tree produced by CompiScriptLanguageParser#whileStmt.
-    def enterWhileStmt(self, ctx:CompiScriptLanguageParser.WhileStmtContext):
-        pass
-
-    # Exit a parse tree produced by CompiScriptLanguageParser#whileStmt.
-    def exitWhileStmt(self, ctx:CompiScriptLanguageParser.WhileStmtContext):
         pass
 
 

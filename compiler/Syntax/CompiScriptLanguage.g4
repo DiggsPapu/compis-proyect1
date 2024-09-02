@@ -20,25 +20,25 @@ varDecl: 'var' IDENTIFIER ('=' expression)? ';'
 
 statement: 
     exprStmt
-    | forStmt
     | ifStmt
+    | forStmt
+    | whileStmt
     | printStmt
     | returnStmt
-    | whileStmt
     | block
     ;
 
 exprStmt: expression ';' ;
 
-forStmt: 'for' '(' (varDecl | exprStmt | ';') expression? ';' expression? ')' statement ;
+ifStmt: 'if' '(' expression ')' block ('else' block)? ;
 
-ifStmt: 'if' '(' expression ')' statement ('else' statement)? ;
+forStmt: 'for' '(' (varDecl | exprStmt | ';') expression? ';' expression? ')' block ;
+
+whileStmt: 'while' '(' expression ')' block ;
 
 printStmt: 'print' expression ';' ;
 
 returnStmt: 'return' expression? ';' ;
-
-whileStmt: 'while' '(' expression ')' statement ;
 
 block: '{' declaration* '}' ;
 

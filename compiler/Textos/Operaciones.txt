@@ -32,3 +32,6 @@ true!="demonios";
 variable2>2 and false;
 (20>2) and false or true and ("yellow">="black");
 (-variable2*1+-variable)>=(50+2*8) and ("raul albiol"!=string);
+var variablenula
+
+!!!!!!!!!!!!!(1>2);

@@ -3,6 +3,7 @@ from antlr4 import *
 from Syntax.CompiScriptLanguageLexer import *
 from Syntax.CompiScriptLanguageParser import *
 from Semantic.CompiScriptVisitor import *
+from Semantic.CompiScriptVisitorSemantic import *
 from Syntax.CompiScriptLanguageVisitor import *
 from antlr4.tree.Trees import Trees
 import graphviz
@@ -26,7 +27,7 @@ def create_visual_tree(tree, parser):
 
 def main(argv):
     # Leer el código desde stdin (el código que se envía desde Django)
-    input_stream = FileStream(f"{os.getcwd()}/compiler/Textos/FuncionesConIfs.txt")
+    input_stream = FileStream(f"{os.getcwd()}/compiler/Textos/WhileStmt.txt")
     # input_stream = InputStream(sys.stdin.read())
     lexer = CompiScriptLanguageLexer(input_stream)
     stream = CommonTokenStream(lexer)
