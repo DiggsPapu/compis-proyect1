@@ -28,15 +28,16 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         self.currentFuncion = None
         self.classDeclarationName = None
         self.insideVariable = None
+        self.variableEnDefinicion = Stack()
         
     def instanciarUnaClase(self, ctx, nombreClase):
         # Chequear en la tabla de tipos en el context y si no existe generar error
         if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(nombreClase) == None:
             raise SemanticError(f"Error semantico, no existe la clase \"{nombreClase}\"")
         # Esto solo significaria que esta siendo un temp algo como new Perrito(cos,sen,tan); por lo que se debe de crear una variable temporal que sera borrada
-        if self.variableEnDefinicion == None:
-            self.variableEnDefinicion = "return"
-            self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.put(self.variableEnDefinicion, Variable("return", self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(nombreClase),self.stackAmbitos.first()))
+        if self.variableEnDefinicion.first() == None:
+            self.variableEnDefinicion.insert("return")
+            self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.put(self.variableEnDefinicion.first(), Variable("return", self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(nombreClase),self.stackAmbitos.first()))
         metodoInit:Metodo = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(nombreClase+".init")
         # Puede que no tengan init por lo que se cheque y en caso de que no tenga init entonces solo se pasa
         if metodoInit!= None:
@@ -66,10 +67,10 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             self.visit(metodoInit.contexto)
             # En caso de que no sea un temporal
             atributos = []
-            if self.variableEnDefinicion!="return":
+            if self.variableEnDefinicion.first()!="return":
                 # Ahora hay que meter los valores generados en el contexto original
                 atributos = newAmbito.tablaDeSimbolos.search(
-                    r'^' + re.escape(self.variableEnDefinicion) + r'\..*'
+                    r'^' + re.escape(self.variableEnDefinicion.first()) + r'\..*'
                 )
             self.stackAmbitos.remove_first()
             for nombreAtributo in atributos:
@@ -156,7 +157,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         if ctx.IDENTIFIER() == None:
             raise SemanticError(f'Error semantico, declaracion de variable invalida')
         id = ctx.IDENTIFIER().symbol.text
-        self.variableEnDefinicion = id
+        self.variableEnDefinicion.insert(id)
         # Averiguaremos el tipo despues y la inicializacion despues
         if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.contains_key(id):
             raise SemanticError(f"Error semantico, no se puede re declarar una variable ya creada en el ambito, \"{id}\"")
@@ -171,7 +172,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             simbolo:Variable = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(id) 
             simbolo.definirInicializador(variableTipo)
             simbolo.redefinirTipo(variableTipo)
-        self.variableEnDefinicion = None
+        self.variableEnDefinicion.remove_first()
             
 
     # Visit a parse tree produced by CompiScriptLanguageParser#exprStmt.
@@ -300,10 +301,10 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             for name in names:
                 value:Simbolo = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.get(name)
                 self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(value.nombreSimbolo, value)
-        elif self.variableEnDefinicion!=None:
+        elif self.variableEnDefinicion.first()!=None:
             # Copiar los valores definidos en la variable al ambito actual
             names = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.search(
-                r'^' + re.escape(self.variableEnDefinicion) + r'\..*'
+                r'^' + re.escape(self.variableEnDefinicion.first()) + r'\..*'
             )
             for name in names:
                 value:Simbolo = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.get(name)
@@ -325,7 +326,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             identificadorCampo = ctx.getChild(2).symbol.text
             if identificadorCampo == None:
                 raise SemanticError(f"Error semantico, la variable \"{identificadorCampo}\" para definir el campo de la clase no existe")
-            newCampo = Campo(self.variableEnDefinicion+"."+identificadorCampo,Nil(), self.stackAmbitos.first(), nombreVariable=self.variableEnDefinicion)
+            newCampo = Campo(self.variableEnDefinicion.first()+"."+identificadorCampo,Nil(), self.stackAmbitos.first(), nombreVariable=self.variableEnDefinicion.first())
             # Ocurre la asignacion, se obtiene el parametro al que se asigna y su tipo
             retorno = self.visit(ctx.expression())
             if isinstance(retorno, Parametro) or isinstance(retorno, Variable) or isinstance(retorno, Campo):
@@ -365,6 +366,14 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         variable = Booleano()
         for child in ctx.getChildren():
             variableTemp = self.visit(child)
+            # Probablemente sea producto de un if y un else, entonces hay que chequear si alguno de sus valores es booleano y si no lanzar error
+            if isinstance(variable, list):
+                for var in variableTemp:
+                    if isinstance(var, Simbolo):
+                        var = var.tipo
+                    if isinstance(var, Booleano):
+                        variableTemp = var
+                        break
             if variableTemp == 'and' or variableTemp == 'or':
                 pass
             elif not isinstance(variableTemp, Booleano) or not isinstance(variable, Booleano):
@@ -386,23 +395,33 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         for index in range(0, ctx.getChildCount()):
             # variable o valor
             variableTemp = self.visit(ctx.getChild(index))
-            # Es una variable
-            if isinstance(variableTemp, Variable) or isinstance(variableTemp, Parametro) or isinstance(variableTemp, Campo):
-                variableTemp = variableTemp.tipo
-            # Es operacion
-            if isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='>' or variableTemp=='<' or variableTemp=='>=' or variableTemp=='<=' or variableTemp=='==' or variableTemp=='!=':
-                currentOperation = variableTemp
-            # Siempre devolvera o generar un booleano al ser comparacion, tienen que ser del mismo tipo
-            elif (type(variableTemp)==type(variable)) and (currentOperation=='>' or currentOperation=='<' or currentOperation=='>=' or currentOperation=='<='):
-                variable = Booleano()
-            # Puede comparar cualquier tipo para ver si son iguales o no
-            elif currentOperation=='!=' or currentOperation == '==':
-                variable = Booleano()
-            elif currentOperation == '' and variable == None:
-                variable = variableTemp
-            elif currentOperation == '':
-                pass
-            else:
+            acceptance = False
+            # En caso de que no se retorne una lista convertirlo a lista para generalizar procedimiento
+            if not isinstance(variableTemp, list):
+                variableTemp = [variableTemp]
+            for var in variableTemp:
+                # Es una variable
+                if isinstance(var, Variable) or isinstance(var, Parametro) or isinstance(var, Campo):
+                    var = var.tipo
+                # Es operacion
+                if isinstance(var, TerminalNodeImpl) or var=='>' or var=='<' or var=='>=' or var=='<=' or var=='==' or var=='!=':
+                    acceptance = True
+                    currentOperation = var
+                # Siempre devolvera o generar un booleano al ser comparacion, tienen que ser del mismo tipo
+                elif (type(var)==type(variable)) and (currentOperation=='>' or currentOperation=='<' or currentOperation=='>=' or currentOperation=='<='):
+                    acceptance = True
+                    variable = Booleano()
+                # Puede comparar cualquier tipo para ver si son iguales o no
+                elif currentOperation=='!=' or currentOperation == '==':
+                    acceptance = True
+                    variable = Booleano()
+                elif currentOperation == '' and variable == None:
+                    acceptance = True
+                    variable = var
+                elif currentOperation == '':
+                    acceptance = True
+                    pass
+            if not acceptance:
                 raise SemanticError(f'Error semantico, operacion invalida no se pueden comparar diferentes tipos')
         # Retorna el ultimo valor que obtiene la variable luego de operar
         return variable
@@ -534,7 +553,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 # Si es un metodo se deben de copiar todos los atributos del metodo por si se modificaron o se crearon
                 lastAmbito = self.stackAmbitos.remove_first()
                 if isinstance(funcionIdentifier, Metodo):
-                    insV = self.variableEnDefinicion if self.variableEnDefinicion!=None else self.insideVariable
+                    insV = self.variableEnDefinicion.first() if self.variableEnDefinicion.first()!=None else self.insideVariable
                     if isinstance(insV, Simbolo):
                         insV = insV.nombreSimbolo
                     names = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.search(
