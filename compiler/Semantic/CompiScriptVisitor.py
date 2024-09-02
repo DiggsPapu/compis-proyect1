@@ -76,7 +76,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             for nombreAtributo in atributos:
                 atributo = newAmbito.tablaDeSimbolos.get(nombreAtributo)
                 self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(nombreAtributo, atributo)
-        self.classDeclarationName = None
+        self.classDeclarationName.remove_first()
         self.insideVariable = None
         return self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(nombreClase)
         
@@ -537,7 +537,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             funcionIdentifier = self.visit(ctx.getChild(0))
             # En caso de que sea funcion
             if isinstance(funcionIdentifier, Funcion):
-                if (funcionIdentifier, Metodo):
+                if isinstance(funcionIdentifier, Metodo):
                     self.classDeclarationName.insert(funcionIdentifier.nombreSimbolo.split(".")[0])
                 newTablaSimbolos = HashMap()
                 mapa = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.map
