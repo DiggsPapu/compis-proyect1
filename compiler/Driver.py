@@ -27,7 +27,7 @@ def create_visual_tree(tree, parser):
 
 def main(argv):
     # Leer el código desde stdin (el código que se envía desde Django)
-    input_stream = FileStream(f"{os.getcwd()}/compiler/Textos/WhileStmt.txt")
+    input_stream = FileStream(f"{os.getcwd()}/compiler/Textos/Block.txt")
     # input_stream = InputStream(sys.stdin.read())
     lexer = CompiScriptLanguageLexer(input_stream)
     stream = CommonTokenStream(lexer)

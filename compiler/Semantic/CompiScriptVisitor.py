@@ -26,10 +26,18 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         self.TablaDeAmbitos = HashMap()
         self.TablaDeAmbitos.put(0, Ambito(0, HashMap()))
         self.stackAmbitos = Stack([0])
-        self.currentFuncion = None
-        self.classDeclarationName = Stack()
+        self.classDeclarationName = Stack([])
         self.insideVariable = None
-        self.variableEnDefinicion = Stack()
+        self.variableEnDefinicion = Stack([])
+        
+    def crearUnNuevoAmbito(self):
+        newTablaSimbolos = HashMap()
+        mapa = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.map
+        newTablaSimbolos.replaceMap(mapa)
+        newAmbito:Ambito = Ambito(self.TablaDeAmbitos.size(), newTablaSimbolos)
+        newAmbito.tablaDeTipos.replaceMap(self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.map)
+        self.stackAmbitos.insert(self.TablaDeAmbitos.size())
+        self.TablaDeAmbitos.put(self.TablaDeAmbitos.size(), newAmbito)
         
     def instanciarUnaClase(self, ctx, nombreClase):
         # Chequear en la tabla de tipos en el context y si no existe generar error
@@ -42,9 +50,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         metodoInit:Metodo = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(nombreClase+".init")
         # Puede que no tengan init por lo que se cheque y en caso de que no tenga init entonces solo se pasa
         if metodoInit!= None:
-            newTablaSimbolos = HashMap()
-            mapa = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.map
-            newTablaSimbolos.replaceMap(mapa)
+            self.crearUnNuevoAmbito()
             arguments = []
             if len(ctx.arguments())>0:
                 arguments = self.visit(ctx.arguments()[0])
@@ -57,25 +63,20 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 tempP = self.visit(argument)
                 if isinstance(tempP, Simbolo):
                     tempP = tempP.tipo
-                newTablaSimbolos.put(parametro, Parametro(parametro, tempP, self.TablaDeAmbitos.size()+1, funcionPertenece=nombreClase+".init"))
+                self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(parametro, Parametro(parametro, tempP, self.TablaDeAmbitos.size()+1, funcionPertenece=nombreClase+".init"))
                 index+=1
-            # Crear un nuevo ambito solo para crear los tipos de la clase
-            newAmbito:Ambito = Ambito(self.TablaDeAmbitos.size(), newTablaSimbolos)
-            newAmbito.tablaDeTipos.replaceMap(self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.map)
-            self.stackAmbitos.insert(self.TablaDeAmbitos.size())
-            self.TablaDeAmbitos.put(self.TablaDeAmbitos.size(), newAmbito)
             # Visitar el contexto del ambito
             self.visit(metodoInit.contexto)
             # En caso de que no sea un temporal
             atributos = []
             if self.variableEnDefinicion.first()!="return":
                 # Ahora hay que meter los valores generados en el contexto original
-                atributos = newAmbito.tablaDeSimbolos.search(
+                atributos = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.search(
                     r'^' + re.escape(self.variableEnDefinicion.first()) + r'\..*'
                 )
             self.stackAmbitos.remove_first()
             for nombreAtributo in atributos:
-                atributo = newAmbito.tablaDeSimbolos.get(nombreAtributo)
+                atributo = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(nombreAtributo)
                 self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(nombreAtributo, atributo)
         self.classDeclarationName.remove_first()
         self.insideVariable = None
@@ -181,34 +182,14 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         if ctx.varDecl():
             self.visit(ctx.varDecl())
         elif ctx.exprStmt():
-            self.visit(ctx.exprStmt())
-
-        # Evaluar la condición del bucle for
-        condicion = self.visit(ctx.expression())
-        
+            self.visit(ctx.exprStmt())        
         # Verificar que la condición sea un booleano
-        if not isinstance(condicion, Booleano):
+        if not isinstance(self.visit(ctx.expression(0)), Booleano):
             raise SemanticError(f"Error semántico: la condición del for no es un valor booleano.")
+        self.visit(ctx.expression(1))
+        self.visit(ctx.block())
+        return Nil()
     
-        # Ejecutar el bloque del for mientras la condición sea verdadera
-        while condicion.valor:  # Asumiendo que `Booleano` tiene un atributo `valor`
-            # Visitar el cuerpo del for
-            self.visit(ctx.statement())
-            
-            # Actualizar la expresión de incremento (la tercera parte del for)
-            if ctx.expression(1):  # Verifica si hay una expresión de actualización
-                self.visit(ctx.expression(1))
-            
-            # Volver a evaluar la condición después de cada iteración
-            condicion = self.visit(ctx.expression())
-            
-            # Verificar nuevamente que la condición sea un booleano
-            if not isinstance(condicion, Booleano):
-                raise SemanticError(f"Error semántico: la condición del for no es un valor booleano.")
-        
-        return None
-
-
     # Visit a parse tree produced by CompiScriptLanguageParser#ifStmt.
     def visitIfStmt(self, ctx:CompiScriptLanguageParser.IfStmtContext):
         # Evaluar la expresión condicional
@@ -230,8 +211,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     def visitPrintStmt(self, ctx:CompiScriptLanguageParser.PrintStmtContext):
         # Visitarlo para ver que todo este correcto
         self.visit(ctx.expression())
-
-
+        return Nil()
+        
     # Visit a parse tree produced by CompiScriptLanguageParser#returnStmt.
     def visitReturnStmt(self, ctx:CompiScriptLanguageParser.ReturnStmtContext):
         if (ctx.expression()):
@@ -254,17 +235,11 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     # Visit a parse tree produced by CompiScriptLanguageParser#block.
     def visitBlock(self, ctx:CompiScriptLanguageParser.BlockContext):
         # Chequear que este bien hecha la gramática, {} y eso
-        self.visitChildren(ctx)
+        if self.visit(ctx.getChild(0))!="{" or self.visit(ctx.getChild(ctx.getChildCount()-1))!="}":raise SemanticError("Error Semantico, el bloque no esta encerrado en llaves")
         # Lo unico que puede haber en un bloque es una declaracion pero se tiene que crear un nuevo ambito
         lastDeclaration = None
         # Crear nuevo ambito
-        newTablaSimbolos = HashMap()
-        mapa = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.map
-        newTablaSimbolos.replaceMap(mapa)
-        newAmbito:Ambito = Ambito(self.TablaDeAmbitos.size(), newTablaSimbolos)
-        newAmbito.tablaDeTipos.replaceMap(self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.map)
-        self.stackAmbitos.insert(self.TablaDeAmbitos.size())
-        self.TablaDeAmbitos.put(self.TablaDeAmbitos.size(), newAmbito)
+        self.crearUnNuevoAmbito()
         for declarations in ctx.declaration():
             possibleDeclaration = self.visit(declarations)
             if possibleDeclaration!=";":
@@ -518,9 +493,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             if isinstance(funcionIdentifier, Funcion):
                 if isinstance(funcionIdentifier, Metodo):
                     self.classDeclarationName.insert(funcionIdentifier.nombreSimbolo.split(".")[0])
-                newTablaSimbolos = HashMap()
-                mapa = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.map
-                newTablaSimbolos.replaceMap(mapa)
+                self.crearUnNuevoAmbito()
                 arguments = []
                 if len(ctx.arguments())>0:
                     arguments = self.visit(ctx.arguments()[0])
@@ -533,13 +506,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                     tempP = self.visit(argument)
                     if isinstance(tempP, Simbolo):
                         tempP = tempP.tipo
-                    newTablaSimbolos.put(parametro, Parametro(parametro, tempP, self.TablaDeAmbitos.size()+1, funcionPertenece=funcionIdentifier.nombreSimbolo))
+                    self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(parametro, Parametro(parametro, tempP, self.TablaDeAmbitos.size()+1, funcionPertenece=funcionIdentifier.nombreSimbolo))
                     index+=1
-                # Crear un nuevo ambito solo para almacenar los parametros de la funcion
-                newAmbito:Ambito = Ambito(self.TablaDeAmbitos.size(), newTablaSimbolos)
-                newAmbito.tablaDeTipos.replaceMap(self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.map)
-                self.stackAmbitos.insert(self.TablaDeAmbitos.size())
-                self.TablaDeAmbitos.put(self.TablaDeAmbitos.size(), newAmbito)
                 # Visitar el contexto del ambito y generar el retorno en caso tenga
                 retorno = self.visit(funcionIdentifier.contexto)
                 # Si es un metodo se deben de copiar todos los atributos del metodo por si se modificaron o se crearon
@@ -562,7 +530,6 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 # vamos a obtener el valor, puede ser un atributo de la clase, o puede ser un metodo
                 # De manera que lo mejor es hacer un while para recorrer child por child e ir decidiendo que ocurre
                 # Los casos son: .metodo(), .atributo, no puede haber .funcion() porque tiene que ser si o si una funcion dado que se retorna algo, y no puede ser variable porque se obtiene algo por lo que es un atributo
-                lastWasInstance = False
                 lastVariableValue = None 
                 index = 1
                 if funcionIdentifier!="this":
@@ -690,7 +657,6 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         funcion = None
         # En caso de que no se este declarando una clase
         if (self.classDeclarationName.first()==None):
-            self.currentFuncion = nombreFuncion
             funcion = Funcion(nombreFuncion, TipoFuncion(), self.stackAmbitos.first())
         # Metodos de una clase
         else:
@@ -701,9 +667,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         if ctx.parameters():
             # Obtener los parametros y meterlos en la tabla de simbolos actual no la de la funcion para desglosar la funcion
             parametros = self.visit(ctx.parameters())
-            for parametro in parametros:
-                # Solamente almacenar el parametro en la funcion
-                funcion.aniadirParametro(parametro)
+            # Solamente almacenar el parametro en la funcion
+            for parametro in parametros: funcion.aniadirParametro(parametro)
         # Solamente se va a almacenar el contexto de la ejecucion de la funcion
         funcion.aniadirContexto(ctx.block())
         # Agregar la funcion al ambito actual de la tabla de simbolos
