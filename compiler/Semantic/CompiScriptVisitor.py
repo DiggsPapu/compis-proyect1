@@ -282,8 +282,9 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         self.stackAmbitos.insert(self.TablaDeAmbitos.size())
         self.TablaDeAmbitos.put(self.TablaDeAmbitos.size(), newAmbito)
         for declarations in ctx.declaration():
-            if self.visit(declarations)!=";":
-                lastDeclaration = self.visit(declarations)            
+            possibleDeclaration = self.visit(declarations)
+            if possibleDeclaration!=";":
+                lastDeclaration = possibleDeclaration
         # Sale del ambito creado, en caso de una funcion se crean dos ambitos, el externo con la funcion y el interno que es el del bloque
         lastAmbito = self.stackAmbitos.remove_first()
         # Probablemente se este llamando algun metodo
