@@ -1,0 +1,9 @@
+fun funcion1(param, param2){
+    if (param<param2){
+        return true;
+    }
+    else{
+        return 2;
+    }
+}
+var variable = funcion1(1, 2)*5;

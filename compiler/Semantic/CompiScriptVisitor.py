@@ -26,7 +26,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         self.TablaDeAmbitos = HashMap()
         self.stackAmbitos = Stack([0])
         self.currentFuncion = None
-        self.classDeclarationName = None
+        self.classDeclarationName = Stack()
         self.insideVariable = None
         self.variableEnDefinicion = Stack()
         
@@ -109,7 +109,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     def visitClassDecl(self, ctx:CompiScriptLanguageParser.ClassDeclContext):
         # Primero voy a hacer sin herencia y sin instanciacion, solo crear el tipo
         className = ctx.IDENTIFIER()[0].symbol.text
-        self.classDeclarationName = className
+        self.classDeclarationName.insert(className)
         # Verificar que el nombre de la clase sea unico
         if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(className)!=None:
             raise SemanticError(f"Clase \"{className}\" ya ha sido declarada")
@@ -142,7 +142,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         for child in ctx.function():
             self.visit(child)
         self.TablaDeAmbitos.map[self.stackAmbitos.first()].tablaDeTipos = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos
-        self.classDeclarationName = None
+        self.classDeclarationName.remove_first()
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#funDecl.
@@ -322,7 +322,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         if ctx.logic():
             return self.visit(ctx.logic())
         # Se esta declarando una variable, pero el this solo puede estar en el contexto de un metodo de una clase
-        elif self.classDeclarationName!= None and ctx.call() and self.visit(ctx.call())=="this":
+        elif self.classDeclarationName.first()!= None and ctx.call() and self.visit(ctx.call())=="this":
             # Crear un nuevo campo
             identificadorCampo = ctx.getChild(2).symbol.text
             if identificadorCampo == None:
@@ -443,6 +443,16 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         for index in range(0, ctx.getChildCount()):
             # variable o valor
             variableTemp = self.visit(ctx.getChild(index))
+            # Chequear los posibles valores y si hay alguno valido
+            if isinstance(variableTemp, list):
+                for var in variableTemp:
+                    if isinstance(var, Simbolo):
+                        var = var.tipo
+                    if isinstance(var, Numero) or isinstance(var, Cadena):
+                        variableTemp = var
+                        break
+                if isinstance(variableTemp, list):
+                    raise SemanticError(f'Error semantico, operacion aritmetica invalida (suma, resta, multiplicacion, division), tipo invalido 1')
             # Es un simbolo
             if isinstance(variableTemp, Simbolo):
                 variableTemp = variableTemp.tipo
@@ -519,7 +529,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             if ctx.arguments() and len(ctx.arguments())>1:
                 raise SemanticError("Error semantico, no se puede doblar argumentos")
             nombreClase = ctx.getChild(1).getChild(0).symbol.text
-            self.classDeclarationName = nombreClase
+            self.classDeclarationName.insert(nombreClase)
             return self.instanciarUnaClase(ctx, nombreClase)
         # En caso de que sean argumentos puede que haya algo como funcion().otrafuncion().otrafuncion2() o algo como funcion().identificador o identificadores
         else:                    
@@ -527,6 +537,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             funcionIdentifier = self.visit(ctx.getChild(0))
             # En caso de que sea funcion
             if isinstance(funcionIdentifier, Funcion):
+                if (funcionIdentifier, Metodo):
+                    self.classDeclarationName.insert(funcionIdentifier.nombreSimbolo.split(".")[0])
                 newTablaSimbolos = HashMap()
                 mapa = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.map
                 newTablaSimbolos.replaceMap(mapa)
@@ -563,6 +575,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                     for name in names:
                         value:Simbolo = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.get(name)
                         self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(value.nombreSimbolo, value)
+                if (funcionIdentifier, Metodo):
+                    self.classDeclarationName.remove_first()
                 funcionIdentifier = retorno
             # En caso de que sea algo como funcion().algo o de que sea variable.algo entonces se hace un for para recorrer lo que no es el primary ni el primer set de argumentos
             if len(ctx.arguments())>1 or ctx.IDENTIFIER():
@@ -651,10 +665,10 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # En este caso puede ser una expresion, o super.IDENTIFIER entonces este se tiene que encargar del identifier
         if not ctx.expression() and ctx.getChildCount()>1:
             # Es un super, hay que chequear que se esta inicializando o se esta trabajando dentro de una clase
-            if (self.classDeclarationName!= None or (self.insideVariable!=None and isinstance(self.insideVariable, DefinidoPorUsuario))) and self.visit(ctx.getChild(0)) == "super":
+            if (self.classDeclarationName.first()!= None or (self.insideVariable!=None and isinstance(self.insideVariable, DefinidoPorUsuario))) and self.visit(ctx.getChild(0)) == "super":
                 # Ejecutar la funcion del super
                 # Buscar la clase que se esta inicializando
-                claseInicializando:DefinidoPorUsuario = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(self.classDeclarationName)
+                claseInicializando:DefinidoPorUsuario = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(self.classDeclarationName.first())
                 retorno = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{claseInicializando.inheritance}.{ctx.getChild(2)}')
                 if retorno == None:
                     raise SemanticError(f"La super clase \"{ctx.getChild(2)}\" invocada no existe")
@@ -696,12 +710,12 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         nombreFuncion = ctx.IDENTIFIER().symbol.text
         funcion = None
         # En caso de que no se este declarando una clase
-        if (self.classDeclarationName==None):
+        if (self.classDeclarationName.first()==None):
             self.currentFuncion = nombreFuncion
             funcion = Funcion(nombreFuncion, TipoFuncion(), self.stackAmbitos.first())
         # Metodos de una clase
         else:
-            nombreFuncion = self.classDeclarationName+"."+nombreFuncion
+            nombreFuncion = self.classDeclarationName.first()+"."+nombreFuncion
             # en este caso basicamente solo hay que obtener los fields de la clase
             funcion = Metodo(nombreSimbolo=nombreFuncion, tipo=TipoFuncion(), ambito=self.stackAmbitos.first())
         # Si la funcion/metodo tiene parametros
