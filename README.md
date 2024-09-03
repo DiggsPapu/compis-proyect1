@@ -1,11 +1,11 @@
 # Proyecto 1 - Construcción de Compildores
 ## Índice
-- [Descripción]()
-- [Temas vistos]()
-- [Organización de archivos]()
-- [Compilación]()
-- [Informe]()
-- [Autores]()
+- [Descripción](https://github.com/DiggsPapu/compis-proyect1?tab=readme-ov-file#descripci%C3%B3n)
+- [Temas vistos](https://github.com/DiggsPapu/compis-proyect1?tab=readme-ov-file#temas-vistos)
+- [Organización de archivos](https://github.com/DiggsPapu/compis-proyect1?tab=readme-ov-file#organizaci%C3%B3n-de-archivos)
+- [Compilación](https://github.com/DiggsPapu/compis-proyect1?tab=readme-ov-file#compilaci%C3%B3n)
+- [Informe](https://github.com/DiggsPapu/compis-proyect1?tab=readme-ov-file#informe)
+- [Autores](https://github.com/DiggsPapu/compis-proyect1?tab=readme-ov-file#autores)
   
 ## Descripción
 Para el proyecto se requiere la implementación de un compilador para el legunaje de programación _CompiScript_, donde el objetivo principal es desarrollosar un analizador semántico que verifique y valide las reglas semánticas del lenguaje, incluyendo el manejo de tipos, control de flujo y la resolución ded nombres dentro de diferentes ámbitos.
