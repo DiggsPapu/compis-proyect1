@@ -92,7 +92,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 symbol:Simbolo
                 symbol = ambito.tablaDeSimbolos.get(key)
                 print(f'''
-                  nombre simbolo: {symbol.nombreSimbolo}    ambito del simbolo: {symbol.ambito}     tipo del simbolo: {symbol.tipo}
+                  nombre simbolo: {symbol.nombreSimbolo}    ambito del simbolo: {symbol.ambito}     tipo del simbolo: {symbol.tipo}     valor del símbolo:{symbol.tipo.valor}
                   ''')
     
     # Visit a parse tree produced by CompiScriptLanguageParser#program.
@@ -218,7 +218,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         if (ctx.expression()):
             return self.visit(ctx.expression())
         # Un return solo retorna un nulo
-        return Nil(valor=None)
+        return Nil(valor='nil')
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#whileStmt.
@@ -272,7 +272,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         else:
             pass
         # En caso de que no haya nada retorna un Nil
-        return Nil(valor=None) if lastDeclaration == None else lastDeclaration
+        return Nil(valor='nil') if lastDeclaration == None else lastDeclaration
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#expression.
@@ -335,9 +335,11 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                         variableTemp = var
                         break
             if variableTemp == 'and' or variableTemp == 'or':
-                pass
+                variable.valor = f'{variable.valor}{variableTemp}'
             elif not isinstance(variableTemp, Booleano) or not isinstance(variable, Booleano):
                 raise SemanticError(f'Error semantico, las comparaciones no generan valores booleanos para operar logicamente')
+            else:
+                variable.valor = f'({variable.valor}{variableTemp.valor})'
         return variable
 
 
@@ -361,8 +363,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 variableTemp = [variableTemp]
             for var in variableTemp:
                 # Es una variable
-                if isinstance(var, Variable) or isinstance(var, Parametro) or isinstance(var, Campo):
-                    var = var.tipo
+                if isinstance(var, Variable) or isinstance(var, Parametro) or isinstance(var, Campo): var = var.tipo
                 # Es operacion
                 if isinstance(var, TerminalNodeImpl) or var=='>' or var=='<' or var=='>=' or var=='<=' or var=='==' or var=='!=':
                     acceptance = True
@@ -370,11 +371,11 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 # Siempre devolvera o generar un booleano al ser comparacion, tienen que ser del mismo tipo
                 elif (type(var)==type(variable)) and (currentOperation=='>' or currentOperation=='<' or currentOperation=='>=' or currentOperation=='<='):
                     acceptance = True
-                    variable = Booleano()
+                    variable = Booleano(valor=f'({variable.valor}{currentOperation}{var.valor})')
                 # Puede comparar cualquier tipo para ver si son iguales o no
                 elif currentOperation=='!=' or currentOperation == '==':
                     acceptance = True
-                    variable = Booleano()
+                    variable = Booleano(valor=f'({variable.valor}{currentOperation}{var.valor})')
                 elif currentOperation == '' and variable == None:
                     acceptance = True
                     variable = var
@@ -421,20 +422,16 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             # Si es suma y es cadena o numero, casteo implicito en caso de que sea string + numero
             elif (isinstance(variable, Numero) or isinstance(variable, Cadena)) and (isinstance(variableTemp, Numero) or isinstance(variableTemp, Cadena)) and currentOperation=='+':
                 # Se asigna el valor de numero o cadena
-                if isinstance(variable, Cadena) or isinstance(variableTemp, Cadena): 
-                    variable = Cadena()
-                else:
-                    variable = Numero()
+                if isinstance(variable, Cadena) or isinstance(variableTemp, Cadena): variable = Cadena(valor=f'{variable.valor}+{variableTemp.valor}')
+                else: variable = Numero(valor=f'({variable.valor}+{variableTemp.valor})')
             # Si es resta, division, multiplicacion o modulo es numero
             elif  isinstance(variable, Numero) and isinstance(variableTemp, Numero) and (currentOperation=='-' or currentOperation=='/' or currentOperation=='*' or currentOperation=='%'):
-                variable = Numero()
+                variable = Numero(valor=f'({variable.valor}{currentOperation}{variableTemp.valor})')
             elif currentOperation == '' and variable == None:
                 # Es un tipo
-                if isinstance(variableTemp, Tipo):
-                    variable = variableTemp
+                if isinstance(variableTemp, Tipo):variable = variableTemp
                 # Es un simbolo
-                elif isinstance(variableTemp, Simbolo):
-                    variable = variableTemp.tipo
+                elif isinstance(variableTemp, Simbolo):variable = variableTemp.tipo
             else:
                 raise SemanticError(f'Error semantico, operacion aritmetica invalida (suma, resta, multiplicacion, division), tipo invalido')
         # Retorna el ultimo valor que obtiene la variable luego de operar
@@ -456,10 +453,10 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 elif not operation == '-' and (isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='!'):operation = '!'
                 elif isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='-' or isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='!': raise SemanticError(f'Error semantico, no se puede negar un booleano con \'-\' o negar un número con \'!\'')
                 # Manejo de los tipos
-                elif variable == None and isinstance(variableTemp, Numero) and operation == '-':variable = Numero() 
-                elif variable == None and isinstance(variableTemp, Booleano) and operation == '!':variable = Booleano()
-                elif isinstance(variable, Numero) and isinstance(variableTemp, Numero) and operation == '-':variable = Numero() 
-                elif isinstance(variable, Booleano) and isinstance(variableTemp, Booleano) and operation == '!':variable = Booleano()
+                elif variable == None and isinstance(variableTemp, Numero) and operation == '-':variable = Numero(valor=f'(-{variableTemp.valor})') 
+                elif variable == None and isinstance(variableTemp, Booleano) and operation == '!':variable = Booleano(valor=f'(!{variableTemp.valor})') 
+                elif isinstance(variable, Numero) and isinstance(variableTemp, Numero) and operation == '-':variable = Numero(valor=f'(-{variableTemp.valor})')  
+                elif isinstance(variable, Booleano) and isinstance(variableTemp, Booleano) and operation == '!':variable = Booleano(valor=f'(!{variableTemp.valor})') 
                 else: raise  SemanticError(f'Error semantico, no se puede negar un no booleano o no se puede poner en negativo un no numero')
             # Retornar el tipo de la operacion
             return variable
@@ -602,7 +599,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                     elif isinstance(lastVariableValue, Variable) or isinstance(lastVariableValue, Campo) or isinstance(lastVariableValue, Parametro):
                         funcionIdentifier = lastVariableValue
                     index+=1
-            return funcionIdentifier if funcionIdentifier!=None else Nil()
+            return funcionIdentifier if funcionIdentifier!=None else Nil(valor="nil")
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#primary.
@@ -632,16 +629,15 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             return tablaDeSimbolosActual.get(id)
         # Tipo numero
         elif ctx.NUMBER():
-            return Numero()
+            return Numero(valor=ctx.getText())
         # Tipo string
         elif ctx.STRING():
-            return Cadena()
+            return Cadena(valor=ctx.getText())
         # Tipo booleano
         elif ctx.getText() == "false" or ctx.getText() == "true":
-            return Booleano()
+            return Booleano(valor=ctx.getText())
         # Tipo booleano
-        elif ctx.getText() == "nil":
-            return Nil()
+        elif ctx.getText() == "nil": return Nil(valor='nil')
         # Expresion a resolver
         elif ctx.expression():
             return self.visit(ctx.expression())

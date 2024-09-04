@@ -34,4 +34,4 @@ variable2>2 and false;
 (-variable2*1+-variable)>=(50+2*8) and ("raul albiol"!=string);
 var variablenula
 
-!!!!!!!!!!!!!(1>2);
+var variableprueba = !!!!!!!!!!!!!(1>2);
