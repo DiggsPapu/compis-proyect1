@@ -78,7 +78,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             lastAmbito = self.stackAmbitos.remove_first()
             for nombreAtributo in atributos:
                 atributo = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.get(nombreAtributo)
-                self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.put(nombreAtributo, atributo)
+                self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(nombreAtributo, atributo)
         if self.variableEnDefinicion.first()=="return": self.variableEnDefinicion.remove_first()
         self.classDeclarationName.remove_first()
         self.insideVariable = None
@@ -531,7 +531,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 if isinstance(funcionIdentifier, Metodo):
                     self.classDeclarationName.remove_first()
                 self.insideFuncion.remove_first()
-                funcionIdentifier = funcionIdentifier.variableRetorno
+                if len(funcionIdentifier.variableRetorno)>1: funcionIdentifier = funcionIdentifier.variableRetorno
+                else: funcionIdentifier = funcionIdentifier.variableRetorno[0]
             # En caso de que sea algo como funcion().algo o de que sea variable.algo entonces se hace un for para recorrer lo que no es el primary ni el primer set de argumentos
             if len(ctx.arguments())>1 or ctx.IDENTIFIER():
                 # vamos a obtener el valor, puede ser un atributo de la clase, o puede ser un metodo
