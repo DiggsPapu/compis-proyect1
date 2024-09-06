@@ -28,7 +28,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         self.stackAmbitos = Stack([0])
         self.classDeclarationName = Stack([])
         self.insideFuncion = Stack([])
-        self.insideVariable = None
+        self.insideVariable = Stack([])
         self.variableEnDefinicion = Stack([])
         
     def crearUnNuevoAmbito(self):
@@ -81,7 +81,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(nombreAtributo, atributo)
         if self.variableEnDefinicion.first()=="return": self.variableEnDefinicion.remove_first()
         self.classDeclarationName.remove_first()
-        self.insideVariable = None
+        self.insideVariable.remove_first()
         return self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(nombreClase)
         
     def imprimirTablaDeSimbolos(self):
@@ -254,15 +254,15 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # Sale del ambito creado, en caso de una funcion se crean dos ambitos, el externo con la funcion y el interno que es el del bloque
         lastAmbito = self.stackAmbitos.remove_first()
         # Probablemente se este llamando algun metodo
-        if self.insideVariable!=None:
+        if self.insideVariable.first()!=None:
             names = []
-            if isinstance(self.insideVariable, Simbolo):
+            if isinstance(self.insideVariable.first(), Simbolo):
                 names = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.search(
-                    r'^' + re.escape(self.insideVariable.nombreSimbolo) + r'\..*'
+                    r'^' + re.escape(self.insideVariable.first().nombreSimbolo) + r'\..*'
                 )
-            elif isinstance(self.insideVariable, str):
+            elif isinstance(self.insideVariable.first(), str):
                 names = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.search(
-                    r'^' + re.escape(self.insideVariable) + r'\..*'
+                    r'^' + re.escape(self.insideVariable.first()) + r'\..*'
                 )                    
             # Copiar los valores definidos en la variable al ambito actual
             for name in names:
@@ -306,12 +306,12 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             # Se almacena el campo en la tabla de simbolos
             self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(newCampo.nombreSimbolo, newCampo)
         # Re asignacion de una variable dentro de el contexto de un metodo
-        elif self.insideVariable!= None and ctx.call() and self.visit(ctx.call())=="this":
+        elif self.insideVariable.first()!= None and ctx.call() and self.visit(ctx.call())=="this":
             variableName = self.visit(ctx.IDENTIFIER())
             variableValue = self.visit(ctx.expression())
             if isinstance(variableValue, Simbolo):
                 variableValue = variableValue.tipo
-            self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(f'{self.insideVariable.nombreSimbolo}.{variableName}', Campo(nombreSimbolo=f'{self.insideVariable.nombreSimbolo}.{variableName}', tipo=variableValue, ambito=self.stackAmbitos.first()))
+            self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(f'{self.insideVariable.first().nombreSimbolo}.{variableName}', Campo(nombreSimbolo=f'{self.insideVariable.first().nombreSimbolo}.{variableName}', tipo=variableValue, ambito=self.stackAmbitos.first()))
         elif ctx.call():
             pass
         # Si no tiene un call y no es logic entonces solo es una reasignacion de variables
@@ -519,7 +519,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 # Si es un metodo se deben de copiar todos los atributos del metodo por si se modificaron o se crearon
                 lastAmbito = self.stackAmbitos.remove_first()
                 if isinstance(funcionIdentifier, Metodo):
-                    insV = self.variableEnDefinicion.first() if self.variableEnDefinicion.first()!=None else self.insideVariable
+                    insV = self.variableEnDefinicion.first() if self.variableEnDefinicion.first()!=None else self.insideVariable.first()
                     if isinstance(insV, Simbolo):
                         insV = insV.nombreSimbolo
                     names = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.search(
@@ -541,14 +541,14 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 lastVariableValue = None 
                 index = 1
                 if funcionIdentifier!="this":
-                    self.insideVariable = funcionIdentifier
+                    self.insideVariable.first().funcionIdentifier
                 while index < ctx.getChildCount():
                     child = ctx.getChild(index)
                     lastVariableValue = self.visit(child)
                     if isinstance(lastVariableValue, str) and not lastVariableValue == ".":
                         # Si retorna this chequear que tiene un . la definicion
                         if funcionIdentifier == "this":
-                            lastVariableValue = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{self.insideVariable.nombreSimbolo}.{lastVariableValue}')
+                            lastVariableValue = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{self.insideVariable.first().nombreSimbolo}.{lastVariableValue}')
                             if lastVariableValue==None:
                                 raise SemanticError(f"No hay propiedad o metodo {self.visit(child)}")
                         elif isinstance(funcionIdentifier, Nil):
@@ -601,7 +601,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                         lastAmbito = self.stackAmbitos.remove_first()
                         # Copiar todos los modificados
                         names = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.search(
-                            r'^' + re.escape(self.insideVariable.nombreSimbolo) + r'\..*'
+                            r'^' + re.escape(self.insideVariable.first().nombreSimbolo) + r'\..*'
                         )
                         for name in names:
                             value:Simbolo = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.get(name)
@@ -621,7 +621,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # En este caso puede ser una expresion, o super.IDENTIFIER entonces este se tiene que encargar del identifier
         if not ctx.expression() and ctx.getChildCount()>1:
             # Es un super, hay que chequear que se esta inicializando o se esta trabajando dentro de una clase
-            if (self.classDeclarationName.first()!= None or (self.insideVariable!=None and isinstance(self.insideVariable, DefinidoPorUsuario))) and self.visit(ctx.getChild(0)) == "super":
+            if (self.classDeclarationName.first()!= None or (self.insideVariable.first()!=None and isinstance(self.insideVariable.first(), DefinidoPorUsuario))) and self.visit(ctx.getChild(0)) == "super":
                 # Ejecutar la funcion del super
                 # Buscar la clase que se esta inicializando
                 claseInicializando:DefinidoPorUsuario = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(self.classDeclarationName.first())
