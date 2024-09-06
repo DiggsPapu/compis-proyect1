@@ -27,6 +27,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         self.TablaDeAmbitos.put(0, Ambito(0, HashMap()))
         self.stackAmbitos = Stack([0])
         self.classDeclarationName = Stack([])
+        self.insideFuncion = Stack([])
         self.insideVariable = None
         self.variableEnDefinicion = Stack([])
         
@@ -216,7 +217,12 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     # Visit a parse tree produced by CompiScriptLanguageParser#returnStmt.
     def visitReturnStmt(self, ctx:CompiScriptLanguageParser.ReturnStmtContext):
         if (ctx.expression()):
-            return self.visit(ctx.expression())
+            retorno = self.visit(ctx.expression())
+            if self.insideFuncion.first()!=None:
+                # Aniadir el retorno del return de la funcion para ese contexto
+                if isinstance(retorno, list): self.TablaDeAmbitos.get(self.insideFuncion.first()).variableRetorno.extend(retorno)
+                else: self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(self.insideFuncion.first()).variableRetorno.append(retorno)
+            return retorno
         # Un return solo retorna un nulo
         return Nil(valor='nil')
 
@@ -488,6 +494,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             funcionIdentifier = self.visit(ctx.getChild(0))
             # En caso de que sea funcion
             if isinstance(funcionIdentifier, Funcion):
+                # Ingreso a una funcion, aniadirla
+                self.insideFuncion.insert(funcionIdentifier.nombreSimbolo)
                 if isinstance(funcionIdentifier, Metodo):
                     self.classDeclarationName.insert(funcionIdentifier.nombreSimbolo.split(".")[0])
                 self.crearUnNuevoAmbito()
@@ -506,7 +514,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                     self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(parametro, Parametro(parametro, tempP, self.TablaDeAmbitos.size()+1, funcionPertenece=funcionIdentifier.nombreSimbolo))
                     index+=1
                 # Visitar el contexto del ambito y generar el retorno en caso tenga
-                retorno = self.visit(funcionIdentifier.contexto)
+                self.visit(funcionIdentifier.contexto)
                 # Si es un metodo se deben de copiar todos los atributos del metodo por si se modificaron o se crearon
                 lastAmbito = self.stackAmbitos.remove_first()
                 if isinstance(funcionIdentifier, Metodo):
@@ -521,7 +529,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                         self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(value.nombreSimbolo, value)
                 if isinstance(funcionIdentifier, Metodo):
                     self.classDeclarationName.remove_first()
-                funcionIdentifier = retorno
+                self.insideFuncion.remove_first()
+                funcionIdentifier = funcionIdentifier.variableRetorno
             # En caso de que sea algo como funcion().algo o de que sea variable.algo entonces se hace un for para recorrer lo que no es el primary ni el primer set de argumentos
             if len(ctx.arguments())>1 or ctx.IDENTIFIER():
                 # vamos a obtener el valor, puede ser un atributo de la clase, o puede ser un metodo

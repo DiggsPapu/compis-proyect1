@@ -7,12 +7,11 @@ class Animal{
     }
 }
 fun funcion1(param, param2){
-    if (param<param2){
-        return true;
-    }
     if (param>param2){
         return 2;
     }
-    return new Animal("hola");
+    if (param<param2){
+        return true;
+    }
 }
 var variable = funcion1(2, 1)*5;
