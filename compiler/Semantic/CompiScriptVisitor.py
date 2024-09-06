@@ -75,10 +75,10 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 atributos = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.search(
                     r'^' + re.escape(self.variableEnDefinicion.first()) + r'\..*'
                 )
-            self.stackAmbitos.remove_first()
+            lastAmbito = self.stackAmbitos.remove_first()
             for nombreAtributo in atributos:
-                atributo = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(nombreAtributo)
-                self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(nombreAtributo, atributo)
+                atributo = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.get(nombreAtributo)
+                self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.put(nombreAtributo, atributo)
         if self.variableEnDefinicion.first()=="return": self.variableEnDefinicion.remove_first()
         self.classDeclarationName.remove_first()
         self.insideVariable = None
