@@ -63,8 +63,9 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 parametro = metodoInit.parametros[index]
                 tempP = self.visit(argument)
                 if isinstance(tempP, Simbolo):
-                    tempP = tempP.tipo
-                self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(parametro, Parametro(parametro, tempP, self.TablaDeAmbitos.size()+1, funcionPertenece=nombreClase+".init"))
+                    self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(parametro, Parametro(tempP.nombreSimbolo, tempP.tipo, self.TablaDeAmbitos.size()+1, funcionPertenece=nombreClase+".init"))
+                else:
+                    self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(parametro, Parametro(parametro, tempP, self.TablaDeAmbitos.size()+1, funcionPertenece=nombreClase+".init"))
                 index+=1
             # Visitar el contexto del ambito
             self.visit(metodoInit.contexto)
@@ -93,9 +94,14 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             for key in keys:
                 symbol:Simbolo
                 symbol = ambito.tablaDeSimbolos.get(key)
-                print(f'''
-                  nombre simbolo: {symbol.nombreSimbolo}    ambito del simbolo: {symbol.ambito}     tipo del simbolo: {symbol.tipo}     valor del símbolo:{symbol.tipo.valor}
-                  ''')
+                if isinstance(symbol.tipo, list):
+                    print(f'''
+                    nombre simbolo: {symbol.nombreSimbolo}    ambito del simbolo: {symbol.ambito}     tipo del simbolo: {symbol.tipo}     
+                    ''')
+                else:
+                    print(f'''
+                    nombre simbolo: {symbol.nombreSimbolo}    ambito del simbolo: {symbol.ambito}     tipo del simbolo: {symbol.tipo}     valor del símbolo:{symbol.tipo.valor}
+                    ''')
     
     # Visit a parse tree produced by CompiScriptLanguageParser#program.
     def visitProgram(self, ctx:CompiScriptLanguageParser.ProgramContext):
@@ -156,7 +162,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # Obtener el nombre del simbolo
         id = ctx.IDENTIFIER().symbol.text
         # Setear el tipo de la variable a Nil inicialmente
-        variableTipo = Nil()
+        variableTipo = Nil(valor="nil")
         # La variable en definicion actual es esa, se setea asi porque puede que hayan mas variables en definicion dentro de esta como en clases
         self.variableEnDefinicion.insert(id)
         # Si ya hay una variable definida entonces se lanza un error de redeclaracion de variable
@@ -165,6 +171,9 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         if ctx.expression():
             # Obtener tipo
             variableTipo = self.visit(ctx.expression())
+            if isinstance(variableTipo, list):
+                if len(variableTipo)==1:
+                    variableTipo = variableTipo[0]
             if isinstance(variableTipo, Simbolo):
                 variableTipo = variableTipo.tipo
         self.variableEnDefinicion.remove_first()
@@ -221,7 +230,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             retorno = self.visit(ctx.expression())
             if self.insideFuncion.first()!=None:
                 # Aniadir el retorno del return de la funcion para ese contexto
-                if isinstance(retorno, list): self.TablaDeAmbitos.get(self.insideFuncion.first()).variableRetorno.extend(retorno)
+                if isinstance(retorno, list): self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(self.insideFuncion.first()).variableRetorno.extend(retorno)
                 else: self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(self.insideFuncion.first()).variableRetorno.append(retorno)
             return retorno
         # Un return solo retorna un nulo
@@ -267,7 +276,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             # Copiar los valores definidos en la variable al ambito actual
             for name in names:
                 value:Simbolo = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.get(name)
-                self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(value.nombreSimbolo, value)
+                self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(name, value)
         elif self.variableEnDefinicion.first()!=None:
             # Copiar los valores definidos en la variable al ambito actual
             names = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.search(
@@ -275,7 +284,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             )
             for name in names:
                 value:Simbolo = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.get(name)
-                self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(value.nombreSimbolo, value)
+                self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(name, value)
         else:
             pass
         # En caso de que no haya nada retorna un Nil
@@ -297,6 +306,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             # Ocurre la asignacion, se obtiene el parametro al que se asigna y su tipo
             retorno = self.visit(ctx.expression())
             if isinstance(retorno, Parametro) or isinstance(retorno, Variable) or isinstance(retorno, Campo):
+                if isinstance(retorno.tipo, DefinidoPorUsuario):
+                    newCampo.nombreSimbolo = retorno.nombreSimbolo
                 newCampo.definirInicializador(retorno.tipo)
                 newCampo.redefinirTipo(retorno.tipo)
             elif isinstance(retorno, Booleano) or isinstance(retorno, Numero) or isinstance(retorno, Cadena) or isinstance(retorno, Nil) or isinstance(retorno, DefinidoPorUsuario):
@@ -304,7 +315,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 newCampo.redefinirTipo(newCampo.inicializador)
             
             # Se almacena el campo en la tabla de simbolos
-            self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(newCampo.nombreSimbolo, newCampo)
+            self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(self.variableEnDefinicion.first()+"."+identificadorCampo, newCampo)
         # Re asignacion de una variable dentro de el contexto de un metodo
         elif self.insideVariable.first()!= None and ctx.call() and self.visit(ctx.call())=="this":
             variableName = self.visit(ctx.IDENTIFIER())
@@ -495,6 +506,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             funcionIdentifier = self.visit(ctx.getChild(0))
             # En caso de que sea funcion
             if isinstance(funcionIdentifier, Funcion):
+                funcionIdentifier.variableRetorno = []
                 # Ingreso a una funcion, aniadirla
                 self.insideFuncion.insert(funcionIdentifier.nombreSimbolo)
                 if isinstance(funcionIdentifier, Metodo):
@@ -540,11 +552,12 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 # Los casos son: .metodo(), .atributo, no puede haber .funcion() porque tiene que ser si o si una funcion dado que se retorna algo, y no puede ser variable porque se obtiene algo por lo que es un atributo
                 lastVariableValue = None 
                 index = 1
+                # En caso de que no se este llamando una propiedad
                 if funcionIdentifier!="this":
-                    self.insideVariable.first().funcionIdentifier
+                    self.insideVariable.insert(funcionIdentifier)
                 while index < ctx.getChildCount():
                     child = ctx.getChild(index)
-                    lastVariableValue = self.visit(child)
+                    lastVariableValue = self.visit(child)                                 
                     if isinstance(lastVariableValue, str) and not lastVariableValue == ".":
                         # Si retorna this chequear que tiene un . la definicion
                         if funcionIdentifier == "this":
@@ -552,12 +565,21 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                             if lastVariableValue==None:
                                 raise SemanticError(f"No hay propiedad o metodo {self.visit(child)}")
                         elif isinstance(funcionIdentifier, Nil):
-                            pass
+                            pass                            
                         # Buscar si existe el coso .variable
-                        elif isinstance(funcionIdentifier.tipo, DefinidoPorUsuario):
+                        elif isinstance(funcionIdentifier, list) or isinstance(funcionIdentifier.tipo, DefinidoPorUsuario):
+                            # Recorrer la lista y determinar cual es un tipo valido regresado en caso de que no haya entonces se mantendra como None y lanzara el error
+                            if isinstance(funcionIdentifier, list):
+                                for posV in funcionIdentifier:
+                                    if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{posV.tipo.nombreTipo}.{lastVariableValue}')!=None:
+                                        funcionIdentifier = posV
+                                        break                            
                             lastVariableValue = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{funcionIdentifier.tipo.nombreTipo}.{lastVariableValue}') if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{funcionIdentifier.tipo.nombreTipo}.{lastVariableValue}')!=None else self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{funcionIdentifier.nombreSimbolo}.{lastVariableValue}')
                             if lastVariableValue == None:
                                     raise SemanticError(f"Error Semantico, no existe el atributo o metodo {lastVariableValue}")
+                            if index>2 and (isinstance(funcionIdentifier, Campo) or isinstance(funcionIdentifier, Variable)):
+                                self.insideVariable.remove_first()
+                                self.insideVariable.insert(funcionIdentifier)
                         pass
                         
                     # Si el token es un punto se ignora
@@ -565,6 +587,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                         pass
                     # Si es un metodo se ejecuta el metodo
                     elif isinstance(lastVariableValue, Metodo):
+                        lastVariableValue.variableRetorno = []
                         self.insideFuncion.insert(lastVariableValue.nombreSimbolo)
                         newTablaSimbolos = HashMap()
                         mapa = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.map
