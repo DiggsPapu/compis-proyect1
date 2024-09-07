@@ -548,7 +548,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                     self.classDeclarationName.remove_first()
                 self.insideFuncion.remove_first()
                 if len(funcionIdentifier.variableRetorno)>1: funcionIdentifier = funcionIdentifier.variableRetorno
-                else: funcionIdentifier = funcionIdentifier.variableRetorno[0]
+                elif len(funcionIdentifier.variableRetorno)==1: funcionIdentifier = funcionIdentifier.variableRetorno[0]
+                else: funcionIdentifier = Nil(valor='nil')
             # En caso de que sea algo como funcion().algo o de que sea variable.algo entonces se hace un for para recorrer lo que no es el primary ni el primer set de argumentos
             if len(ctx.arguments())>1 or ctx.IDENTIFIER():
                 # vamos a obtener el valor, puede ser un atributo de la clase, o puede ser un metodo
