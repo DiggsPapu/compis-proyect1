@@ -506,6 +506,10 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             funcionIdentifier = self.visit(ctx.getChild(0))
             # En caso de que sea funcion
             if isinstance(funcionIdentifier, Funcion):
+                # Es recursiva
+                if self.insideFuncion.first() == funcionIdentifier.nombreSimbolo:
+                    # Retornar los casos
+                    return funcionIdentifier.variableRetorno
                 funcionIdentifier.variableRetorno = []
                 # Ingreso a una funcion, aniadirla
                 self.insideFuncion.insert(funcionIdentifier.nombreSimbolo)
