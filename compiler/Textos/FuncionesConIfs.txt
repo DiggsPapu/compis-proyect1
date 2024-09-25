@@ -1,0 +1,20 @@
+class Animal{
+    init(especie){
+        this.especie = especie;
+    }
+    getEspecie(){
+        return this.especie;
+    }
+}
+fun funcion1(param, param2){
+    if (param<param2){
+        return true;
+    }
+    else {
+        if (param>param2){
+            return 2;
+        }
+    }
+    return "hey";
+}
+var variable = funcion1(2, 1)*5;

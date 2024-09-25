@@ -17,9 +17,9 @@ def serializedATN():
         1,1,1,1,1,1,1,1,3,1,59,8,1,1,2,1,2,1,2,1,2,3,2,65,8,2,1,2,1,2,5,
         2,69,8,2,10,2,12,2,72,9,2,1,2,1,2,1,3,1,3,1,3,1,4,1,4,1,4,1,4,3,
         4,83,8,4,1,4,1,4,1,5,1,5,1,5,1,5,1,5,1,5,1,5,3,5,94,8,5,1,6,1,6,
-        1,6,1,7,1,7,1,7,1,7,1,7,3,7,104,8,7,1,7,3,7,107,8,7,1,7,1,7,3,7,
-        111,8,7,1,7,1,7,1,7,1,8,1,8,1,8,1,8,1,8,1,8,1,8,3,8,123,8,8,1,9,
-        1,9,1,9,1,9,1,10,1,10,3,10,131,8,10,1,10,1,10,1,11,1,11,1,11,1,11,
+        1,6,1,7,1,7,1,7,1,7,1,7,1,7,1,7,3,7,106,8,7,1,8,1,8,1,8,1,8,1,8,
+        3,8,113,8,8,1,8,3,8,116,8,8,1,8,1,8,3,8,120,8,8,1,8,1,8,1,8,1,9,
+        1,9,1,9,1,9,1,9,1,9,1,10,1,10,1,10,1,10,1,11,1,11,3,11,137,8,11,
         1,11,1,11,1,12,1,12,5,12,143,8,12,10,12,12,12,146,9,12,1,12,1,12,
         1,13,1,13,1,13,3,13,153,8,13,1,13,1,13,1,13,1,13,3,13,159,8,13,1,
         14,1,14,1,14,5,14,164,8,14,10,14,12,14,167,9,14,1,15,1,15,1,15,5,
@@ -33,8 +33,8 @@ def serializedATN():
         0,0,23,0,2,4,6,8,10,12,14,16,18,20,22,24,26,28,30,32,34,36,38,40,
         42,44,0,4,1,0,18,19,1,0,20,25,1,0,26,30,2,0,26,26,31,31,267,0,49,
         1,0,0,0,2,58,1,0,0,0,4,60,1,0,0,0,6,75,1,0,0,0,8,78,1,0,0,0,10,93,
-        1,0,0,0,12,95,1,0,0,0,14,98,1,0,0,0,16,115,1,0,0,0,18,124,1,0,0,
-        0,20,128,1,0,0,0,22,134,1,0,0,0,24,140,1,0,0,0,26,158,1,0,0,0,28,
+        1,0,0,0,12,95,1,0,0,0,14,98,1,0,0,0,16,107,1,0,0,0,18,124,1,0,0,
+        0,20,130,1,0,0,0,22,134,1,0,0,0,24,140,1,0,0,0,26,158,1,0,0,0,28,
         160,1,0,0,0,30,168,1,0,0,0,32,176,1,0,0,0,34,187,1,0,0,0,36,190,
         1,0,0,0,38,221,1,0,0,0,40,223,1,0,0,0,42,231,1,0,0,0,44,239,1,0,
         0,0,46,48,3,2,1,0,47,46,1,0,0,0,48,51,1,0,0,0,49,47,1,0,0,0,49,50,
@@ -51,22 +51,22 @@ def serializedATN():
         94,3,18,9,0,90,94,3,20,10,0,91,94,3,22,11,0,92,94,3,24,12,0,93,86,
         1,0,0,0,93,87,1,0,0,0,93,88,1,0,0,0,93,89,1,0,0,0,93,90,1,0,0,0,
         93,91,1,0,0,0,93,92,1,0,0,0,94,11,1,0,0,0,95,96,3,26,13,0,96,97,
-        5,8,0,0,97,13,1,0,0,0,98,99,5,9,0,0,99,103,5,10,0,0,100,104,3,8,
-        4,0,101,104,3,12,6,0,102,104,5,8,0,0,103,100,1,0,0,0,103,101,1,0,
-        0,0,103,102,1,0,0,0,104,106,1,0,0,0,105,107,3,26,13,0,106,105,1,
-        0,0,0,106,107,1,0,0,0,107,108,1,0,0,0,108,110,5,8,0,0,109,111,3,
-        26,13,0,110,109,1,0,0,0,110,111,1,0,0,0,111,112,1,0,0,0,112,113,
-        5,11,0,0,113,114,3,10,5,0,114,15,1,0,0,0,115,116,5,12,0,0,116,117,
-        5,10,0,0,117,118,3,26,13,0,118,119,5,11,0,0,119,122,3,10,5,0,120,
-        121,5,13,0,0,121,123,3,10,5,0,122,120,1,0,0,0,122,123,1,0,0,0,123,
-        17,1,0,0,0,124,125,5,14,0,0,125,126,3,26,13,0,126,127,5,8,0,0,127,
-        19,1,0,0,0,128,130,5,15,0,0,129,131,3,26,13,0,130,129,1,0,0,0,130,
-        131,1,0,0,0,131,132,1,0,0,0,132,133,5,8,0,0,133,21,1,0,0,0,134,135,
-        5,16,0,0,135,136,5,10,0,0,136,137,3,26,13,0,137,138,5,11,0,0,138,
-        139,3,10,5,0,139,23,1,0,0,0,140,144,5,3,0,0,141,143,3,2,1,0,142,
-        141,1,0,0,0,143,146,1,0,0,0,144,142,1,0,0,0,144,145,1,0,0,0,145,
-        147,1,0,0,0,146,144,1,0,0,0,147,148,5,4,0,0,148,25,1,0,0,0,149,150,
-        3,36,18,0,150,151,5,17,0,0,151,153,1,0,0,0,152,149,1,0,0,0,152,153,
+        5,8,0,0,97,13,1,0,0,0,98,99,5,9,0,0,99,100,5,10,0,0,100,101,3,26,
+        13,0,101,102,5,11,0,0,102,105,3,24,12,0,103,104,5,12,0,0,104,106,
+        3,24,12,0,105,103,1,0,0,0,105,106,1,0,0,0,106,15,1,0,0,0,107,108,
+        5,13,0,0,108,112,5,10,0,0,109,113,3,8,4,0,110,113,3,12,6,0,111,113,
+        5,8,0,0,112,109,1,0,0,0,112,110,1,0,0,0,112,111,1,0,0,0,113,115,
+        1,0,0,0,114,116,3,26,13,0,115,114,1,0,0,0,115,116,1,0,0,0,116,117,
+        1,0,0,0,117,119,5,8,0,0,118,120,3,26,13,0,119,118,1,0,0,0,119,120,
+        1,0,0,0,120,121,1,0,0,0,121,122,5,11,0,0,122,123,3,24,12,0,123,17,
+        1,0,0,0,124,125,5,14,0,0,125,126,5,10,0,0,126,127,3,26,13,0,127,
+        128,5,11,0,0,128,129,3,24,12,0,129,19,1,0,0,0,130,131,5,15,0,0,131,
+        132,3,26,13,0,132,133,5,8,0,0,133,21,1,0,0,0,134,136,5,16,0,0,135,
+        137,3,26,13,0,136,135,1,0,0,0,136,137,1,0,0,0,137,138,1,0,0,0,138,
+        139,5,8,0,0,139,23,1,0,0,0,140,144,5,3,0,0,141,143,3,2,1,0,142,141,
+        1,0,0,0,143,146,1,0,0,0,144,142,1,0,0,0,144,145,1,0,0,0,145,147,
+        1,0,0,0,146,144,1,0,0,0,147,148,5,4,0,0,148,25,1,0,0,0,149,150,3,
+        36,18,0,150,151,5,17,0,0,151,153,1,0,0,0,152,149,1,0,0,0,152,153,
         1,0,0,0,153,154,1,0,0,0,154,155,5,43,0,0,155,156,5,7,0,0,156,159,
         3,26,13,0,157,159,3,28,14,0,158,152,1,0,0,0,158,157,1,0,0,0,159,
         27,1,0,0,0,160,165,3,30,15,0,161,162,7,0,0,0,162,164,3,30,15,0,163,
@@ -96,7 +96,7 @@ def serializedATN():
         1,0,0,0,236,234,1,0,0,0,236,237,1,0,0,0,237,43,1,0,0,0,238,236,1,
         0,0,0,239,244,3,26,13,0,240,241,5,40,0,0,241,243,3,26,13,0,242,240,
         1,0,0,0,243,246,1,0,0,0,244,242,1,0,0,0,244,245,1,0,0,0,245,45,1,
-        0,0,0,246,244,1,0,0,0,26,49,58,64,70,82,93,103,106,110,122,130,144,
+        0,0,0,246,244,1,0,0,0,26,49,58,64,70,82,93,105,112,115,119,136,144,
         152,158,165,173,181,187,190,195,200,202,221,226,236,244
     ]
 
@@ -111,8 +111,8 @@ class CompiScriptLanguageParser ( Parser ):
     sharedContextCache = PredictionContextCache()
 
     literalNames = [ "<INVALID>", "'class'", "'extends'", "'{'", "'}'", 
-                     "'fun'", "'var'", "'='", "';'", "'for'", "'('", "')'", 
-                     "'if'", "'else'", "'print'", "'return'", "'while'", 
+                     "'fun'", "'var'", "'='", "';'", "'if'", "'('", "')'", 
+                     "'else'", "'for'", "'while'", "'print'", "'return'", 
                      "'.'", "'and'", "'or'", "'>'", "'>='", "'<'", "'<='", 
                      "'!='", "'=='", "'-'", "'+'", "'/'", "'*'", "'%'", 
                      "'!'", "'new'", "'true'", "'false'", "'nil'", "'this'", 
@@ -138,11 +138,11 @@ class CompiScriptLanguageParser ( Parser ):
     RULE_varDecl = 4
     RULE_statement = 5
     RULE_exprStmt = 6
-    RULE_forStmt = 7
-    RULE_ifStmt = 8
-    RULE_printStmt = 9
-    RULE_returnStmt = 10
-    RULE_whileStmt = 11
+    RULE_ifStmt = 7
+    RULE_forStmt = 8
+    RULE_whileStmt = 9
+    RULE_printStmt = 10
+    RULE_returnStmt = 11
     RULE_block = 12
     RULE_expression = 13
     RULE_logic = 14
@@ -156,8 +156,8 @@ class CompiScriptLanguageParser ( Parser ):
     RULE_arguments = 22
 
     ruleNames =  [ "program", "declaration", "classDecl", "funDecl", "varDecl", 
-                   "statement", "exprStmt", "forStmt", "ifStmt", "printStmt", 
-                   "returnStmt", "whileStmt", "block", "expression", "logic", 
+                   "statement", "exprStmt", "ifStmt", "forStmt", "whileStmt", 
+                   "printStmt", "returnStmt", "block", "expression", "logic", 
                    "comparison", "term", "unary", "call", "primary", "function", 
                    "parameters", "arguments" ]
 
@@ -264,7 +264,7 @@ class CompiScriptLanguageParser ( Parser ):
             self.state = 49
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & 16490594162282) != 0):
+            while (((_la) & ~0x3f) == 0 and ((1 << _la) & 16490594166378) != 0):
                 self.state = 46
                 self.declaration()
                 self.state = 51
@@ -348,7 +348,7 @@ class CompiScriptLanguageParser ( Parser ):
                 self.state = 56
                 self.varDecl()
                 pass
-            elif token in [3, 9, 10, 12, 14, 15, 16, 26, 31, 32, 33, 34, 35, 36, 37, 38, 39, 41, 42, 43]:
+            elif token in [3, 9, 10, 13, 14, 15, 16, 26, 31, 32, 33, 34, 35, 36, 37, 38, 39, 41, 42, 43]:
                 self.enterOuterAlt(localctx, 4)
                 self.state = 57
                 self.statement()
@@ -576,12 +576,16 @@ class CompiScriptLanguageParser ( Parser ):
             return self.getTypedRuleContext(CompiScriptLanguageParser.ExprStmtContext,0)
 
 
+        def ifStmt(self):
+            return self.getTypedRuleContext(CompiScriptLanguageParser.IfStmtContext,0)
+
+
         def forStmt(self):
             return self.getTypedRuleContext(CompiScriptLanguageParser.ForStmtContext,0)
 
 
-        def ifStmt(self):
-            return self.getTypedRuleContext(CompiScriptLanguageParser.IfStmtContext,0)
+        def whileStmt(self):
+            return self.getTypedRuleContext(CompiScriptLanguageParser.WhileStmtContext,0)
 
 
         def printStmt(self):
@@ -590,10 +594,6 @@ class CompiScriptLanguageParser ( Parser ):
 
         def returnStmt(self):
             return self.getTypedRuleContext(CompiScriptLanguageParser.ReturnStmtContext,0)
-
-
-        def whileStmt(self):
-            return self.getTypedRuleContext(CompiScriptLanguageParser.WhileStmtContext,0)
 
 
         def block(self):
@@ -636,27 +636,27 @@ class CompiScriptLanguageParser ( Parser ):
             elif token in [9]:
                 self.enterOuterAlt(localctx, 2)
                 self.state = 87
-                self.forStmt()
+                self.ifStmt()
                 pass
-            elif token in [12]:
+            elif token in [13]:
                 self.enterOuterAlt(localctx, 3)
                 self.state = 88
-                self.ifStmt()
+                self.forStmt()
                 pass
             elif token in [14]:
                 self.enterOuterAlt(localctx, 4)
                 self.state = 89
-                self.printStmt()
+                self.whileStmt()
                 pass
             elif token in [15]:
                 self.enterOuterAlt(localctx, 5)
                 self.state = 90
-                self.returnStmt()
+                self.printStmt()
                 pass
             elif token in [16]:
                 self.enterOuterAlt(localctx, 6)
                 self.state = 91
-                self.whileStmt()
+                self.returnStmt()
                 pass
             elif token in [3]:
                 self.enterOuterAlt(localctx, 7)
@@ -725,6 +725,80 @@ class CompiScriptLanguageParser ( Parser ):
         return localctx
 
 
+    class IfStmtContext(ParserRuleContext):
+        __slots__ = 'parser'
+
+        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+            super().__init__(parent, invokingState)
+            self.parser = parser
+
+        def expression(self):
+            return self.getTypedRuleContext(CompiScriptLanguageParser.ExpressionContext,0)
+
+
+        def block(self, i:int=None):
+            if i is None:
+                return self.getTypedRuleContexts(CompiScriptLanguageParser.BlockContext)
+            else:
+                return self.getTypedRuleContext(CompiScriptLanguageParser.BlockContext,i)
+
+
+        def getRuleIndex(self):
+            return CompiScriptLanguageParser.RULE_ifStmt
+
+        def enterRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "enterIfStmt" ):
+                listener.enterIfStmt(self)
+
+        def exitRule(self, listener:ParseTreeListener):
+            if hasattr( listener, "exitIfStmt" ):
+                listener.exitIfStmt(self)
+
+        def accept(self, visitor:ParseTreeVisitor):
+            if hasattr( visitor, "visitIfStmt" ):
+                return visitor.visitIfStmt(self)
+            else:
+                return visitor.visitChildren(self)
+
+
+
+
+    def ifStmt(self):
+
+        localctx = CompiScriptLanguageParser.IfStmtContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 14, self.RULE_ifStmt)
+        self._la = 0 # Token type
+        try:
+            self.enterOuterAlt(localctx, 1)
+            self.state = 98
+            self.match(CompiScriptLanguageParser.T__8)
+            self.state = 99
+            self.match(CompiScriptLanguageParser.T__9)
+            self.state = 100
+            self.expression()
+            self.state = 101
+            self.match(CompiScriptLanguageParser.T__10)
+            self.state = 102
+            self.block()
+            self.state = 105
+            self._errHandler.sync(self)
+            _la = self._input.LA(1)
+            if _la==12:
+                self.state = 103
+                self.match(CompiScriptLanguageParser.T__11)
+                self.state = 104
+                self.block()
+
+
+        except RecognitionException as re:
+            localctx.exception = re
+            self._errHandler.reportError(self, re)
+            self._errHandler.recover(self, re)
+        finally:
+            self.exitRule()
+        return localctx
+
+
     class ForStmtContext(ParserRuleContext):
         __slots__ = 'parser'
 
@@ -732,8 +806,8 @@ class CompiScriptLanguageParser ( Parser ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def statement(self):
-            return self.getTypedRuleContext(CompiScriptLanguageParser.StatementContext,0)
+        def block(self):
+            return self.getTypedRuleContext(CompiScriptLanguageParser.BlockContext,0)
 
 
         def varDecl(self):
@@ -774,54 +848,54 @@ class CompiScriptLanguageParser ( Parser ):
     def forStmt(self):
 
         localctx = CompiScriptLanguageParser.ForStmtContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 14, self.RULE_forStmt)
+        self.enterRule(localctx, 16, self.RULE_forStmt)
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 98
-            self.match(CompiScriptLanguageParser.T__8)
-            self.state = 99
+            self.state = 107
+            self.match(CompiScriptLanguageParser.T__12)
+            self.state = 108
             self.match(CompiScriptLanguageParser.T__9)
-            self.state = 103
+            self.state = 112
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [6]:
-                self.state = 100
+                self.state = 109
                 self.varDecl()
                 pass
             elif token in [10, 26, 31, 32, 33, 34, 35, 36, 37, 38, 39, 41, 42, 43]:
-                self.state = 101
+                self.state = 110
                 self.exprStmt()
                 pass
             elif token in [8]:
-                self.state = 102
+                self.state = 111
                 self.match(CompiScriptLanguageParser.T__7)
                 pass
             else:
                 raise NoViableAltException(self)
 
-            self.state = 106
+            self.state = 115
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if (((_la) & ~0x3f) == 0 and ((1 << _la) & 16490594042880) != 0):
-                self.state = 105
+                self.state = 114
                 self.expression()
 
 
-            self.state = 108
+            self.state = 117
             self.match(CompiScriptLanguageParser.T__7)
-            self.state = 110
+            self.state = 119
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             if (((_la) & ~0x3f) == 0 and ((1 << _la) & 16490594042880) != 0):
-                self.state = 109
+                self.state = 118
                 self.expression()
 
 
-            self.state = 112
+            self.state = 121
             self.match(CompiScriptLanguageParser.T__10)
-            self.state = 113
-            self.statement()
+            self.state = 122
+            self.block()
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -831,7 +905,7 @@ class CompiScriptLanguageParser ( Parser ):
         return localctx
 
 
-    class IfStmtContext(ParserRuleContext):
+    class WhileStmtContext(ParserRuleContext):
         __slots__ = 'parser'
 
         def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
@@ -842,59 +916,46 @@ class CompiScriptLanguageParser ( Parser ):
             return self.getTypedRuleContext(CompiScriptLanguageParser.ExpressionContext,0)
 
 
-        def statement(self, i:int=None):
-            if i is None:
-                return self.getTypedRuleContexts(CompiScriptLanguageParser.StatementContext)
-            else:
-                return self.getTypedRuleContext(CompiScriptLanguageParser.StatementContext,i)
+        def block(self):
+            return self.getTypedRuleContext(CompiScriptLanguageParser.BlockContext,0)
 
 
         def getRuleIndex(self):
-            return CompiScriptLanguageParser.RULE_ifStmt
+            return CompiScriptLanguageParser.RULE_whileStmt
 
         def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterIfStmt" ):
-                listener.enterIfStmt(self)
+            if hasattr( listener, "enterWhileStmt" ):
+                listener.enterWhileStmt(self)
 
         def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitIfStmt" ):
-                listener.exitIfStmt(self)
+            if hasattr( listener, "exitWhileStmt" ):
+                listener.exitWhileStmt(self)
 
         def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitIfStmt" ):
-                return visitor.visitIfStmt(self)
+            if hasattr( visitor, "visitWhileStmt" ):
+                return visitor.visitWhileStmt(self)
             else:
                 return visitor.visitChildren(self)
 
 
 
 
-    def ifStmt(self):
+    def whileStmt(self):
 
-        localctx = CompiScriptLanguageParser.IfStmtContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 16, self.RULE_ifStmt)
+        localctx = CompiScriptLanguageParser.WhileStmtContext(self, self._ctx, self.state)
+        self.enterRule(localctx, 18, self.RULE_whileStmt)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 115
-            self.match(CompiScriptLanguageParser.T__11)
-            self.state = 116
+            self.state = 124
+            self.match(CompiScriptLanguageParser.T__13)
+            self.state = 125
             self.match(CompiScriptLanguageParser.T__9)
-            self.state = 117
+            self.state = 126
             self.expression()
-            self.state = 118
+            self.state = 127
             self.match(CompiScriptLanguageParser.T__10)
-            self.state = 119
-            self.statement()
-            self.state = 122
-            self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,9,self._ctx)
-            if la_ == 1:
-                self.state = 120
-                self.match(CompiScriptLanguageParser.T__12)
-                self.state = 121
-                self.statement()
-
-
+            self.state = 128
+            self.block()
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -938,14 +999,14 @@ class CompiScriptLanguageParser ( Parser ):
     def printStmt(self):
 
         localctx = CompiScriptLanguageParser.PrintStmtContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 18, self.RULE_printStmt)
+        self.enterRule(localctx, 20, self.RULE_printStmt)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 124
-            self.match(CompiScriptLanguageParser.T__13)
-            self.state = 125
+            self.state = 130
+            self.match(CompiScriptLanguageParser.T__14)
+            self.state = 131
             self.expression()
-            self.state = 126
+            self.state = 132
             self.match(CompiScriptLanguageParser.T__7)
         except RecognitionException as re:
             localctx.exception = re
@@ -990,82 +1051,22 @@ class CompiScriptLanguageParser ( Parser ):
     def returnStmt(self):
 
         localctx = CompiScriptLanguageParser.ReturnStmtContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 20, self.RULE_returnStmt)
+        self.enterRule(localctx, 22, self.RULE_returnStmt)
         self._la = 0 # Token type
-        try:
-            self.enterOuterAlt(localctx, 1)
-            self.state = 128
-            self.match(CompiScriptLanguageParser.T__14)
-            self.state = 130
-            self._errHandler.sync(self)
-            _la = self._input.LA(1)
-            if (((_la) & ~0x3f) == 0 and ((1 << _la) & 16490594042880) != 0):
-                self.state = 129
-                self.expression()
-
-
-            self.state = 132
-            self.match(CompiScriptLanguageParser.T__7)
-        except RecognitionException as re:
-            localctx.exception = re
-            self._errHandler.reportError(self, re)
-            self._errHandler.recover(self, re)
-        finally:
-            self.exitRule()
-        return localctx
-
-
-    class WhileStmtContext(ParserRuleContext):
-        __slots__ = 'parser'
-
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
-            super().__init__(parent, invokingState)
-            self.parser = parser
-
-        def expression(self):
-            return self.getTypedRuleContext(CompiScriptLanguageParser.ExpressionContext,0)
-
-
-        def statement(self):
-            return self.getTypedRuleContext(CompiScriptLanguageParser.StatementContext,0)
-
-
-        def getRuleIndex(self):
-            return CompiScriptLanguageParser.RULE_whileStmt
-
-        def enterRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "enterWhileStmt" ):
-                listener.enterWhileStmt(self)
-
-        def exitRule(self, listener:ParseTreeListener):
-            if hasattr( listener, "exitWhileStmt" ):
-                listener.exitWhileStmt(self)
-
-        def accept(self, visitor:ParseTreeVisitor):
-            if hasattr( visitor, "visitWhileStmt" ):
-                return visitor.visitWhileStmt(self)
-            else:
-                return visitor.visitChildren(self)
-
-
-
-
-    def whileStmt(self):
-
-        localctx = CompiScriptLanguageParser.WhileStmtContext(self, self._ctx, self.state)
-        self.enterRule(localctx, 22, self.RULE_whileStmt)
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 134
             self.match(CompiScriptLanguageParser.T__15)
-            self.state = 135
-            self.match(CompiScriptLanguageParser.T__9)
             self.state = 136
-            self.expression()
-            self.state = 137
-            self.match(CompiScriptLanguageParser.T__10)
+            self._errHandler.sync(self)
+            _la = self._input.LA(1)
+            if (((_la) & ~0x3f) == 0 and ((1 << _la) & 16490594042880) != 0):
+                self.state = 135
+                self.expression()
+
+
             self.state = 138
-            self.statement()
+            self.match(CompiScriptLanguageParser.T__7)
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -1121,7 +1122,7 @@ class CompiScriptLanguageParser ( Parser ):
             self.state = 144
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & 16490594162282) != 0):
+            while (((_la) & ~0x3f) == 0 and ((1 << _la) & 16490594166378) != 0):
                 self.state = 141
                 self.declaration()
                 self.state = 146

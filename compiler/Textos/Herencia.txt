@@ -1,6 +1,15 @@
 var variable1 = 3;
-class Mascota{
-    init(duenio, conCollar){
+class Animal{
+    init(especie){
+        this.especie = especie;
+    }
+    getEspecie(){
+        return this.especie;
+    }
+}
+class Mascota extends Animal{
+    init(duenio, conCollar, especie){
+        super.init(especie);
         this.duenio = duenio;
         this.conCollar = conCollar;
     }
@@ -12,15 +21,11 @@ class Mascota{
     }
 }
 class Perrito extends Mascota{
-    init(nombre, sexo, edadHumana){
-        super.init("Duenio de"+nombre, false);
+    init(nombre, sexo, edadHumana, especie){
+        super.init("Duenio de"+nombre, sexo, especie);
         this.nombre = nombre;
         this.macho = sexo;
         this.edadPerruna = (edadHumana * variable1)+4;
     }
 }
-var perrito2 = new Perrito("pedro2", false, 50);
-var collar = perrito2.tieneCollar();
-var duenio = perrito2.imprimirDuenio();
-var duenio2 = perrito2.duenio;
-var collar2 = perrito2.conCollar;
+var perrito2 = new Perrito("pedro2", false, 50, "bulldog");

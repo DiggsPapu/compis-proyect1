@@ -99,7 +99,7 @@ class Funcion(Simbolo):
         # Tendran los id's de los parametros para la ejecucion, por lo que es una lista con str's
         self.parametros = [] 
         # La variable de retorno en caso de que no tenga return retorna un Nil por ende se va a ir generando un nil default que sera actualizado en tiempo de ejecucion
-        self.variableRetorno = Nil()
+        self.variableRetorno = []
         self.contexto = None
     # Aniadir el contexto o el arbol es necesario para recorrer en tiempo de ejecucion
     def aniadirContexto(self, ctx):
@@ -113,7 +113,6 @@ class Metodo(Funcion):
         # Tendran los id's de los parametros para la ejecucion, por lo que es una lista con str's
         self.parametros = [] 
         # La variable de retorno en caso de que no tenga return retorna un Nil por ende se va a ir generando un nil default que sera actualizado en tiempo de ejecucion
-        self.variableRetorno = Nil()
         
 # Esto nos servira para funciones ya que asi podemos ingresar los parametros de una funcion
 class Parametro(Simbolo):
@@ -254,7 +253,9 @@ class Stack:
     def empty(self):
         return  len(self.items) == 0
     def first(self):
-        return  self.items[len(self.items)-1]
+        if len(self.items)>0:
+            return  self.items[len(self.items)-1]
+        return None
     def remove_first(self):
         if not self.empty():
             return self.items.pop(len(self.items)-1)

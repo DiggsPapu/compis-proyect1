@@ -26,9 +26,10 @@ class Perrito{
         return variable1+variable2;
     }
 }
+new Perrito("Raul", false, 20);
 var perrito = new Perrito("Pedro", true, 50);
 var persona = new Persona("Raul", false, 20, perrito);
 var nombrePerrito = persona.getMascota().getNombre();
 var cosa = persona.mascota.getNombre();
-var suma = persona.mascota.suma(789, 21)*persona.mascota.suma(200, 21);
+var suma = persona.mascota.suma(789, 21)*persona.mascota.suma(200, 50);
 

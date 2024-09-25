@@ -44,13 +44,18 @@ class CompiScriptLanguageVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CompiScriptLanguageParser#ifStmt.
+    def visitIfStmt(self, ctx:CompiScriptLanguageParser.IfStmtContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CompiScriptLanguageParser#forStmt.
     def visitForStmt(self, ctx:CompiScriptLanguageParser.ForStmtContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CompiScriptLanguageParser#ifStmt.
-    def visitIfStmt(self, ctx:CompiScriptLanguageParser.IfStmtContext):
+    # Visit a parse tree produced by CompiScriptLanguageParser#whileStmt.
+    def visitWhileStmt(self, ctx:CompiScriptLanguageParser.WhileStmtContext):
         return self.visitChildren(ctx)
 
 
@@ -61,11 +66,6 @@ class CompiScriptLanguageVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#returnStmt.
     def visitReturnStmt(self, ctx:CompiScriptLanguageParser.ReturnStmtContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CompiScriptLanguageParser#whileStmt.
-    def visitWhileStmt(self, ctx:CompiScriptLanguageParser.WhileStmtContext):
         return self.visitChildren(ctx)
 
 
