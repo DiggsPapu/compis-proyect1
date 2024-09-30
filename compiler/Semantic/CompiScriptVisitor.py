@@ -43,7 +43,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     def instanciarUnaClase(self, ctx, nombreClase):
         # Chequear en la tabla de tipos en el context y si no existe generar error
         if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(nombreClase) == None:
-            raise SemanticError(f"Error semantico, no existe la clase \"{nombreClase}\"")
+            raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico, no existe la clase \"{nombreClase}\"")
         # Esto solo significaria que esta siendo un temp algo como new Perrito(cos,sen,tan); por lo que se debe de crear una variable temporal que sera borrada
         if self.variableEnDefinicion.first() == None:
             self.variableEnDefinicion.insert("return")
@@ -57,7 +57,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 arguments = self.visit(ctx.arguments()[0])
             # Meter los parametros que se usan en esa inicializacion, si no son de igual length entonces raise error
             if len(arguments) != len(metodoInit.parametros):
-                raise SemanticError(f"Error Semantico, para el metodo \"{metodoInit.nombreSimbolo}\" se esperaban {len(metodoInit.parametros)} parametros, {len(arguments)} fueron recibidos")
+                raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error Semantico, para el metodo \"{metodoInit.nombreSimbolo}\" se esperaban {len(metodoInit.parametros)} parametros, {len(arguments)} fueron recibidos")
             index = 0
             for argument in arguments:
                 parametro = metodoInit.parametros[index]
@@ -116,7 +116,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         self.classDeclarationName.insert(className)
         # Verificar que el nombre de la clase sea unico
         if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(className)!=None:
-            raise SemanticError(f"Clase \"{className}\" ya ha sido declarada")
+            raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Clase \"{className}\" ya ha sido declarada")
         # Se crea en la tabla de simbolos del ambito
         self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.put(className, DefinidoPorUsuario(nombreTipo=className, valor="clase"))
         # Significa que hay un extends
@@ -141,7 +141,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                         newMethod.parametros = oldMethod.parametros
                         self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(f'{className}.{methodn[1]}', newMethod)
             else:
-                raise SemanticError(f'Error semantico, la clase heredada \"{claseExtendida}\" no existe')
+                raise SemanticError(f'Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico, la clase heredada \"{claseExtendida}\" no existe')
         # Va a visitar todas las funciones
         for child in ctx.function():
             self.visit(child)
@@ -158,7 +158,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     def visitVarDecl(self, ctx:CompiScriptLanguageParser.VarDeclContext):
         # Esta mal escrito y no se puede obtener la variable en la definicion de la variable
         if ctx.IDENTIFIER() == None:
-            raise SemanticError(f'Error semantico, declaracion de variable invalida')
+            raise SemanticError(f'Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico, declaracion de variable invalida')
         # Obtener el nombre del simbolo
         id = ctx.IDENTIFIER().symbol.text
         # Setear el tipo de la variable a Nil inicialmente
@@ -167,7 +167,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         self.variableEnDefinicion.insert(id)
         # Si ya hay una variable definida entonces se lanza un error de redeclaracion de variable
         if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.contains_key(id):
-            raise SemanticError(f"Error semantico, no se puede re declarar una variable ya creada en el ambito, \"{id}\"")
+            raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico, no se puede re declarar una variable ya creada en el ambito, \"{id}\"")
         if ctx.expression():
             # Obtener tipo
             variableTipo = self.visit(ctx.expression())
@@ -196,7 +196,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             self.visit(ctx.exprStmt())        
         # Verificar que la condición sea un booleano
         if not isinstance(self.visit(ctx.expression(0)), Booleano):
-            raise SemanticError(f"Error semántico: la condición del for no es un valor booleano.")
+            raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error semántico: la condición del for no es un valor booleano.")
         self.visit(ctx.expression(1))
         self.visit(ctx.block())
         return Nil()
@@ -213,7 +213,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             condicion = self.visit(ctx.expression(child))
             # Verificar que la condición sea un booleano
             if not isinstance(condicion, Booleano):
-                raise SemanticError(f"Error semántico: la condición del if no es un valor booleano.")
+                raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Line: {ctx.start.line}, col: {ctx.start.column}. , line: {ctx.start.line}, col: {ctx.start.column},Error semántico: la condición del if no es un valor booleano.")
             # get the returns in case of if, else if
             retornos.append(self.visit(blocks[child]))
         # Tiene un else
@@ -250,7 +250,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         condicion = self.visit(ctx.expression())
         # Verificar que la condición sea un booleano
         if not isinstance(condicion, Booleano):
-            raise SemanticError(f"Error semántico: la condición del while no es un valor booleano.")
+            raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error semántico: la condición del while no es un valor booleano.")
         # Retornar lo que sea que diga el bloque, solo hay que chequear que lo que haya dentro del statement sea un bloque
         return self.visit(ctx.block())
 
@@ -308,7 +308,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             # Crear un nuevo campo
             identificadorCampo = ctx.getChild(2).symbol.text
             if identificadorCampo == None:
-                raise SemanticError(f"Error semantico, la variable \"{identificadorCampo}\" para definir el campo de la clase no existe")
+                raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico, la variable \"{identificadorCampo}\" para definir el campo de la clase no existe")
             newCampo = Campo(nombreSimbolo=self.variableEnDefinicion.first()+"."+identificadorCampo,tipo=Nil(), ambito=self.stackAmbitos.first(), nombreVariable=self.variableEnDefinicion.first())
             # Ocurre la asignacion, se obtiene el parametro al que se asigna y su tipo
             retorno = self.visit(ctx.expression())
@@ -362,7 +362,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             if variableTemp == 'and' or variableTemp == 'or':
                 variable.valor = f'{variable.valor}{variableTemp}'
             elif not isinstance(variableTemp, Booleano) or not isinstance(variable, Booleano):
-                raise SemanticError(f'Error semantico, las comparaciones no generan valores booleanos para operar logicamente')
+                raise SemanticError(f'Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico, las comparaciones no generan valores booleanos para operar logicamente')
             else:
                 variable.valor = f'({variable.valor}{variableTemp.valor})'
         return variable
@@ -408,7 +408,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                     acceptance = True
                     pass
             if not acceptance:
-                raise SemanticError(f'Error semantico, operacion invalida no se pueden comparar diferentes tipos')
+                raise SemanticError(f'Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico, operacion invalida no se pueden comparar diferentes tipos')
         # Retorna el ultimo valor que obtiene la variable luego de operar
         return variable
 
@@ -437,7 +437,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                         variableTemp = var
                         break
                 if isinstance(variableTemp, list):
-                    raise SemanticError(f'Error semantico, operacion aritmetica invalida (suma, resta, multiplicacion, division), tipo invalido 1')
+                    raise SemanticError(f'Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico, operacion aritmetica invalida (suma, resta, multiplicacion, division), tipo invalido 1')
             # Es un simbolo
             if isinstance(variableTemp, Simbolo):
                 variableTemp = variableTemp.tipo
@@ -458,7 +458,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 # Es un simbolo
                 elif isinstance(variableTemp, Simbolo):variable = variableTemp.tipo
             else:
-                raise SemanticError(f'Error semantico, operacion aritmetica invalida (suma, resta, multiplicacion, division), tipo invalido')
+                raise SemanticError(f'Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico, operacion aritmetica invalida (suma, resta, multiplicacion, division), tipo invalido')
         # Retorna el ultimo valor que obtiene la variable luego de operar
         return variable
 
@@ -476,13 +476,13 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 # Manejo de las operaciones
                 if not operation == '!' and (isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='-'):operation = '-'
                 elif not operation == '-' and (isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='!'):operation = '!'
-                elif isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='-' or isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='!': raise SemanticError(f'Error semantico, no se puede negar un booleano con \'-\' o negar un número con \'!\'')
+                elif isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='-' or isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='!': raise SemanticError(f'Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico, no se puede negar un booleano con \'-\' o negar un número con \'!\'')
                 # Manejo de los tipos
                 elif variable == None and isinstance(variableTemp, Numero) and operation == '-':variable = Numero(valor=f'(-{variableTemp.valor})') 
                 elif variable == None and isinstance(variableTemp, Booleano) and operation == '!':variable = Booleano(valor=f'(!{variableTemp.valor})') 
                 elif isinstance(variable, Numero) and isinstance(variableTemp, Numero) and operation == '-':variable = Numero(valor=f'(-{variableTemp.valor})')  
                 elif isinstance(variable, Booleano) and isinstance(variableTemp, Booleano) and operation == '!':variable = Booleano(valor=f'(!{variableTemp.valor})') 
-                else: raise  SemanticError(f'Error semantico, no se puede negar un no booleano o no se puede poner en negativo un no numero')
+                else: raise  SemanticError(f'Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico, no se puede negar un no booleano o no se puede poner en negativo un no numero')
             # Retornar el tipo de la operacion
             return variable
 
@@ -528,7 +528,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                     arguments = self.visit(ctx.arguments()[0])
                 # Meter los parametros que se usan en esa inicializacion, si no son de igual length entonces raise error
                 if len(arguments) != len(funcionIdentifier.parametros):
-                    raise SemanticError(f"Error Semantico, para esta funcion \"{funcionIdentifier.nombreSimbolo}\" se esperaban {len(funcionIdentifier.parametros)} parametros, {len(arguments)} fueron recibidos")
+                    raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error Semantico, para esta funcion \"{funcionIdentifier.nombreSimbolo}\" se esperaban {len(funcionIdentifier.parametros)} parametros, {len(arguments)} fueron recibidos")
                 index = 0
                 for argument in arguments:
                     parametro = funcionIdentifier.parametros[index]
@@ -575,7 +575,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                         if funcionIdentifier == "this":
                             lastVariableValue = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{self.insideVariable.first().nombreSimbolo}.{lastVariableValue}')
                             if lastVariableValue==None:
-                                raise SemanticError(f"No hay propiedad o metodo {self.visit(child)}")
+                                raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. No hay propiedad o metodo {self.visit(child)}")
                         elif isinstance(funcionIdentifier, Nil):
                             pass                            
                         # Buscar si existe el coso .variable
@@ -588,7 +588,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                                         break                            
                             lastVariableValue = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{funcionIdentifier.tipo.nombreTipo}.{lastVariableValue}') if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{funcionIdentifier.tipo.nombreTipo}.{lastVariableValue}')!=None else self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{funcionIdentifier.nombreSimbolo}.{lastVariableValue}')
                             if lastVariableValue == None:
-                                    raise SemanticError(f"Error Semantico, no existe el atributo o metodo {lastVariableValue}")
+                                    raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error Semantico, no existe el atributo o metodo {lastVariableValue}")
                             if index>2 and (isinstance(funcionIdentifier, Campo) or isinstance(funcionIdentifier, Variable)):
                                 self.insideVariable.remove_first()
                                 self.insideVariable.insert(funcionIdentifier)
@@ -617,7 +617,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                             hijo = ctx.getChild(index)                            
                         # Meter los parametros que se usan en esa inicializacion, si no son de igual length entonces raise error
                         if len(arguments) != len(lastVariableValue.parametros):
-                            raise SemanticError(f"Error Semantico, se esperaban {len(lastVariableValue.parametros)} parametros, {len(arguments)} fueron recibidos")
+                            raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error Semantico, se esperaban {len(lastVariableValue.parametros)} parametros, {len(arguments)} fueron recibidos")
                         index2 = 0
                         for argument in arguments:
                             parametro = lastVariableValue.parametros[index2]
@@ -662,7 +662,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 claseInicializando:DefinidoPorUsuario = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(self.classDeclarationName.first())
                 retorno = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{claseInicializando.inheritance}.{ctx.getChild(2)}')
                 if retorno == None:
-                    raise SemanticError(f"La super clase \"{ctx.getChild(2)}\" invocada no existe")
+                    raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. La super clase \"{ctx.getChild(2)}\" invocada no existe")
                 # Retornar la funcion a ejecutar -> heredada
                 return retorno
         # Es una variable o es un super.IDENTIFIER hay que buscarlo en la tabla de simbolos
@@ -673,7 +673,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             tablaDeSimbolosActual:HashMap = ambitoActual.tablaDeSimbolos
             # Puede retornar una variable o el nombre de una funcion
             if (tablaDeSimbolosActual.get(id)== None and tablaDeTiposActual.get(id)==None):
-                raise SemanticError(f"Error semantico la variable, la clase o la funcion \"{id}\" no existe")
+                raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico la variable, la clase o la funcion \"{id}\" no existe")
             return tablaDeSimbolosActual.get(id)
         # Tipo numero
         elif ctx.NUMBER():
