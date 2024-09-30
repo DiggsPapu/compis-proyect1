@@ -204,15 +204,20 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
     # Visit a parse tree produced by CompiScriptLanguageParser#ifStmt.
     def visitIfStmt(self, ctx:CompiScriptLanguageParser.IfStmtContext):
         # Evaluar la expresión condicional
-        condicion = self.visit(ctx.expression())
-        # Verificar que la condición sea un booleano
-        if not isinstance(condicion, Booleano):
-            raise SemanticError(f"Error semántico: la condición del if no es un valor booleano.")
-        # Visitar el bloque del if y aniadir el retorno que haya
-        retornos = [self.visit(ctx.block(0))]
-        # Tiene un else y aniadir un retorno si hay
-        if (len(ctx.block())>1):
-            retornos.append(self.visit(ctx.block(1)))
+        retornos = []
+        # Check if there is one expression or multiple, if multiple it means if, else if
+        childCount = ctx.expression().getChildCount()
+        for child in range(0, childCount):
+            # Condicion del if, else if
+            condicion = self.visit(ctx.expression(child))
+            # Verificar que la condición sea un booleano
+            if not isinstance(condicion, Booleano):
+                raise SemanticError(f"Error semántico: la condición del if no es un valor booleano.")
+            # get the returns in case of if, else if
+            retornos.append(self.visit(ctx.block(child)))
+        # Tiene un else
+        if childCount>ctx.block().getChildCount():
+           retornos.append(self.visit(ctx.block(ctx.block().getChildCount()-1)))
         # Retornar los posibles retornos del if
         if len(retornos)>1 and not isinstance(retornos[0], Nil) and not isinstance(retornos[1], Nil): return retornos
         elif len(retornos)==1 and not isinstance(retornos[0], Nil): return retornos[0]

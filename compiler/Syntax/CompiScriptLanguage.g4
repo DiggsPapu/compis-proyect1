@@ -30,7 +30,7 @@ statement:
 
 exprStmt: expression ';' ;
 
-ifStmt: 'if' '(' expression ')' block ('else' block)? ;
+ifStmt: 'if' '(' expression ')' block ('else if' '(' expression ')' block)* ('else' block)? ;
 
 forStmt: 'for' '(' (varDecl | exprStmt | ';') expression? ';' expression? ')' block ;
 
