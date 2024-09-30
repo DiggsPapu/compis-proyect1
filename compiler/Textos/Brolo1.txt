@@ -131,7 +131,7 @@ fun compareValues(a, b) {
         print "At least one condition met.";
     }
 
-    if (not (a == b)) {
+    if (! (a == b)) {
         print "a is not equal to b";
     }
 }
@@ -188,47 +188,3 @@ lateAssignment();
 print addNumbers(5, 15);
 printMessage("Hello from CompiScript!");
 outerFunction();
-```
-
-## Recursive test
-This tests a recursive method:
-```
-class Ackermann {
-    fun init() {
-        // No initialization required for this class
-    }
-
-    fun ackermann(m, n) {
-        if (m == 0) {
-            return n + 1;
-        } else if (m > 0 and n == 0) {
-            return this.ackermann(m - 1, 1);
-        } else {
-            return this.ackermann(m - 1, this.ackermann(m, n - 1));
-        }
-    }
-}
-
-class AckermannTest {
-    fun init() {
-        this.ackermannObj = Ackermann();
-    }
-
-    fun runComplexTests() {
-        var result1 = this.ackermannObj.ackermann(3, 6);
-        print "Ackermann(3, 6) = " + result1;
-
-        var result2 = this.ackermannObj.ackermann(2, 10);
-        print "Ackermann(2, 10) = " + result2;
-
-        var result3 = this.ackermannObj.ackermann(3, 4);
-        print "Ackermann(3, 4) = " + result3;
-
-        var result4 = this.ackermannObj.ackermann(2, 20);
-        print "Ackermann(2, 20) = " + result4;
-    }
-}
-
-var test = AckermannTest();
-test.init();
-test.runComplexTests();

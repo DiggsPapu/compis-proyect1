@@ -348,7 +348,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                     return self.visit(child)
             else:
                 return self.visit(ctx.comparison())
-        variable = Booleano()
+        variable = Booleano(valor='')
         for child in ctx.getChildren():
             variableTemp = self.visit(child)
             # Probablemente sea producto de un if y un else, entonces hay que chequear si alguno de sus valores es booleano y si no lanzar error
@@ -359,6 +359,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                     if isinstance(var, Booleano):
                         variableTemp = var
                         break
+            if isinstance(variableTemp, Simbolo):
+                variableTemp = variableTemp.tipo
             if variableTemp == 'and' or variableTemp == 'or':
                 variable.valor = f'{variable.valor}{variableTemp}'
             elif not isinstance(variableTemp, Booleano) or not isinstance(variable, Booleano):

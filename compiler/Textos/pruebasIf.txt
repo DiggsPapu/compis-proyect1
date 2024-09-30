@@ -1,6 +1,16 @@
 if(2 > 4){
     print"esto no";
 } 
+
+if (5<4){
+    "hey";
+}
+else if ("hola">"hey"){
+
+}
+else{
+    print"Esto si";
+}
 if (5<4){
     "hey";
 }

@@ -13,7 +13,7 @@ class Tipo():
         return "tipo"
 
 class Booleano(Tipo):
-    def __init__(self, nombreTipo="booleano", valor="booleano") -> None:
+    def __init__(self, nombreTipo="booleano", valor="") -> None:
         super().__init__(nombreTipo, valor)
     
     def __str__(self) -> str:
@@ -21,14 +21,14 @@ class Booleano(Tipo):
 
 
 class Cadena(Tipo):
-    def __init__(self, nombreTipo="cadena", valor="cadena") -> None:
+    def __init__(self, nombreTipo="cadena", valor="") -> None:
         super().__init__(nombreTipo, valor)
     def __str__(self) -> str:
         return "cadena"
 
 
 class DefinidoPorUsuario(Tipo):
-    def __init__(self, nombreTipo="tipo", valor="tipo") -> None:
+    def __init__(self, nombreTipo="tipo", valor="") -> None:
         super().__init__(nombreTipo, valor)
         self.metodosCtx = HashMap()
         self.init = None
