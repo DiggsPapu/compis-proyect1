@@ -71,8 +71,8 @@ myDog.bark();
 myDog.sit();
 myDog.fetch();
 
-var globalVar1 = 20;
-print "Global Variable inside function: " + this.globalVar1;
+globalVar1 = 20;
+print "Global Variable inside function: " + globalVar1;
 print "Local Variable: " + globalVar1;
 
 fun countToTen() {

@@ -206,19 +206,21 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # Evaluar la expresión condicional
         retornos = []
         # Check if there is one expression or multiple, if multiple it means if, else if
-        childCount = ctx.expression().getChildCount()
-        for child in range(0, childCount):
+        expressions = ctx.expression()
+        blocks = ctx.block()
+        for child in range(0, len(expressions)):
             # Condicion del if, else if
             condicion = self.visit(ctx.expression(child))
             # Verificar que la condición sea un booleano
             if not isinstance(condicion, Booleano):
                 raise SemanticError(f"Error semántico: la condición del if no es un valor booleano.")
             # get the returns in case of if, else if
-            retornos.append(self.visit(ctx.block(child)))
+            retornos.append(self.visit(blocks[child]))
         # Tiene un else
-        if childCount>ctx.block().getChildCount():
-           retornos.append(self.visit(ctx.block(ctx.block().getChildCount()-1)))
+        if len(expressions)<len(blocks):
+           retornos.append(self.visit(blocks[len(blocks)-1]))
         # Retornar los posibles retornos del if
+        if len(retornos)>2: return retornos
         if len(retornos)>1 and not isinstance(retornos[0], Nil) and not isinstance(retornos[1], Nil): return retornos
         elif len(retornos)==1 and not isinstance(retornos[0], Nil): return retornos[0]
         return Nil()

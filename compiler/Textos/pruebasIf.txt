@@ -1,5 +1,9 @@
 if(2 > 4){
     print"esto no";
-} else{
+} 
+if (5<4){
+    "hey";
+}
+else{
     print"Esto si";
 }
