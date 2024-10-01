@@ -134,6 +134,51 @@ class CompiScriptLanguageListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CompiScriptLanguageParser#array.
+    def enterArray(self, ctx:CompiScriptLanguageParser.ArrayContext):
+        pass
+
+    # Exit a parse tree produced by CompiScriptLanguageParser#array.
+    def exitArray(self, ctx:CompiScriptLanguageParser.ArrayContext):
+        pass
+
+
+    # Enter a parse tree produced by CompiScriptLanguageParser#arrayCreation.
+    def enterArrayCreation(self, ctx:CompiScriptLanguageParser.ArrayCreationContext):
+        pass
+
+    # Exit a parse tree produced by CompiScriptLanguageParser#arrayCreation.
+    def exitArrayCreation(self, ctx:CompiScriptLanguageParser.ArrayCreationContext):
+        pass
+
+
+    # Enter a parse tree produced by CompiScriptLanguageParser#arrayAccess.
+    def enterArrayAccess(self, ctx:CompiScriptLanguageParser.ArrayAccessContext):
+        pass
+
+    # Exit a parse tree produced by CompiScriptLanguageParser#arrayAccess.
+    def exitArrayAccess(self, ctx:CompiScriptLanguageParser.ArrayAccessContext):
+        pass
+
+
+    # Enter a parse tree produced by CompiScriptLanguageParser#arrayPush.
+    def enterArrayPush(self, ctx:CompiScriptLanguageParser.ArrayPushContext):
+        pass
+
+    # Exit a parse tree produced by CompiScriptLanguageParser#arrayPush.
+    def exitArrayPush(self, ctx:CompiScriptLanguageParser.ArrayPushContext):
+        pass
+
+
+    # Enter a parse tree produced by CompiScriptLanguageParser#arrayPop.
+    def enterArrayPop(self, ctx:CompiScriptLanguageParser.ArrayPopContext):
+        pass
+
+    # Exit a parse tree produced by CompiScriptLanguageParser#arrayPop.
+    def exitArrayPop(self, ctx:CompiScriptLanguageParser.ArrayPopContext):
+        pass
+
+
     # Enter a parse tree produced by CompiScriptLanguageParser#logic.
     def enterLogic(self, ctx:CompiScriptLanguageParser.LogicContext):
         pass

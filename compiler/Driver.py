@@ -2,7 +2,6 @@ import sys
 from antlr4 import *
 from Syntax.CompiScriptLanguageLexer import *
 from Syntax.CompiScriptLanguageParser import *
-from Semantic.CompiScriptVisitor import *
 from Semantic.CompiScriptVisitorSemantic import *
 from Syntax.CompiScriptLanguageVisitor import *
 from TAC.CompiScriptTacVisitor import CompiScriptTacVisitor
@@ -35,7 +34,7 @@ def main(argv):
     parser = CompiScriptLanguageParser(stream)
     tree = parser.program()  # Usar 'program' como regla inicial según la gramática CompiScript
     
-    visitor = CompiScriptVisitor()
+    visitor = CompiScriptVisitorSemantic()
     
     # Generar el árbol como texto
     tree_str = Trees.toStringTree(tree, None, parser)

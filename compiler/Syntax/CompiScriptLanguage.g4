@@ -42,7 +42,17 @@ returnStmt: 'return' expression? ';' ;
 
 block: '{' declaration* '}' ;
 
-expression: (call '.')? IDENTIFIER '=' expression | logic  ;
+expression: (call '.')? IDENTIFIER '=' expression | ( array | logic )  ;
+
+array: (arrayCreation | arrayPush | arrayPop ) ;
+
+arrayCreation: '[' (  ( array | logic ) ( ',' ( array | logic ) )*)? ']' ; 
+
+arrayAccess: IDENTIFIER ('[' NUMBER ']')+ ;
+
+arrayPush: IDENTIFIER '.push(' ( array | logic ) ')' ;
+
+arrayPop: IDENTIFIER '.pop()' ;
 
 logic: comparison (( 'and'| 'or' ) comparison)* ;
 
@@ -54,7 +64,7 @@ unary: ( '!' | '-' ) unary | call ;
 
 call: 'new'? primary ( '(' arguments? ')' | '.' IDENTIFIER )* ;
 
-primary: 'true' | 'false' | 'nil' | 'this' | 'break' | 'continue' | NUMBER | STRING | IDENTIFIER | '(' expression ')' | 'super' '.' IDENTIFIER ;
+primary: 'true' | 'false' | 'nil' | 'this' | 'break' | 'continue' | NUMBER | STRING | IDENTIFIER | '(' expression ')' | arrayAccess | 'super' '.' IDENTIFIER ;
 
 function : IDENTIFIER '(' parameters? ')' block ;
 

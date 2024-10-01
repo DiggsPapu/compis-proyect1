@@ -5,6 +5,8 @@
 import copy
 import re
 
+from .Errors import SemanticError
+
 class Tipo():
     def __init__(self, nombreTipo="tipo", valor="tipo") -> None:
         self.nombreTipo = nombreTipo
@@ -25,7 +27,6 @@ class Cadena(Tipo):
         super().__init__(nombreTipo, valor)
     def __str__(self) -> str:
         return "cadena"
-
 
 class DefinidoPorUsuario(Tipo):
     def __init__(self, nombreTipo="tipo", valor="") -> None:
@@ -66,6 +67,34 @@ class TipoFuncion(Tipo):
     def __str__(self) -> str:
         return "funcion"    
 
+class Array(Tipo):
+    def __init__(self, nombreTipo="array", valor=[]) -> None:
+        super().__init__(nombreTipo, valor)
+        self.tipoArray = Tipo()
+        self.tamanoArray = 0
+        
+    def __str__(self) -> str:
+        return "array"
+    
+    def push(self, elemento):
+        tipo = elemento if isinstance(elemento, Tipo) else elemento.tipo
+        # Se esta setteando el tipo del array
+        if str(self.tipoArray) == "tipo": self.tipoArray = tipo
+        # Se chequea que el array sea de un solo tipo
+        if not self.tipoArray.nombreTipo==tipo.nombreTipo: raise SemanticError(f"El tipo {str(tipo)} del elemento no coincide con el tipo del array {str(self.tipoArray)}")
+        # Se aniade el elemento al array
+        self.valor.append(elemento if isinstance(elemento, Tipo) else elemento.nombreSimbolo)
+        self.tamanoArray += 1
+    
+    def pop(self):
+        self.tamanoArray -= 1    
+        return self.valor.pop(len(self.valor)-1)
+        
+    def get(self, index): 
+        if index < len(self.valor):
+            return self.valor[index]  
+        raise SemanticError(f"El indice {index} esta fuera de rango del array {self.tamanoArray}")
+            
 class Simbolo():
     # constructor
     # el default de la inicializacion es nil porque al principio el tipo del simbolo se desconoce por lo que es Null o Nil en compiscript
@@ -139,7 +168,6 @@ class Variable(Simbolo):
     
     def redefinirTipo(self, tipo:Tipo):
         self.tipo = tipo
-        
 # Esta es la estructura basica para hacer las tablas, de tipos, de simbolos y de contextos
 
 # Tabla de Simbolos
@@ -191,6 +219,11 @@ class HashMap:
                 mapCopy[key] = Nil(nombreTipo=value.nombreTipo, valor=value.valor)
             elif isinstance(value, TipoFuncion):
                 newValue = TipoFuncion(nombreTipo=value.nombreTipo, valor=value.valor)
+            elif isinstance(value, Array):
+                newValue = Array(nombreTipo=value.nombreTipo, valor=[])
+                for elemento in value.valor:
+                    newValue.push(elemento)
+                mapCopy[key] = newValue
             elif isinstance(value, DefinidoPorUsuario):
                 newValue = DefinidoPorUsuario(nombreTipo=value.nombreTipo, valor=value.valor)
                 newValue.init = value.init
@@ -274,7 +307,7 @@ class Ambito():
         self.tablaDeSimbolos = tablaDeSimbolos
         # Poner los tipos basicos
         self.tablaDeTipos = HashMap()
-        self.tablaDeTipos.replaceMap({"numero": Numero(), "booleano":Booleano(), "cadena": Cadena(), "nil":Nil(), "definidoPorUsuario":DefinidoPorUsuario(), "tipo":Tipo(), "tipoFuncion":TipoFuncion()})
+        self.tablaDeTipos.replaceMap({"numero": Numero(), "booleano":Booleano(), "cadena": Cadena(), "nil":Nil(), "definidoPorUsuario":DefinidoPorUsuario(), "tipo":Tipo(), "tipoFuncion":TipoFuncion(), "array":Array()})
         self.ambitosHijos = set()
     
     # Aniadir contextos hijos
