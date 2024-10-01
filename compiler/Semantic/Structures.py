@@ -82,7 +82,7 @@ class Array(Tipo):
         # Se esta setteando el tipo del array
         if str(self.tipoArray) == "tipo": self.tipoArray = tipo
         # Se chequea que el array sea de un solo tipo
-        if not self.tipoArray.nombreTipo==tipo.nombreTipo:raise SemanticError(f"El tipo {str(tipo)} del elemento no coincide con el tipo del array {str(self.tipoArray)}")
+        if not self.tipoArray.nombreTipo==tipo.nombreTipo: raise SemanticError(f"El tipo {str(tipo)} del elemento no coincide con el tipo del array {str(self.tipoArray)}")
         # Se aniade el elemento al array
         self.elementos.append(elemento if isinstance(elemento, Tipo) else elemento.nombreSimbolo)
         self.tamanoArray += len(self.elementos)
@@ -91,7 +91,10 @@ class Array(Tipo):
         self.tamanoArray -= 1    
         return self.elementos.pop(len(self.elementos)-1)
         
-    def get(self, index): return self.elementos[index]
+    def get(self, index): 
+        if index < len(self.elementos):
+            return self.elementos[index]  
+        raise SemanticError(f"El indice {index} esta fuera de rango del array")
             
 class Simbolo():
     # constructor

@@ -360,13 +360,19 @@ class CompiScriptVisitorSemantic(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#arrayAccess.
     def visitArrayAccess(self, ctx:CompiScriptLanguageParser.ArrayAccessContext):
+        
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#arrayPush.
     def visitArrayPush(self, ctx:CompiScriptLanguageParser.ArrayPushContext):
+        for i in range(ctx.getChildCount()):
+            if isinstance(ctx.getChild(i), ErrorNodeImpl): 
+                raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error en la declaración de un array")
+        array = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(ctx.IDENTIFIER().symbol.text)
+        if not isinstance(array.tipo, Array): raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico, la variable \"{ctx.IDENTIFIER().symbol.text}\" no es un array, no se puede hacer push")
         if ctx.logic(): 
-            self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(ctx.IDENTIFIER().symbol.text).tipo.push(self.visit(ctx.logic()))
+            array.tipo.push(self.visit(ctx.logic()))
             return Nil()
         raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Se esperaba un valor para agregar al array")
 
@@ -375,9 +381,10 @@ class CompiScriptVisitorSemantic(CompiScriptLanguageVisitor):
         for i in range(ctx.getChildCount()):
             if isinstance(ctx.getChild(i), ErrorNodeImpl): 
                 raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error en la declaración de un array")
-        if ctx.IDENTIFIER():
-            elemento = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(ctx.IDENTIFIER().symbol.text).tipo.pop()
-            return elemento if not isinstance(elemento, str) else self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(elemento)
+        array = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(ctx.IDENTIFIER().symbol.text)
+        if not isinstance(array.tipo, Array): raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico, la variable \"{ctx.IDENTIFIER().symbol.text}\" no es un array, no se puede hacer pop")
+        elemento = array.tipo.pop()
+        return elemento if not isinstance(elemento, str) else self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(elemento)
             
     # Visit a parse tree produced by CompiScriptLanguageParser#logic.
     def visitLogic(self, ctx:CompiScriptLanguageParser.LogicContext):
