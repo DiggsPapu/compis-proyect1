@@ -5,6 +5,7 @@ from Syntax.CompiScriptLanguageParser import *
 from Semantic.CompiScriptVisitor import *
 from Semantic.CompiScriptVisitorSemantic import *
 from Syntax.CompiScriptLanguageVisitor import *
+from TAC.CompiScriptTacVisitor import CompiScriptTacVisitor
 from antlr4.tree.Trees import Trees
 import graphviz
 import os
@@ -27,7 +28,7 @@ def create_visual_tree(tree, parser):
 
 def main(argv):
     # Leer el código desde stdin (el código que se envía desde Django)
-    input_stream = FileStream(f"{os.getcwd()}/compiler/Textos/WhileStmt.txt")
+    input_stream = FileStream(f"{os.getcwd()}/compiler/Textos/PruebaTAC.txt")
     # input_stream = InputStream(sys.stdin.read())
     lexer = CompiScriptLanguageLexer(input_stream)
     stream = CommonTokenStream(lexer)
@@ -46,6 +47,16 @@ def main(argv):
 
     visitor.visit(tree)
     visitor.imprimirTablaDeSimbolos()
+
+    tac_visitor = CompiScriptTacVisitor()  # Crear instancia del visitor TAC
+    tac_visitor.visit(tree)  # Recorrer el árbol de sintaxis con el visitor TAC
+    
+    # Obtener las instrucciones TAC generadas
+    tac_instructions = tac_visitor.get_tac()
+    
+    # Imprimir las instrucciones TAC
+    for instr in tac_instructions:
+        print(instr)
     
 if __name__ == '__main__':
     main(sys.argv)
