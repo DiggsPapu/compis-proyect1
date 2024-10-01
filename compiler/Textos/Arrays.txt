@@ -1,2 +1,4 @@
-var array = [];
 var array1 = [1];
+array1[0];
+array1.push('hola');
+array1.pop()

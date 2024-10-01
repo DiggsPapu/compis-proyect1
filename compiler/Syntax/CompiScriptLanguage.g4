@@ -42,9 +42,17 @@ returnStmt: 'return' expression? ';' ;
 
 block: '{' declaration* '}' ;
 
-expression: (call '.')? IDENTIFIER '=' expression | ( logic | array )  ;
+expression: (call '.')? IDENTIFIER '=' expression | ( array | logic )  ;
 
-array: '[' ( logic ( ',' logic )*)? ']' ;
+array: (arrayCreation | arrayAccess | arrayPush | arrayPop ) ;
+
+arrayCreation: '[' ( logic ( ',' logic )*)? ']' ; 
+
+arrayAccess: IDENTIFIER '[' NUMBER ']' ;
+
+arrayPush: IDENTIFIER '.push(' logic ')' ;
+
+arrayPop: IDENTIFIER '.pop(' NUMBER ')' ;
 
 logic: comparison (( 'and'| 'or' ) comparison)* ;
 

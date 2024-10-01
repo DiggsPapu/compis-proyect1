@@ -348,7 +348,41 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             
     # Visit a parse tree produced by CompiScriptLanguageParser#array.
     def visitArray(self, ctx:CompiScriptLanguageParser.ArrayContext):
-        return self.visitChildren(ctx)        
+        # Check for error nodes
+        for i in range(ctx.getChildCount()):
+            if isinstance(ctx.getChild(i), ErrorNodeImpl):
+                raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error en la declaración de un array")
+        # Crear un nuevo array
+        if ctx.arrayCreation():
+            return self.visit(ctx.arrayCreation())
+        # Acceder a un array
+        elif ctx.arrayAccess():
+            return self.visit(ctx.arrayAccess())
+        # Agregar un elemento a un array
+        elif ctx.arrayPush():
+            return self.visit(ctx.arrayPush())
+        # Eliminar un elemento de un array
+        elif ctx.arrayPop():
+            return self.visit(ctx.arrayPop())
+        
+    # Visit a parse tree produced by CompiScriptLanguageParser#arrayCreation.
+    def visitArrayCreation(self, ctx:CompiScriptLanguageParser.ArrayCreationContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CompiScriptLanguageParser#arrayAccess.
+    def visitArrayAccess(self, ctx:CompiScriptLanguageParser.ArrayAccessContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CompiScriptLanguageParser#arrayPush.
+    def visitArrayPush(self, ctx:CompiScriptLanguageParser.ArrayPushContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CompiScriptLanguageParser#arrayPop.
+    def visitArrayPop(self, ctx:CompiScriptLanguageParser.ArrayPopContext):
+        return self.visitChildren(ctx)
             
     # Visit a parse tree produced by CompiScriptLanguageParser#logic.
     def visitLogic(self, ctx:CompiScriptLanguageParser.LogicContext):
