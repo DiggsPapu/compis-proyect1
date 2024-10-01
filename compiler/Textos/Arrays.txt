@@ -4,5 +4,4 @@ var array2 = [1,2,3,4,5];
 var array3 = [1,2,3,4,variable];
 array3.push(variable);
 var lastVal = array3.pop();
-variable.push(2);
-variable.pop();
+var thirdVal = array3[50];
