@@ -134,6 +134,15 @@ class CompiScriptLanguageListener(ParseTreeListener):
         pass
 
 
+    # Enter a parse tree produced by CompiScriptLanguageParser#array.
+    def enterArray(self, ctx:CompiScriptLanguageParser.ArrayContext):
+        pass
+
+    # Exit a parse tree produced by CompiScriptLanguageParser#array.
+    def exitArray(self, ctx:CompiScriptLanguageParser.ArrayContext):
+        pass
+
+
     # Enter a parse tree produced by CompiScriptLanguageParser#logic.
     def enterLogic(self, ctx:CompiScriptLanguageParser.LogicContext):
         pass

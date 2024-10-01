@@ -42,7 +42,9 @@ returnStmt: 'return' expression? ';' ;
 
 block: '{' declaration* '}' ;
 
-expression: (call '.')? IDENTIFIER '=' expression | logic  ;
+expression: (call '.')? IDENTIFIER '=' ( expression | logic | array ) ;
+
+array: '[' (logic)* ']' ;
 
 logic: comparison (( 'and'| 'or' ) comparison)* ;
 

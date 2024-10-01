@@ -79,6 +79,11 @@ class CompiScriptLanguageVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CompiScriptLanguageParser#array.
+    def visitArray(self, ctx:CompiScriptLanguageParser.ArrayContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CompiScriptLanguageParser#logic.
     def visitLogic(self, ctx:CompiScriptLanguageParser.LogicContext):
         return self.visitChildren(ctx)

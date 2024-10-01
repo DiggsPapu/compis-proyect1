@@ -342,8 +342,11 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             variableName = self.visit(ctx.IDENTIFIER())
             variableValue = self.visit(ctx.expression())
             self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(variableName, Variable(nombreSimbolo=variableValue, tipo=variableValue, ambito=self.stackAmbitos.first()))
-
-
+            
+    # Visit a parse tree produced by CompiScriptLanguageParser#array.
+    def visitArray(self, ctx:CompiScriptLanguageParser.ArrayContext):
+        return self.visitChildren(ctx)        
+            
     # Visit a parse tree produced by CompiScriptLanguageParser#logic.
     def visitLogic(self, ctx:CompiScriptLanguageParser.LogicContext):
         # En caso de que sea solo un hijo entonces solo sera una comparacion, es decir no es logico la operacion
