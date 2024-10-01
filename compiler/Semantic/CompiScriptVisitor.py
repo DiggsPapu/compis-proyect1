@@ -308,6 +308,9 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # Solo es una comparacion logica
         if ctx.logic():
             return self.visit(ctx.logic())
+        # Es un array
+        elif ctx.array():
+            return self.visit(ctx.array())
         # Se esta declarando una variable, pero el this solo puede estar en el contexto de un metodo de una clase
         elif self.classDeclarationName.first()!= None and ctx.call() and self.visit(ctx.call())=="this":
             # Crear un nuevo campo
