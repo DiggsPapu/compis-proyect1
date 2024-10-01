@@ -1,9 +1,8 @@
 class Ackermann {
-    fun init() {
-        // No initialization required for this class
+    init() {
     }
 
-    fun ackermann(m, n) {
+    ackermann(m, n) {
         if (m == 0) {
             return n + 1;
         } else if (m > 0 and n == 0) {
@@ -15,11 +14,11 @@ class Ackermann {
 }
 
 class AckermannTest {
-    fun init() {
+    init() {
         this.ackermannObj = Ackermann();
     }
 
-    fun runComplexTests() {
+    runComplexTests() {
         var result1 = this.ackermannObj.ackermann(3, 6);
         print "Ackermann(3, 6) = " + result1;
 
