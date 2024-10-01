@@ -372,7 +372,12 @@ class CompiScriptVisitorSemantic(CompiScriptLanguageVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#arrayPop.
     def visitArrayPop(self, ctx:CompiScriptLanguageParser.ArrayPopContext):
-        return self.visitChildren(ctx)
+        for i in range(ctx.getChildCount()):
+            if isinstance(ctx.getChild(i), ErrorNodeImpl): 
+                raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error en la declaración de un array")
+        if ctx.IDENTIFIER():
+            elemento = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(ctx.IDENTIFIER().symbol.text).tipo.pop()
+            return elemento if not isinstance(elemento, str) else self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(elemento)
             
     # Visit a parse tree produced by CompiScriptLanguageParser#logic.
     def visitLogic(self, ctx:CompiScriptLanguageParser.LogicContext):

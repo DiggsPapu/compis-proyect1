@@ -52,7 +52,7 @@ arrayAccess: IDENTIFIER '[' NUMBER ']' ;
 
 arrayPush: IDENTIFIER '.push(' logic ')' ;
 
-arrayPop: IDENTIFIER '.pop(' NUMBER ')' ;
+arrayPop: IDENTIFIER '.pop()' ;
 
 logic: comparison (( 'and'| 'or' ) comparison)* ;
 

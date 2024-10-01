@@ -88,8 +88,8 @@ class Array(Tipo):
         self.tamanoArray += len(self.elementos)
     
     def pop(self):
-        self.elementos.pop(len(self.elementos)-1)
-        self.tamanoArray -= len(self.elementos)    
+        self.tamanoArray -= 1    
+        return self.elementos.pop(len(self.elementos)-1)
         
     def get(self, index): return self.elementos[index]
             
