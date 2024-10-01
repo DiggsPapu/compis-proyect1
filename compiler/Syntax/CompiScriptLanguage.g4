@@ -44,7 +44,7 @@ block: '{' declaration* '}' ;
 
 expression: (call '.')? IDENTIFIER '=' expression | ( array | logic )  ;
 
-array: (arrayCreation | arrayAccess | arrayPush | arrayPop ) ;
+array: (arrayCreation | arrayPush | arrayPop ) ;
 
 arrayCreation: '[' (  ( array | logic ) ( ',' ( array | logic ) )*)? ']' ; 
 
@@ -64,7 +64,7 @@ unary: ( '!' | '-' ) unary | call ;
 
 call: 'new'? primary ( '(' arguments? ')' | '.' IDENTIFIER )* ;
 
-primary: 'true' | 'false' | 'nil' | 'this' | 'break' | 'continue' | NUMBER | STRING | IDENTIFIER | '(' expression ')' | 'super' '.' IDENTIFIER ;
+primary: 'true' | 'false' | 'nil' | 'this' | 'break' | 'continue' | NUMBER | STRING | IDENTIFIER | '(' expression ')' | arrayAccess | 'super' '.' IDENTIFIER ;
 
 function : IDENTIFIER '(' parameters? ')' block ;
 

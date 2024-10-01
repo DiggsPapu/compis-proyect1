@@ -336,8 +336,6 @@ class CompiScriptVisitorSemantic(CompiScriptLanguageVisitor):
     def visitArray(self, ctx:CompiScriptLanguageParser.ArrayContext):
         # Crear un nuevo array
         if ctx.arrayCreation(): return self.visit(ctx.arrayCreation())
-        # Acceder a un array
-        elif ctx.arrayAccess(): return self.visit(ctx.arrayAccess())
         # Agregar un elemento a un array
         elif ctx.arrayPush(): return self.visit(ctx.arrayPush())
         # Eliminar un elemento de un array
@@ -370,6 +368,7 @@ class CompiScriptVisitorSemantic(CompiScriptLanguageVisitor):
             if isinstance(ctx.getChild(i), ErrorNodeImpl): 
                 raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error en la declaración de un array")
         array = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(ctx.IDENTIFIER().symbol.text)
+        if array==None: raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico, la variable \"{ctx.IDENTIFIER().symbol.text}\" no existe")
         if not isinstance(array.tipo, Array): raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico, la variable \"{ctx.IDENTIFIER().symbol.text}\" no es un array, no se puede acceder en el índice")
         # Array dentro de arrays
         indexes = ctx.NUMBER()
@@ -760,6 +759,9 @@ class CompiScriptVisitorSemantic(CompiScriptLanguageVisitor):
             if (tablaDeSimbolosActual.get(id)== None and tablaDeTiposActual.get(id)==None):
                 raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico la variable, la clase o la funcion \"{id}\" no existe")
             return tablaDeSimbolosActual.get(id) if tablaDeSimbolosActual.get(id)!=None else tablaDeTiposActual.get(id)
+        # Array access
+        elif ctx.arrayAccess():
+            return self.visit(ctx.arrayAccess())
         # Tipo numero
         elif ctx.NUMBER():
             return Numero(valor=ctx.getText())
