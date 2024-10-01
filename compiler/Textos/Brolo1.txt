@@ -3,24 +3,24 @@ var globalVar2 = "Global String";
 var globalBoolean = true;
 
 class Animal {
-    fun init(type, sound) {
+    init(type, sound) {
         this.type = type;
         this.sound = sound;
     }
 
-    fun getType() {
+    getType() {
         return this.type;
     }
 
-    fun getSound() {
+    getSound() {
         return this.sound;
     }
 
-    fun speak() {
+    speak() {
         print this.type + " says: " + this.sound;
     }
 
-    fun isSameType(otherType) {
+    isSameType(otherType) {
         if (this.type == otherType) {
             return true;
         } else {
@@ -28,35 +28,35 @@ class Animal {
         }
     }
 
-    fun isQuiet() {
+    isQuiet() {
         return this.sound == nil;
     }
 }
 
 class Dog extends Animal {
-    fun init(breed, sound) {
+    init(breed, sound) {
         this.breed = breed;
         this.sound = sound;
         this.type = "Dog";
     }
 
-    fun getBreed() {
+    getBreed() {
         return this.breed;
     }
 
-    fun bark() {
+    bark() {
         print this.breed + " barks: " + this.sound;
     }
 
-    fun sit() {
+    sit() {
         print this.breed + " is sitting.";
     }
 
-    fun fetch() {
+    fetch() {
         print this.breed + " is fetching.";
     }
 
-    fun isQuietBreed() {
+    isQuietBreed() {
         if (this.sound == nil) {
             return true;
         } else {

@@ -1,7 +1,7 @@
 from Syntax.CompiScriptLanguageVisitor import *
 from Syntax.CompiScriptLanguageParser import *
 from .Structures import HashMap, Ambito, Variable, Numero, Nil, Simbolo, Tipo, TipoFuncion, Funcion, Booleano, DefinidoPorUsuario, Stack, Campo, Parametro, Cadena, Metodo
-from antlr4.tree.Tree import TerminalNodeImpl
+from antlr4.tree.Tree import TerminalNodeImpl, ErrorNodeImpl
 import re
 # Manejo de errores lexicos
 class LexicalError(Exception):
@@ -117,6 +117,11 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         # Verificar que el nombre de la clase sea unico
         if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(className)!=None:
             raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Clase \"{className}\" ya ha sido declarada")
+        # Check for error nodes
+        for i in range(ctx.getChildCount()):
+            if isinstance(ctx.getChild(i), ErrorNodeImpl):
+                raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error en la declaración de la clase \"{className}\"")
+    
         # Se crea en la tabla de simbolos del ambito
         self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.put(className, DefinidoPorUsuario(nombreTipo=className, valor="clase"))
         # Significa que hay un extends
@@ -597,8 +602,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                                         break 
                             lastVariableName = lastVariableValue                                   
                             lastVariableValue = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{funcionIdentifier.tipo.nombreTipo}.{lastVariableValue}') if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{funcionIdentifier.tipo.nombreTipo}.{lastVariableValue}')!=None else self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{funcionIdentifier.nombreSimbolo}.{lastVariableValue}')
-                            if lastVariableValue == None:
-                                    raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error Semantico, no existe el atributo o metodo {lastVariableName}")
+                            if lastVariableValue == None: raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error Semantico, no existe el atributo o metodo {lastVariableName}")
                             if index>2 and (isinstance(funcionIdentifier, Campo) or isinstance(funcionIdentifier, Variable)):
                                 lastVariable = self.insideVariable.remove_first()
                                 # En el caso de que un campo sea de un tipo y no un definido por usuario entonces se mantiene el inside variable
