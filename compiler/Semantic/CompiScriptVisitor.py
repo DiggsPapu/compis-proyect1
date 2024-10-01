@@ -513,6 +513,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         else:                    
             # El primary indicara si el primero es una funcion o una variable
             funcionIdentifier = self.visit(ctx.getChild(0))
+            if isinstance(funcionIdentifier, DefinidoPorUsuario): raise SemanticError(f'Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico, no se puede llamar a una clase como funcion debe de tener un new')
             # En caso de que sea funcion
             if isinstance(funcionIdentifier, Funcion):
                 # Es recursiva
@@ -676,7 +677,7 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
             # Puede retornar una variable o el nombre de una funcion
             if (tablaDeSimbolosActual.get(id)== None and tablaDeTiposActual.get(id)==None):
                 raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico la variable, la clase o la funcion \"{id}\" no existe")
-            return tablaDeSimbolosActual.get(id)
+            return tablaDeSimbolosActual.get(id) if tablaDeSimbolosActual.get(id)!=None else tablaDeTiposActual.get(id)
         # Tipo numero
         elif ctx.NUMBER():
             return Numero(valor=ctx.getText())

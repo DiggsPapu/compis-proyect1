@@ -33,6 +33,5 @@ class AckermannTest {
     }
 }
 
-var test = AckermannTest();
-test.init();
+var test = new AckermannTest();
 test.runComplexTests();
