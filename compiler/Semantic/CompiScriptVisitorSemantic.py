@@ -349,7 +349,7 @@ class CompiScriptVisitorSemantic(CompiScriptLanguageVisitor):
         for i in range(ctx.getChildCount()):
             if isinstance(ctx.getChild(i), ErrorNodeImpl): raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error en la declaración de un array")
         # Crear el array
-        newArray = Array()
+        newArray = Array(valor=[])
         # logic and array at the same time
         if ctx.logic() and ctx.array(): raise SemanticError(f'Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico, no se puede crear un array con diferentes tipos de datos adentro, de manera que un array con otro tipo de dato no puede ser creado')
         # Not an empty array

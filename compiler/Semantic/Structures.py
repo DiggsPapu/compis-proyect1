@@ -68,11 +68,10 @@ class TipoFuncion(Tipo):
         return "funcion"    
 
 class Array(Tipo):
-    def __init__(self, nombreTipo="array", valor="") -> None:
+    def __init__(self, nombreTipo="array", valor=[]) -> None:
         super().__init__(nombreTipo, valor)
         self.tipoArray = Tipo()
         self.tamanoArray = 0
-        self.elementos = []
         
     def __str__(self) -> str:
         return "array"
@@ -84,16 +83,16 @@ class Array(Tipo):
         # Se chequea que el array sea de un solo tipo
         if not self.tipoArray.nombreTipo==tipo.nombreTipo: raise SemanticError(f"El tipo {str(tipo)} del elemento no coincide con el tipo del array {str(self.tipoArray)}")
         # Se aniade el elemento al array
-        self.elementos.append(elemento if isinstance(elemento, Tipo) else elemento.nombreSimbolo)
+        self.valor.append(elemento if isinstance(elemento, Tipo) else elemento.nombreSimbolo)
         self.tamanoArray += 1
     
     def pop(self):
         self.tamanoArray -= 1    
-        return self.elementos.pop(len(self.elementos)-1)
+        return self.valor.pop(len(self.valor)-1)
         
     def get(self, index): 
-        if index < len(self.elementos):
-            return self.elementos[index]  
+        if index < len(self.valor):
+            return self.valor[index]  
         raise SemanticError(f"El indice {index} esta fuera de rango del array {self.tamanoArray}")
             
 class Simbolo():
@@ -221,8 +220,8 @@ class HashMap:
             elif isinstance(value, TipoFuncion):
                 newValue = TipoFuncion(nombreTipo=value.nombreTipo, valor=value.valor)
             elif isinstance(value, Array):
-                newValue = Array(nombreTipo=value.nombreTipo, valor=value.valor)
-                for elemento in value.elementos:
+                newValue = Array(nombreTipo=value.nombreTipo, valor=[])
+                for elemento in value.valor:
                     newValue.push(elemento)
                 mapCopy[key] = newValue
             elif isinstance(value, DefinidoPorUsuario):
