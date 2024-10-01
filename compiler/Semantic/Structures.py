@@ -80,9 +80,9 @@ class Array(Tipo):
     def push(self, elemento):
         tipo = elemento if isinstance(elemento, Tipo) else elemento.tipo
         # Se esta setteando el tipo del array
-        if isinstance(self.tipoArray, Tipo): self.tipoArray = tipo
+        if str(self.tipoArray) == "tipo": self.tipoArray = tipo
         # Se chequea que el array sea de un solo tipo
-        if not self.tipoArray.nombreTipo==tipo.nombreTipo:raise SemanticError("El tipo del elemento no coincide con el tipo del array")
+        if not self.tipoArray.nombreTipo==tipo.nombreTipo:raise SemanticError(f"El tipo {str(tipo)} del elemento no coincide con el tipo del array {str(self.tipoArray)}")
         # Se aniade el elemento al array
         self.elementos.append(elemento if isinstance(elemento, Tipo) else elemento.nombreSimbolo)
         self.tamanoArray += len(self.elementos)
