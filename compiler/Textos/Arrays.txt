@@ -4,4 +4,13 @@ var array2 = [1,2,3,4,5];
 var array3 = [1,2,3,4,variable];
 array3.push(variable);
 var lastVal = array3.pop();
-var thirdVal = array3[50];
+var thirdVal = array3[2];
+
+[1,2,3,4,5];
+
+var arrayDeArrays = [];
+
+arrayDeArrays.push([1,2,3,4,5]);
+arrayDeArrays.push([6,7,8,9,0]);
+
+var valor13 = arrayDeArrays[1][3];

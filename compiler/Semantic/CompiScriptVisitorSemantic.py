@@ -350,9 +350,15 @@ class CompiScriptVisitorSemantic(CompiScriptLanguageVisitor):
             if isinstance(ctx.getChild(i), ErrorNodeImpl): raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error en la declaración de un array")
         # Crear el array
         newArray = Array()
+        # logic and array at the same time
+        if ctx.logic() and ctx.array(): raise SemanticError(f'Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico, no se puede crear un array con diferentes tipos de datos adentro, de manera que un array con otro tipo de dato no puede ser creado')
         # Not an empty array
         if ctx.logic():
             for child in ctx.logic():
+                # Aqui se deben de ir creando los elementos en el array
+                newArray.push(self.visit(child))
+        if ctx.array():
+            for child in ctx.array():
                 # Aqui se deben de ir creando los elementos en el array
                 newArray.push(self.visit(child))
         return newArray
@@ -365,8 +371,13 @@ class CompiScriptVisitorSemantic(CompiScriptLanguageVisitor):
                 raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error en la declaración de un array")
         array = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(ctx.IDENTIFIER().symbol.text)
         if not isinstance(array.tipo, Array): raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico, la variable \"{ctx.IDENTIFIER().symbol.text}\" no es un array, no se puede acceder en el índice")
-        index = ctx.NUMBER().symbol.text
-        elemento = array.tipo.get(int(index))
+        # Array dentro de arrays
+        indexes = ctx.NUMBER()
+        elemento = None
+        for index in range(len(indexes)):
+            elemento = array.get(int(indexes[index].symbol.text)) if isinstance(array, Array) else array.tipo.get(int(indexes[index].symbol.text))
+            if isinstance(elemento, Array): array = elemento
+            if len(indexes)-1>index and not isinstance(elemento, Array): raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico, la variable \"{ctx.IDENTIFIER().symbol.text}\" no es un array, no se puede acceder en el índice")
         return elemento if not isinstance(elemento, str) else self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(elemento)
 
 
@@ -379,6 +390,9 @@ class CompiScriptVisitorSemantic(CompiScriptLanguageVisitor):
         if not isinstance(array.tipo, Array): raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico, la variable \"{ctx.IDENTIFIER().symbol.text}\" no es un array, no se puede hacer push")
         if ctx.logic(): 
             array.tipo.push(self.visit(ctx.logic()))
+            return Nil()
+        elif ctx.array():
+            array.tipo.push(self.visit(ctx.array()))
             return Nil()
         raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Se esperaba un valor para agregar al array")
 

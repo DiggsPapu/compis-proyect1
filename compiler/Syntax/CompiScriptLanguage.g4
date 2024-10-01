@@ -46,11 +46,11 @@ expression: (call '.')? IDENTIFIER '=' expression | ( array | logic )  ;
 
 array: (arrayCreation | arrayAccess | arrayPush | arrayPop ) ;
 
-arrayCreation: '[' ( logic ( ',' logic )*)? ']' ; 
+arrayCreation: '[' (  ( array | logic ) ( ',' ( array | logic ) )*)? ']' ; 
 
-arrayAccess: IDENTIFIER '[' NUMBER ']' ;
+arrayAccess: IDENTIFIER ('[' NUMBER ']')+ ;
 
-arrayPush: IDENTIFIER '.push(' logic ')' ;
+arrayPush: IDENTIFIER '.push(' ( array | logic ) ')' ;
 
 arrayPop: IDENTIFIER '.pop()' ;
 
