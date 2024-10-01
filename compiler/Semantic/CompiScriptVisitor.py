@@ -430,6 +430,9 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
         for index in range(0, ctx.getChildCount()):
             # variable o valor
             variableTemp = self.visit(ctx.getChild(index))
+            # Es un simbolo
+            if isinstance(variableTemp, Simbolo):
+                variableTemp = variableTemp.tipo
             # Chequear los posibles valores y si hay alguno valido
             if isinstance(variableTemp, list):
                 for var in variableTemp:
@@ -440,9 +443,6 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                         break
                 if isinstance(variableTemp, list):
                     raise SemanticError(f'Line: {ctx.start.line}, col: {ctx.start.column}. Error semantico, operacion aritmetica invalida (suma, resta, multiplicacion, division), tipo invalido 1')
-            # Es un simbolo
-            if isinstance(variableTemp, Simbolo):
-                variableTemp = variableTemp.tipo
             # Es operacion
             if isinstance(variableTemp, TerminalNodeImpl) or variableTemp=='+' or variableTemp=='-' or variableTemp=='*' or variableTemp=='/' or variableTemp=='%':
                 currentOperation = variableTemp
@@ -570,15 +570,21 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                 # En caso de que no se este llamando una propiedad
                 if funcionIdentifier!="this":
                     self.insideVariable.insert(funcionIdentifier)
+                variableInicial = len(self.insideVariable.items)                
                 while index < ctx.getChildCount():
                     child = ctx.getChild(index)
                     lastVariableValue = self.visit(child)                                 
                     if isinstance(lastVariableValue, str) and not lastVariableValue == ".":
                         # Si retorna this chequear que tiene un . la definicion
                         if funcionIdentifier == "this":
-                            lastVariableValue = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{self.insideVariable.first().nombreSimbolo}.{lastVariableValue}')
+                            lastVariableValue = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{self.insideVariable.first().nombreSimbolo}.{lastVariableValue}') if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{self.insideVariable.first().nombreSimbolo}.{lastVariableValue}')!=None else self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{self.insideVariable.first().tipo.nombreTipo}.{lastVariableValue}')
                             if lastVariableValue==None:
                                 raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. No hay propiedad o metodo {self.visit(child)}")
+                            elif isinstance(lastVariableValue, Metodo):
+                                self.insideFuncion.insert(lastVariableValue.nombreSimbolo)
+                                if self.insideFuncion.first() == lastVariableValue.nombreSimbolo:
+                                    # Retornar los casos
+                                    return lastVariableValue.variableRetorno
                         elif isinstance(funcionIdentifier, Nil):
                             pass                            
                         # Buscar si existe el coso .variable
@@ -588,13 +594,21 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                                 for posV in funcionIdentifier:
                                     if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{posV.tipo.nombreTipo}.{lastVariableValue}')!=None:
                                         funcionIdentifier = posV
-                                        break                            
+                                        break 
+                            lastVariableName = lastVariableValue                                   
                             lastVariableValue = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{funcionIdentifier.tipo.nombreTipo}.{lastVariableValue}') if self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{funcionIdentifier.tipo.nombreTipo}.{lastVariableValue}')!=None else self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{funcionIdentifier.nombreSimbolo}.{lastVariableValue}')
                             if lastVariableValue == None:
-                                    raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error Semantico, no existe el atributo o metodo {lastVariableValue}")
+                                    raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error Semantico, no existe el atributo o metodo {lastVariableName}")
                             if index>2 and (isinstance(funcionIdentifier, Campo) or isinstance(funcionIdentifier, Variable)):
-                                self.insideVariable.remove_first()
-                                self.insideVariable.insert(funcionIdentifier)
+                                lastVariable = self.insideVariable.remove_first()
+                                # En el caso de que un campo sea de un tipo y no un definido por usuario entonces se mantiene el inside variable
+                                if isinstance(funcionIdentifier, Campo) and not isinstance(funcionIdentifier.tipo, DefinidoPorUsuario):
+                                    self.insideVariable.insert(lastVariable)
+                                elif isinstance(funcionIdentifier.tipo, DefinidoPorUsuario):
+                                    self.insideVariable.insert(self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.get(f'{funcionIdentifier.perteneceVariable}'))
+                                    self.insideVariable.insert(funcionIdentifier)
+                                else:     
+                                    self.insideVariable.insert(funcionIdentifier)
                         pass
                         
                     # Si el token es un punto se ignora
@@ -650,6 +664,8 @@ class CompiScriptVisitor(CompiScriptLanguageVisitor):
                     elif isinstance(lastVariableValue, Variable) or isinstance(lastVariableValue, Campo) or isinstance(lastVariableValue, Parametro):
                         funcionIdentifier = lastVariableValue
                     index+=1
+                if variableInicial<len(self.insideVariable.items):
+                    self.insideVariable.remove_first()
             return funcionIdentifier if funcionIdentifier!=None else Nil(valor="nil")
 
 
