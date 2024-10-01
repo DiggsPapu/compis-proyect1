@@ -1,23 +1,9 @@
+from .Errors import *
 from Syntax.CompiScriptLanguageVisitor import *
 from Syntax.CompiScriptLanguageParser import *
-from .Structures import HashMap, Ambito, Variable, Numero, Nil, Simbolo, Tipo, TipoFuncion, Funcion, Booleano, DefinidoPorUsuario, Stack, Campo, Parametro, Cadena, Metodo
+from .Structures import HashMap, Ambito, Variable, Numero, Nil, Simbolo, Tipo, TipoFuncion, Array, Funcion, Booleano, DefinidoPorUsuario, Stack, Campo, Parametro, Cadena, Metodo
 from antlr4.tree.Tree import TerminalNodeImpl, ErrorNodeImpl
 import re
-# Manejo de errores lexicos
-class LexicalError(Exception):
-    def __init__(self, message, line, column):
-        super().__init__(f"{message} at line {line}, column {column}")
-        self.line = line
-        self.column = column
-# Manejo de errores Sintacticos
-class ParsingError(Exception):
-    def __init__(self, message, line, column):
-        super().__init__(f"{message} at line {line}, column {column}")
-        self.line = line
-        self.column = column
-class SemanticError(Exception):
-    def __init__(self, message):
-        super().__init__(message)      
 # Implementacion
 class CompiScriptVisitorSemantic(CompiScriptLanguageVisitor):
     def __init__(self) -> None:
@@ -367,8 +353,14 @@ class CompiScriptVisitorSemantic(CompiScriptLanguageVisitor):
         for i in range(ctx.getChildCount()):
             if isinstance(ctx.getChild(i), ErrorNodeImpl):
                 raise SemanticError(f"Line: {ctx.start.line}, col: {ctx.start.column}. Error en la declaración de un array")
-        
-        return self.visitChildren(ctx)
+        # Crear el array
+        newArray = Array()
+        # Not an empty array
+        if ctx.logic():
+            for child in ctx.logic():
+                # Aqui se deben de ir creando los elementos en el array
+                newArray.push(self.visit(child))
+        return newArray
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#arrayAccess.

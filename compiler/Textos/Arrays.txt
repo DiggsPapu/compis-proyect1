@@ -1,4 +1,2 @@
 var array1 = [1];
-array1[0];
-array1.push('hola');
-array1.pop();
+var array2 = [1,2,3,4,5];
