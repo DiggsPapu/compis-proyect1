@@ -34,7 +34,7 @@ def main(argv):
     parser = CompiScriptLanguageParser(stream)
     tree = parser.program()  # Usar 'program' como regla inicial según la gramática CompiScript
     
-    visitor = CompiScriptVisitorSemantic()
+    semantic_visitor = CompiScriptVisitorSemantic()
     
     # Generar el árbol como texto
     tree_str = Trees.toStringTree(tree, None, parser)
@@ -44,8 +44,8 @@ def main(argv):
     # Descomenta si deseas generar la visualización del árbol
     # create_visual_tree(tree, parser)
 
-    visitor.visit(tree)
-    visitor.imprimirTablaDeSimbolos()
+    semantic_visitor.visit(tree)
+    semantic_visitor.imprimirTablaDeSimbolos()
 
     tac_visitor = CompiScriptTacVisitor()  # Crear instancia del visitor TAC
     tac_visitor.visit(tree)  # Recorrer el árbol de sintaxis con el visitor TAC

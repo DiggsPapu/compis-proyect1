@@ -1,3 +1,4 @@
 var x = 2 * 10 + 1;
 var y = 3 * 5 - 8;
 var z = x + y;
+var u = 2 * (24 - z) / 7;
