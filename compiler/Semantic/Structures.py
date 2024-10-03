@@ -308,3 +308,7 @@ class Ambito():
         # Poner los tipos basicos
         self.tablaDeTipos = HashMap()
         self.tablaDeTipos.replaceMap({"numero": Numero(), "booleano":Booleano(), "cadena": Cadena(), "nil":Nil(), "definidoPorUsuario":DefinidoPorUsuario(), "tipo":Tipo(), "tipoFuncion":TipoFuncion(), "array":Array()})
+        self.codigo = []
+    
+    def aniadirCodigo(self, codigo):
+        self.codigo.append(codigo)

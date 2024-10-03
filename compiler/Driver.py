@@ -47,15 +47,12 @@ def main(argv):
     semantic_visitor.visit(tree)
     semantic_visitor.imprimirTablaDeSimbolos()
 
-    tac_visitor = CompiScriptTacVisitor()  # Crear instancia del visitor TAC
+    tac_visitor = CompiScriptTacVisitor(semantic_visitor.TablaDeAmbitos, semantic_visitor.node_ids)  # Crear instancia del visitor TAC
     tac_visitor.visit(tree)  # Recorrer el árbol de sintaxis con el visitor TAC
     
     # Obtener las instrucciones TAC generadas
-    tac_instructions = tac_visitor.get_tac()
+    print(tac_visitor.generateTAC())
     
-    # Imprimir las instrucciones TAC
-    for instr in tac_instructions:
-        print(instr)
     
 if __name__ == '__main__':
     main(sys.argv)
