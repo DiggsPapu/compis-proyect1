@@ -16,15 +16,44 @@ class CompiScriptVisitorSemantic(CompiScriptLanguageVisitor):
         self.insideFuncion = Stack([])
         self.insideVariable = Stack([])
         self.variableEnDefinicion = Stack([])
+        self.node_id_counter = 0  # A counter to generate unique IDs
+        self.node_ids = {}        # Dictionary to store IDs for each node
+    
+    def nodeBelongs(self, ctx):
+        """
+        Assigns current node (ctx) to a ambito.
+        """
+        # If the node has already been assigned an ID, return it
+        if ctx in self.node_ids:
+            return self.node_ids[ctx]
+        self.node_ids[ctx] = self.stackAmbitos.first()    # Store the current context in the dictionary to know which context the node belongs to
+        return self.stackAmbitos.first()
+
+    def visit(self, ctx):
+        """
+        This method is called each time a node is visited explicitly.
+        """
+        # Generate a unique ID for the current node
+        self.nodeBelongs(ctx)
+        # Visit the children of the node (traverse the tree)
+        return super().visit(ctx)
+
+    def visitChildren(self, ctx):
+        """
+        This method is called each time a node's children are visited.
+        """
+        # Generate a unique ID for the parent node before visiting its children
+        self.nodeBelongs(ctx)
         
+        # Continue visiting the children as usual
+        return super().visitChildren(ctx)
+    
     def crearUnNuevoAmbito(self):
         newTablaSimbolos = HashMap()
         mapa = self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.map
         newTablaSimbolos.replaceMap(mapa)
         newAmbito:Ambito = Ambito(self.TablaDeAmbitos.size(), newTablaSimbolos)
         newAmbito.tablaDeTipos.replaceMap(self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.map)
-        if (self.stackAmbitos.first()!=None):
-            self.TablaDeAmbitos.get(self.stackAmbitos.first()).aniadirAmbitoHijo(self.TablaDeAmbitos.size())
         self.stackAmbitos.insert(self.TablaDeAmbitos.size())
         self.TablaDeAmbitos.put(self.TablaDeAmbitos.size(), newAmbito)
         

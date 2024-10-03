@@ -309,11 +309,15 @@ class Ambito():
         self.tablaDeTipos = HashMap()
         self.tablaDeTipos.replaceMap({"numero": Numero(), "booleano":Booleano(), "cadena": Cadena(), "nil":Nil(), "definidoPorUsuario":DefinidoPorUsuario(), "tipo":Tipo(), "tipoFuncion":TipoFuncion(), "array":Array()})
         self.ambitosHijos = set()
+        self.nodosHijos = set()
     
     # Aniadir ambito hijo
     def aniadirAmbitoHijo(self, hijo:int):
         self.ambitosHijos.add(hijo)
     
+    def aniadirNodoHijo(self, hijo:int):
+        self.nodosHijos.add(hijo)
+        
     # Aniadir contextos hijos
     def aniadirContextoHijo(self, hijo:int):
         self.ambitosHijos.add(hijo)
