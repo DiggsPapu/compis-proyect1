@@ -264,6 +264,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
             return ctx.STRING().getText()
         elif ctx.expression():
             return self.visit(ctx.expression())
+        elif ctx.getText() == "false" or ctx.getText() == "true" or "nil": return ctx.getText()
         return self.visitChildren(ctx)
 
 
