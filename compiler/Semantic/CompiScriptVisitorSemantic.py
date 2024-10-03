@@ -23,6 +23,8 @@ class CompiScriptVisitorSemantic(CompiScriptLanguageVisitor):
         newTablaSimbolos.replaceMap(mapa)
         newAmbito:Ambito = Ambito(self.TablaDeAmbitos.size(), newTablaSimbolos)
         newAmbito.tablaDeTipos.replaceMap(self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.map)
+        if (self.stackAmbitos.first()!=None):
+            self.TablaDeAmbitos.get(self.stackAmbitos.first()).aniadirAmbitoHijo(self.TablaDeAmbitos.size())
         self.stackAmbitos.insert(self.TablaDeAmbitos.size())
         self.TablaDeAmbitos.put(self.TablaDeAmbitos.size(), newAmbito)
         
