@@ -304,11 +304,19 @@ class Ambito():
         tablaDeSimbolos:HashMap,
         ) -> None:
         self.identificadorAmbito = identificador
+        self.labelAmbito = f"L{identificador}"
         self.tablaDeSimbolos = tablaDeSimbolos
         # Poner los tipos basicos
         self.tablaDeTipos = HashMap()
         self.tablaDeTipos.replaceMap({"numero": Numero(), "booleano":Booleano(), "cadena": Cadena(), "nil":Nil(), "definidoPorUsuario":DefinidoPorUsuario(), "tipo":Tipo(), "tipoFuncion":TipoFuncion(), "array":Array()})
         self.codigo = []
+        self.ambitosHijosExplorados = Stack()
     
     def aniadirCodigo(self, codigo):
         self.codigo.append(codigo)
+        
+    def aniarAmbitoHijoExplorado(self, ambito):
+        self.ambitosHijosExplorados.insert(ambito)
+        
+    def removerAmbitoHijoExplorado(self):
+        return self.ambitosHijosExplorados.remove_first()

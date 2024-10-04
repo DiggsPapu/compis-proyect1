@@ -1,6 +1,8 @@
 # Generated from CompiScriptLanguage.g4 by ANTLR 4.13.1
 from antlr4 import *
 
+from Semantic.Structures import Stack
+
 from .Structures import Cuadrupleta
 if "." in __name__:
     from Syntax.CompiScriptLanguageParser import CompiScriptLanguageParser
@@ -33,12 +35,34 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         self.tablaDeAmbitos = tablaDeAmbitos    # Tabla de ámbitos con tabla de símbolos y de tipos
         self.correspondenciaNodosAmbitos = correspondenciaNodosAmbitos  # Diccionario que relaciona nodos con ámbitos
         self.ambitoActual = None    # Ámbito actual
+        self.label_counter = self.tablaDeAmbitos.size()
+        self.stackAmbitos = Stack()
+        self.intoAmbito = False
+        self.code = []
+
+    def new_label(self):
+        label = f"L{self.label_counter}"
+        self.label_counter += 1
+        return label
+
+    def emit(self, code_line):
+        self.code.append(code_line)
+
+    def get_code(self):
+        return "\n".join(self.code)
     
     def generateTAC(self):
-        for ambitoIndex in range(0, self.tablaDeAmbitos.size()):
+        for ambitoIndex in range(self.tablaDeAmbitos.size()-1,-1,-1):
             ambito = self.tablaDeAmbitos.get(ambitoIndex)
+            print(ambito.labelAmbito+":")
             for instruccion in ambito.codigo:
-                print(f'{instruccion.resultado} = {instruccion.arg1} {instruccion.operacion if instruccion.operacion else ""} {instruccion.arg2 if instruccion.arg2 else ""}')
+                if instruccion.operacion == 'if':
+                    print(f'    {instruccion.operacion} {instruccion.arg1} {instruccion.resultado}')
+                elif instruccion.operacion == 'else':
+                    print(f'    {instruccion.operacion} {instruccion.resultado}')
+                elif instruccion.operacion == 'new_label':
+                    print(f'    {instruccion.resultado}:')
+                else: print(f'  {instruccion.resultado} = {instruccion.arg1} {instruccion.operacion if instruccion.operacion else ""} {instruccion.arg2 if instruccion.arg2 else ""}')
         
     def visit(self, ctx):
         """
@@ -46,6 +70,9 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         """
         # Asignar el ambito actual
         self.ambitoActual = self.correspondenciaNodosAmbitos.get(ctx)
+        if self.intoAmbito:
+            self.stackAmbitos.push(self.ambitoActual)
+            self.intoAmbito = False
         # Visit the children of the node (traverse the tree)
         return super().visit(ctx)
 
@@ -53,15 +80,15 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         """
         This method is called each time a node's children are visited.
         """
+        self.ultimoAmbito = self.ambitoActual
         # Asignar el ambito actual
         self.ambitoActual = self.correspondenciaNodosAmbitos.get(ctx)
-        
         # Continue visiting the children as usual
         return super().visitChildren(ctx)
     
     # Método para obtener un nuevo temporal  
     def new_temp(self):
-        temp = f't{self.temp_counter}'  # Crear un nuevo temporal
+        temp = f'_t{self.temp_counter}'  # Crear un nuevo temporal
         self.temp_counter += 1
         return temp
     
@@ -166,7 +193,26 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#ifStmt.
     def visitIfStmt(self, ctx:CompiScriptLanguageParser.IfStmtContext):
-        return self.visitChildren(ctx)
+        ambitoIf = self.ambitoActual
+        rangoBlock = len(ctx.block())
+        rangoExpr = len(ctx.expression())
+        ifInstr = []
+        for index in range(rangoBlock-1,-1,-1):
+            instruccion = Cuadrupleta()
+            # Generar el codigo del bloque de primero
+            self.visit(ctx.block(index))
+            # Significa que hay un else
+            if rangoBlock>rangoExpr and index==rangoBlock-1:
+                instruccion.operacion = 'else'
+                instruccion.resultado = f'goto {self.tablaDeAmbitos.get(self.ultimoAmbito).labelAmbito}'
+            else:
+                instruccion.operacion = 'if'
+                instruccion.arg1 = self.visit(ctx.expression(index))
+                instruccion.resultado = f'goto {self.tablaDeAmbitos.get(self.ultimoAmbito).labelAmbito}'
+            ifInstr.append(instruccion)
+        ifInstr.reverse()
+        for instruccion in ifInstr: 
+            self.tablaDeAmbitos.get(ambitoIf).aniadirCodigo(instruccion)
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#forStmt.
