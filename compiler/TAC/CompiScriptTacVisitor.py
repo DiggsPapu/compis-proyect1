@@ -224,7 +224,41 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#forStmt.
     def visitForStmt(self, ctx:CompiScriptLanguageParser.ForStmtContext):
-        return self.visitChildren(ctx)
+        ambitoFor = self.ambitoActual
+        # el exprStmt o la declaracion de variable debe de estar en el flujo normal por ende no estara dentro del label
+        if ctx.exprStmt():
+            self.visit(ctx.exprStmt())
+        elif ctx.varDecl():
+            self.visit(ctx.varDecl())
+        
+        # Crear un nuevo label para evaluar la condicion del for
+        checkLabel = Cuadrupleta()
+        checkLabel.operacion = 'new_label'
+        checkLabel.resultado = self.new_label()
+        self.tablaDeAmbitos.get(ambitoFor).aniadirCodigo(checkLabel)
+        # Crear un nuevo label para evaluar el bloque del for
+        blockLabel = Cuadrupleta()
+        blockLabel.operacion = 'new_label'
+        blockLabel.resultado = self.new_label()
+        # La primera expresion suele ser la de la condicion
+        if ctx.expression():
+            instruccion = Cuadrupleta()
+            instruccion.operacion = 'if'
+            instruccion.arg1 = self.visit(ctx.expression(0))
+            instruccion.resultado = f'goto {blockLabel.resultado}'
+        # Aniadir el label del bloque para que lo demas sea parte del bloque
+        self.tablaDeAmbitos.get(ambitoFor).aniadirCodigo(blockLabel)
+        # Condicion de sumar o lo que sea de la segunda expresion, eso va adentro del bloque
+        if len(ctx.expression())>1:
+            self.visit(ctx.expression(1))
+        # Generar el bloque de codigo del for
+        self.visit(ctx.block())
+        # Agregar el goto para el bloque del for para que evalue la condicion
+        instruccion = Cuadrupleta()
+        instruccion.resultado = f'goto {checkLabel.resultado}'
+        self.tablaDeAmbitos.get(self.ambitoActual).aniadirCodigo(instruccion)
+        # Aniadir el bloque de codigo al ambito actual
+        self.tablaDeAmbitos.get(ambitoFor).codigo.extend(self.tablaDeAmbitos.get(self.ambitoActual).codigo)
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#whileStmt.
