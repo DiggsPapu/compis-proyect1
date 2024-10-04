@@ -225,12 +225,9 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
     # Visit a parse tree produced by CompiScriptLanguageParser#forStmt.
     def visitForStmt(self, ctx:CompiScriptLanguageParser.ForStmtContext):
         ambitoFor = self.ambitoActual
-        # el exprStmt o la declaracion de variable debe de estar en el flujo normal por ende no estara dentro del label
-        if ctx.exprStmt():
-            self.visit(ctx.exprStmt())
-        elif ctx.varDecl():
+        # la declaracion de variable debe de estar en el flujo normal por ende no estara dentro del label
+        if ctx.varDecl():
             self.visit(ctx.varDecl())
-        
         # Crear un nuevo label para evaluar la condicion del for
         checkLabel = Cuadrupleta()
         checkLabel.operacion = 'new_label'
@@ -240,8 +237,11 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         blockLabel = Cuadrupleta()
         blockLabel.operacion = 'new_label'
         blockLabel.resultado = self.new_label()
-        # La primera expresion suele ser la de la condicion
-        if ctx.expression():
+        # Esta puede declarar condiciones por lo que asumiremos que sera el goto y que hace el chequeo en el for semantico
+        if ctx.exprStmt():
+            self.visit(ctx.exprStmt())
+        # La primera expresion suele ser la de la condicion en vez del exprStmt
+        elif ctx.expression():
             instruccion = Cuadrupleta()
             instruccion.operacion = 'if'
             instruccion.arg1 = self.visit(ctx.expression(0))
