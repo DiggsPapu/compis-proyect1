@@ -1,4 +1,5 @@
 # Generated from CompiScriptLanguage.g4 by ANTLR 4.13.1
+import re
 from antlr4 import *
 
 from Semantic.Structures import Stack
@@ -35,7 +36,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         self.tablaDeAmbitos = tablaDeAmbitos    # Tabla de ámbitos con tabla de símbolos y de tipos
         self.correspondenciaNodosAmbitos = correspondenciaNodosAmbitos  # Diccionario que relaciona nodos con ámbitos
         self.ambitoActual = None    # Ámbito actual
-        self.label_counter = self.tablaDeAmbitos.size()
+        self.label_counter = 0
         self.stackAmbitos = Stack()
         self.intoAmbito = False
         self.code = []
@@ -52,17 +53,15 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         return "\n".join(self.code)
     
     def generateTAC(self):
-        for ambitoIndex in range(self.tablaDeAmbitos.size()):
-            ambito = self.tablaDeAmbitos.get(ambitoIndex)
-            print(ambito.labelAmbito+":")
-            for instruccion in ambito.codigo:
-                if instruccion.operacion == 'if':
-                    print(f'    {instruccion.operacion} {instruccion.arg1} {instruccion.resultado}')
-                elif instruccion.operacion == 'else':
-                    print(f'    {instruccion.operacion} {instruccion.resultado}')
-                elif instruccion.operacion == 'new_label':
-                    print(f'    {instruccion.resultado}:')
-                else: print(f'  {instruccion.resultado} = {instruccion.arg1} {instruccion.operacion if instruccion.operacion else ""} {instruccion.arg2 if instruccion.arg2 else ""}')
+        for instruccion in self.tablaDeAmbitos.get(0).codigo:
+            if instruccion.operacion == 'if':
+                print(f'    {instruccion.operacion} {instruccion.arg1} {instruccion.resultado}')
+            elif instruccion.operacion==None and re.search(r'goto', instruccion.resultado):
+                print(f'    {instruccion.resultado}')
+            elif instruccion.operacion == 'new_label':
+                print(f'{instruccion.resultado}:')
+            else: 
+                print(f'    {instruccion.resultado} = {instruccion.arg1} {instruccion.operacion if instruccion.operacion else ""} {instruccion.arg2 if instruccion.arg2 else ""}')
         
     def visit(self, ctx):
         """
@@ -195,23 +194,31 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         rangoBlock = len(ctx.block())
         rangoExpr = len(ctx.expression())
         ifInstr = []
+        blockInstr = []
         for index in range(rangoBlock-1,-1,-1):
             instruccion = Cuadrupleta()
+            instruccionLabel = Cuadrupleta()
+            instruccionLabel.operacion = 'new_label'
+            instruccionLabel.resultado = self.new_label()
+            blockInstr.append(instruccionLabel)
             # Generar el codigo del bloque de primero
             self.visit(ctx.block(index))
+            # Aniadir el bloque de codigo al ambito actual
+            blockInstr.extend(self.tablaDeAmbitos.get(self.ambitoActual).codigo)
             self.ultimoAmbito = self.ambitoActual
             self.ambitoActual = ambitoIf
             # Significa que hay un else
             if rangoBlock>rangoExpr and index==rangoBlock-1:
-                instruccion.operacion = 'else'
-                instruccion.resultado = f'goto {self.tablaDeAmbitos.get(self.ultimoAmbito).labelAmbito}'
+                instruccion.resultado = f'goto {instruccionLabel.resultado}'
             else:
                 instruccion.operacion = 'if'
-                instruccion.resultado = f'goto {self.tablaDeAmbitos.get(self.ultimoAmbito).labelAmbito}'
+                instruccion.resultado = f'goto {instruccionLabel.resultado}'
                 instruccion.arg1 = self.visit(ctx.expression(index))
             ifInstr.append(instruccion)
         ifInstr.reverse()
         for instruccion in ifInstr: 
+            self.tablaDeAmbitos.get(ambitoIf).aniadirCodigo(instruccion)
+        for instruccion in blockInstr:
             self.tablaDeAmbitos.get(ambitoIf).aniadirCodigo(instruccion)
 
 
@@ -222,8 +229,31 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#whileStmt.
     def visitWhileStmt(self, ctx:CompiScriptLanguageParser.WhileStmtContext):
-        return self.visitChildren(ctx)
-
+        ambitoWhile = self.ambitoActual
+        # Crear un nuevo label para evaluar la condicion del while
+        checkLabel = self.new_label()
+        # Crear una instruccion en el flujo para que lleve al nuevo label en cuestión
+        instruccion = Cuadrupleta()
+        instruccion.resultado = f'goto {checkLabel}'
+        self.tablaDeAmbitos.get(ambitoWhile).aniadirCodigo(instruccion)
+        # Crear una instruccion que sea un nuevo label
+        instruccion = Cuadrupleta()
+        instruccion.operacion = 'new_label'
+        instruccion.resultado = checkLabel
+        self.tablaDeAmbitos.get(ambitoWhile).aniadirCodigo(instruccion)
+        # Crear una instruccion que sea un if
+        instruccion = Cuadrupleta()
+        instruccion.operacion = 'if'
+        instruccion.arg1 = self.visit(ctx.expression())
+        self.visit(ctx.block())
+        self.ultimoAmbito = self.ambitoActual
+        self.ambitoActual = ambitoWhile
+        instruccion.resultado = f'goto {self.tablaDeAmbitos.get(self.ultimoAmbito).labelAmbito}'
+        self.tablaDeAmbitos.get(ambitoWhile).aniadirCodigo(instruccion)
+        # Aniadir el goto al bloque del while
+        instruccion = Cuadrupleta()
+        instruccion.resultado = f'goto {checkLabel}'
+        self.tablaDeAmbitos.get(self.ultimoAmbito).aniadirCodigo(instruccion)
 
     # Visit a parse tree produced by CompiScriptLanguageParser#printStmt.
     def visitPrintStmt(self, ctx:CompiScriptLanguageParser.PrintStmtContext):
