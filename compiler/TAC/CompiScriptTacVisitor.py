@@ -38,7 +38,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         for ambitoIndex in range(0, self.tablaDeAmbitos.size()):
             ambito = self.tablaDeAmbitos.get(ambitoIndex)
             for instruccion in ambito.codigo:
-                print(f'{instruccion.resultado} = {instruccion.arg1} {instruccion.operacion} {instruccion.arg2}')
+                print(f'{instruccion.resultado} = {instruccion.arg1} {instruccion.operacion if instruccion.operacion else ""} {instruccion.arg2 if instruccion.arg2 else ""}')
         
     def visit(self, ctx):
         """
@@ -147,7 +147,11 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#varDecl.
     def visitVarDecl(self, ctx:CompiScriptLanguageParser.VarDeclContext):
-        return self.visitChildren(ctx)
+        instruccion = Cuadrupleta()
+        instruccion.resultado = ctx.IDENTIFIER().getText()
+        instruccion.arg1 = self.visit(ctx.expression()) if ctx.expression() else "null"
+        self.tablaDeAmbitos.get(self.ambitoActual).aniadirCodigo(instruccion)
+        return instruccion.resultado
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#statement.
