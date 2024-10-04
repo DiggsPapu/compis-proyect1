@@ -52,7 +52,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         return "\n".join(self.code)
     
     def generateTAC(self):
-        for ambitoIndex in range(self.tablaDeAmbitos.size()-1,-1,-1):
+        for ambitoIndex in range(self.tablaDeAmbitos.size()):
             ambito = self.tablaDeAmbitos.get(ambitoIndex)
             print(ambito.labelAmbito+":")
             for instruccion in ambito.codigo:
@@ -68,11 +68,9 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         """
         This method is called each time a node is visited explicitly.
         """
+        self.ultimoAmbito = self.ambitoActual
         # Asignar el ambito actual
         self.ambitoActual = self.correspondenciaNodosAmbitos.get(ctx)
-        if self.intoAmbito:
-            self.stackAmbitos.push(self.ambitoActual)
-            self.intoAmbito = False
         # Visit the children of the node (traverse the tree)
         return super().visit(ctx)
 
@@ -201,14 +199,16 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
             instruccion = Cuadrupleta()
             # Generar el codigo del bloque de primero
             self.visit(ctx.block(index))
+            self.ultimoAmbito = self.ambitoActual
+            self.ambitoActual = ambitoIf
             # Significa que hay un else
             if rangoBlock>rangoExpr and index==rangoBlock-1:
                 instruccion.operacion = 'else'
                 instruccion.resultado = f'goto {self.tablaDeAmbitos.get(self.ultimoAmbito).labelAmbito}'
             else:
                 instruccion.operacion = 'if'
-                instruccion.arg1 = self.visit(ctx.expression(index))
                 instruccion.resultado = f'goto {self.tablaDeAmbitos.get(self.ultimoAmbito).labelAmbito}'
+                instruccion.arg1 = self.visit(ctx.expression(index))
             ifInstr.append(instruccion)
         ifInstr.reverse()
         for instruccion in ifInstr: 

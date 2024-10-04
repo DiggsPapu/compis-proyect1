@@ -3,6 +3,7 @@ if (true){
 }
 else if (false){
     1*1;
+    true>(6/4<8);
 }
 else{
     1/1;
