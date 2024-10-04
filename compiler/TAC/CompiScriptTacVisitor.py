@@ -245,15 +245,24 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         instruccion = Cuadrupleta()
         instruccion.operacion = 'if'
         instruccion.arg1 = self.visit(ctx.expression())
+        # Crear un nuevo label para el bloque del while
+        blockLabel = Cuadrupleta()
+        blockLabel.resultado = self.new_label()
+        blockLabel.operacion = 'new_label'
         self.visit(ctx.block())
         self.ultimoAmbito = self.ambitoActual
         self.ambitoActual = ambitoWhile
-        instruccion.resultado = f'goto {self.tablaDeAmbitos.get(self.ultimoAmbito).labelAmbito}'
+        # Irse al bloque del while
+        instruccion.resultado = f'goto {blockLabel.resultado}'
         self.tablaDeAmbitos.get(ambitoWhile).aniadirCodigo(instruccion)
         # Aniadir el goto al bloque del while
         instruccion = Cuadrupleta()
         instruccion.resultado = f'goto {checkLabel}'
         self.tablaDeAmbitos.get(self.ultimoAmbito).aniadirCodigo(instruccion)
+        # Aniadir el bloque del while al ambito actual
+        self.tablaDeAmbitos.get(ambitoWhile).aniadirCodigo(blockLabel)
+        for instruccion in self.tablaDeAmbitos.get(self.ultimoAmbito).codigo:
+            self.tablaDeAmbitos.get(ambitoWhile).aniadirCodigo(instruccion)
 
     # Visit a parse tree produced by CompiScriptLanguageParser#printStmt.
     def visitPrintStmt(self, ctx:CompiScriptLanguageParser.PrintStmtContext):
