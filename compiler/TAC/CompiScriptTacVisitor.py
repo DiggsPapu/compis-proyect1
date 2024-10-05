@@ -40,6 +40,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         self.stackAmbitos = Stack()
         self.intoAmbito = False
         self.code = []
+        self.declarandoVariable = None
 
     def new_label(self):
         label = f"L{self.label_counter}"
@@ -60,6 +61,8 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 print(f'    {instruccion.resultado}')
             elif instruccion.operacion == 'new_label':
                 print(f'{instruccion.resultado}:')
+            elif instruccion.operacion == '=':
+                print(f'    {instruccion.resultado} = {instruccion.arg1}')
             else: 
                 print(f'    {instruccion.resultado} = {instruccion.arg1} {instruccion.operacion if instruccion.operacion else ""} {instruccion.arg2 if instruccion.arg2 else ""}')
         
@@ -173,8 +176,10 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
     def visitVarDecl(self, ctx:CompiScriptLanguageParser.VarDeclContext):
         instruccion = Cuadrupleta()
         instruccion.resultado = ctx.IDENTIFIER().getText()
+        self.declarandoVariable = instruccion.resultado
         instruccion.arg1 = self.visit(ctx.expression()) if ctx.expression() else "null"
         self.tablaDeAmbitos.get(self.ambitoActual).aniadirCodigo(instruccion)
+        self.declarandoVariable = None
         return instruccion.resultado
 
 
@@ -326,7 +331,42 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#arrayCreation.
     def visitArrayCreation(self, ctx:CompiScriptLanguageParser.ArrayCreationContext):
-        return self.visitChildren(ctx)
+        instruccion = Cuadrupleta()
+        # O es un array de arrays o es algo con elementos primitivos
+        if ctx.logic():
+            instruccion.resultado = self.new_temp()
+            inicial = instruccion.resultado
+            direccionInicial = f'&{instruccion.resultado}'
+            instruccion.operacion = '='
+            instruccion.arg1 = self.visit(ctx.logic(0))
+            self.tablaDeAmbitos.get(self.ambitoActual).aniadirCodigo(instruccion)
+            if len(ctx.logic())>1:
+                instruccion = Cuadrupleta()
+                for index in range(1, len(ctx.logic())):
+                    elemento = self.visit(ctx.logic(index))
+                    # Calculo de la dirección de memoria para el elemento
+                    instruccion.resultado = self.new_temp()
+                    # Se calcularan los bytes segun el tipo, por ejemplo 8 para un número, 2 bytes para un caracter, para un booleano 2 byte, para un puntero seria de 16 bytes
+                    bytesTipo = 8
+                    # Instruccion para calcular la longitud de memoria
+                    instruccionSize = Cuadrupleta(resultado=self.new_temp(), operacion='*', arg1=f'{bytesTipo}', arg2=f'{index}')
+                    self.tablaDeAmbitos.get(self.ambitoActual).aniadirCodigo(instruccionSize)
+                    # Instruccion para calcular la dirección de memoria
+                    instruccionDireccion = Cuadrupleta(resultado=self.new_temp(), operacion='+', arg1=f'{direccionInicial}', arg2=f'{instruccionSize.resultado}')
+                    self.tablaDeAmbitos.get(self.ambitoActual).aniadirCodigo(instruccionDireccion)
+                    # Instrucion para asignar el elemento a la dirección de memoria
+                    instruccion = Cuadrupleta(resultado=f'*{instruccionDireccion.resultado}', operacion='=', arg1=f'{elemento}')
+                    self.tablaDeAmbitos.get(self.ambitoActual).aniadirCodigo(instruccion)
+            return inicial
+        elif ctx.array():
+            pass
+        # Es un array vacío
+        else:
+            # Asignacion
+            instruccion.operacion = '='
+            instruccion.arg1 = '&'
+            
+        
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#arrayAccess.
