@@ -107,7 +107,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 instruction.arg2 = operando2
                 instruction.resultado = self.new_temp()  # Crear temporal para el resultado
                 
-                self.tablaDeAmbitos.get(self.ambitoActual).aniadirCodigo(instruction)
+                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruction)
                 operandos.insert(0, instruction.resultado)  # Insertar el resultado de vuelta a los operandos
         
         # Si solo hay un término (número o variable)
@@ -138,7 +138,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 instruction.arg2 = operandos.pop(0)  # Siguiente operando
                 
                 instruction.resultado = self.new_temp()  # Crear temporal para el resultado
-                self.tablaDeAmbitos.get(self.ambitoActual).aniadirCodigo(instruction)
+                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruction)
                 
                 operandos_pendientes.append(instruction.resultado)  # Guardar el resultado
             else:
@@ -178,7 +178,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         instruccion.resultado = ctx.IDENTIFIER().getText()
         self.declarandoVariable = instruccion.resultado
         instruccion.arg1 = self.visit(ctx.expression()) if ctx.expression() else "null"
-        self.tablaDeAmbitos.get(self.ambitoActual).aniadirCodigo(instruccion)
+        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccion)
         self.declarandoVariable = None
         return instruccion.resultado
 
@@ -209,7 +209,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
             # Generar el codigo del bloque de primero
             self.visit(ctx.block(index))
             # Aniadir el bloque de codigo al ambito actual
-            blockInstr.extend(self.tablaDeAmbitos.get(self.ambitoActual).codigo)
+            blockInstr.extend(self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).codigo)
             self.ultimoAmbito = self.ambitoActual
             self.ambitoActual = ambitoIf
             # Significa que hay un else
@@ -261,9 +261,9 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         # Agregar el goto para el bloque del for para que evalue la condicion
         instruccion = Cuadrupleta()
         instruccion.resultado = f'goto {checkLabel.resultado}'
-        self.tablaDeAmbitos.get(self.ambitoActual).aniadirCodigo(instruccion)
+        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccion)
         # Aniadir el bloque de codigo al ambito actual
-        self.tablaDeAmbitos.get(ambitoFor).codigo.extend(self.tablaDeAmbitos.get(self.ambitoActual).codigo)
+        self.tablaDeAmbitos.get(ambitoFor).codigo.extend(self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).codigo)
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#whileStmt.
@@ -339,7 +339,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
             direccionInicial = f'&{instruccion.resultado}'
             instruccion.operacion = '='
             instruccion.arg1 = self.visit(ctx.logic(0))
-            self.tablaDeAmbitos.get(self.ambitoActual).aniadirCodigo(instruccion)
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccion)
             if len(ctx.logic())>1:
                 instruccion = Cuadrupleta()
                 for index in range(1, len(ctx.logic())):
@@ -350,13 +350,13 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                     bytesTipo = 8
                     # Instruccion para calcular la longitud de memoria
                     instruccionSize = Cuadrupleta(resultado=self.new_temp(), operacion='*', arg1=f'{bytesTipo}', arg2=f'{index}')
-                    self.tablaDeAmbitos.get(self.ambitoActual).aniadirCodigo(instruccionSize)
+                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccionSize)
                     # Instruccion para calcular la dirección de memoria
                     instruccionDireccion = Cuadrupleta(resultado=self.new_temp(), operacion='+', arg1=f'{direccionInicial}', arg2=f'{instruccionSize.resultado}')
-                    self.tablaDeAmbitos.get(self.ambitoActual).aniadirCodigo(instruccionDireccion)
+                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccionDireccion)
                     # Instrucion para asignar el elemento a la dirección de memoria
                     instruccion = Cuadrupleta(resultado=f'*{instruccionDireccion.resultado}', operacion='=', arg1=f'{elemento}')
-                    self.tablaDeAmbitos.get(self.ambitoActual).aniadirCodigo(instruccion)
+                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccion)
             return inicial
         elif ctx.array():
             pass
@@ -410,7 +410,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
             instruction.resultado = self.new_temp()
             instruction.operacion = self.visit(ctx.getChild(0))
             instruction.arg1 = self.visit(ctx.unary())
-            self.tablaDeAmbitos.get(self.ambitoActual).aniadirCodigo(instruction)
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruction)
             return instruction.resultado
 
 
@@ -433,7 +433,13 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#function.
     def visitFunction(self, ctx:CompiScriptLanguageParser.FunctionContext):
-        return self.visitChildren(ctx)
+        # Crear una instruccion para el label de la funcion
+        instruccion = Cuadrupleta()
+        instruccion.operacion = 'new_label'
+        instruccion.resultado = ctx.IDENTIFIER().getText()
+        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccion)
+        # Generar el código de la función
+        self.visit(ctx.block())
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#parameters.

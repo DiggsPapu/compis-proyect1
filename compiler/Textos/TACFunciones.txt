@@ -1,3 +1,9 @@
-fun funcion3(parametro){
-    parametro * 3;
+fun funcion1(param1, param2)
+{
+    fun funcion3(parametro){
+        parametro=="Hola";
+    }
+    fun funcion2(param1, param2){
+        param1+param2;
+    }
 }
