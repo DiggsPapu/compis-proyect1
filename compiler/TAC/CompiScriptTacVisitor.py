@@ -353,11 +353,21 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 # Temporal para asignar la direccion de memoria al puntero
                 asignarMemoria = Cuadrupleta(arg1=direccion2,operacion='=',resultado=f'*{punteroDireccion.resultado}')
                 self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(asignarMemoria)
+                if index == len(direccionesDeMemoria)-2:
+                    ultimoPuntero = Cuadrupleta(arg1=direccion2,operacion='+',arg2=16,resultado=self.new_temp()) # 16 bytes por direccion
+                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(ultimoPuntero)
+                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(Cuadrupleta(arg1='null',operacion='=',resultado=f'*{ultimoPuntero.resultado}'))
             return inicial
         # Es un array vacío
         else:
             instruccion = Cuadrupleta(arg1='null', operacion='=', resultado=self.new_temp())
             self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccion)
+            # Temporal para calcular la direccion de memoria que tendra el puntero
+            punteroDireccion = Cuadrupleta(arg1=instruccion.resultado,operacion='+',arg2=16,resultado=self.new_temp()) # 16 bytes por direccion
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(punteroDireccion)
+            # Temporal para asignar la direccion de memoria al puntero
+            asignarMemoria = Cuadrupleta(arg1='null',operacion='=',resultado=f'*{punteroDireccion.resultado}')
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(asignarMemoria)
             return f'&{instruccion.resultado}'
             
         
