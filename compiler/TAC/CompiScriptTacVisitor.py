@@ -41,7 +41,6 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         self.intoAmbito = False
         self.code = []
         self.declarandoVariable = None
-
     def new_label(self):
         label = f"L{self.label_counter}"
         self.label_counter += 1
@@ -333,38 +332,33 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
     def visitArrayCreation(self, ctx:CompiScriptLanguageParser.ArrayCreationContext):
         instruccion = Cuadrupleta()
         # O es un array de arrays o es algo con elementos primitivos
-        if ctx.logic():
-            instruccion.resultado = self.new_temp()
-            inicial = instruccion.resultado
-            direccionInicial = f'&{instruccion.resultado}'
-            instruccion.operacion = '='
-            instruccion.arg1 = self.visit(ctx.logic(0))
-            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccion)
-            if len(ctx.logic())>1:
-                instruccion = Cuadrupleta()
-                for index in range(1, len(ctx.logic())):
-                    elemento = self.visit(ctx.logic(index))
-                    # Calculo de la dirección de memoria para el elemento
-                    instruccion.resultado = self.new_temp()
-                    # Se calcularan los bytes segun el tipo, por ejemplo 8 para un número, 2 bytes para un caracter, para un booleano 2 byte, para un puntero seria de 16 bytes
-                    bytesTipo = 8
-                    # Instruccion para calcular la longitud de memoria
-                    instruccionSize = Cuadrupleta(resultado=self.new_temp(), operacion='*', arg1=f'{bytesTipo}', arg2=f'{index}')
-                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccionSize)
-                    # Instruccion para calcular la dirección de memoria
-                    instruccionDireccion = Cuadrupleta(resultado=self.new_temp(), operacion='+', arg1=f'{direccionInicial}', arg2=f'{instruccionSize.resultado}')
-                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccionDireccion)
-                    # Instrucion para asignar el elemento a la dirección de memoria
-                    instruccion = Cuadrupleta(resultado=f'*{instruccionDireccion.resultado}', operacion='=', arg1=f'{elemento}')
-                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccion)
+        if ctx.logic() or ctx.array():
+            direccionesDeMemoria = []
+            inicial = None
+            for index in range(len(ctx.logic() if ctx.logic() else ctx.array())):
+                # Instruccion de temporal del valor
+                valor = Cuadrupleta(arg1=self.visit(ctx.logic(index) if ctx.logic() else ctx.array(index)),operacion='=',resultado=self.new_temp())
+                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(valor)
+                # Instruccion de para la direccion de memoria
+                direccion = Cuadrupleta(arg1=f'&{valor.resultado}',operacion='=',resultado=self.new_temp())
+                if inicial == None: inicial = direccion.resultado
+                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(direccion)
+                direccionesDeMemoria.append(direccion.resultado)
+            for index in range(0,len(direccionesDeMemoria),2):
+                direccion1 = direccionesDeMemoria[index]
+                direccion2 = direccionesDeMemoria[index+1] if index+1<len(direccionesDeMemoria) else 'null'
+                # Temporal para calcular la direccion de memoria que tendra el puntero
+                punteroDireccion = Cuadrupleta(arg1=direccion1,operacion='+',arg2=16,resultado=self.new_temp()) # 16 bytes por direccion
+                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(punteroDireccion)
+                # Temporal para asignar la direccion de memoria al puntero
+                asignarMemoria = Cuadrupleta(arg1=direccion2,operacion='=',resultado=f'*{punteroDireccion.resultado}')
+                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(asignarMemoria)
             return inicial
-        elif ctx.array():
-            pass
         # Es un array vacío
         else:
-            # Asignacion
-            instruccion.operacion = '='
-            instruccion.arg1 = '&'
+            instruccion = Cuadrupleta(arg1='null', operacion='=', resultado=self.new_temp())
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccion)
+            return f'&{instruccion.resultado}'
             
         
 
