@@ -363,7 +363,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
             instruccion = Cuadrupleta(arg1='null', operacion='=', resultado=self.new_temp())
             self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccion)
             # Temporal para calcular la direccion de memoria que tendra el puntero
-            punteroDireccion = Cuadrupleta(arg1=instruccion.resultado,operacion='+',arg2=16,resultado=self.new_temp()) # 16 bytes por direccion
+            punteroDireccion = Cuadrupleta(arg1=f'&{instruccion.resultado}',operacion='+',arg2=16,resultado=self.new_temp()) # 16 bytes por direccion
             self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(punteroDireccion)
             # Temporal para asignar la direccion de memoria al puntero
             asignarMemoria = Cuadrupleta(arg1='null',operacion='=',resultado=f'*{punteroDireccion.resultado}')
@@ -380,6 +380,42 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#arrayPush.
     def visitArrayPush(self, ctx:CompiScriptLanguageParser.ArrayPushContext):
+        if ctx.array() or ctx.logic():
+            array = self.new_temp()
+            # Obtener el nombre del array de la variable
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(Cuadrupleta(arg1=ctx.IDENTIFIER().getText(), operacion='=', resultado=array))
+            # Obtener el valor que se va a pushear
+            elementoTemporal = Cuadrupleta(arg1=self.visit(ctx.logic() if ctx.logic() else ctx.array()), operacion='=', resultado=self.new_temp())
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(elementoTemporal)
+            # No permito array de nulos entonces si tiene un nulo en la posicion se le asigna el valor, ya que esto significa que es la primera posicion
+            comparacion = Cuadrupleta(arg1=f'*{array}',operacion='==',arg2='null',resultado=self.new_temp())
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(comparacion)
+            # Crear label para guardar la variable y asignar el ultimo puntero a null
+            labelSave = self.new_label()
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(Cuadrupleta(operacion='if',arg1=comparacion.resultado,resultado=f'goto {labelSave}'))            
+            # Moverse dentro de la direccion de memoria del puntero
+            # Crear label
+            checkLabel = self.new_label()
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(Cuadrupleta(operacion='new_label',resultado=checkLabel))
+            # Crear temporal para calcular la direccion de memoria que tendra el puntero
+            punteroDireccion = Cuadrupleta(arg1=array,operacion='+',arg2=16,resultado=array)
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(punteroDireccion)
+            # Crear temporal para verificar si ya se llego al puntero nulo que es el ultimo
+            ultimoPuntero = Cuadrupleta(arg1=f'*{punteroDireccion.resultado}',operacion='!=',arg2='null',resultado=self.new_temp())
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(ultimoPuntero)
+            # Crear if para verificar si ya se llego al puntero nulo que es el ultimo
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(Cuadrupleta(operacion='if',arg1=ultimoPuntero.resultado,resultado=f'goto {checkLabel}'))
+            # Label para guardar la variable y asignar el ultimo puntero a null
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(Cuadrupleta(operacion='new_label',resultado=labelSave))
+            # Crear la instruccion para asignar el valor al puntero
+            asignarMemoria = Cuadrupleta(arg1=f'&{elementoTemporal.resultado}',operacion='=',resultado=f'*{punteroDireccion.resultado}')
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(asignarMemoria)
+            # Crear la instruccion para calcular la direccion de memoria que tendra el puntero nulo que es el ultimo
+            punteroDireccion = Cuadrupleta(arg1=f'&{punteroDireccion.resultado}',operacion='+',arg2=16,resultado=self.new_temp())
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(punteroDireccion)
+            # Crear la instruccion para asignar el puntero al siguiente puntero que es nulo
+            siguientePuntero = Cuadrupleta(arg1='null',operacion='=',resultado=f'*{punteroDireccion.resultado}')
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(siguientePuntero)
         return self.visitChildren(ctx)
 
 
