@@ -421,8 +421,31 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#arrayPop.
     def visitArrayPop(self, ctx:CompiScriptLanguageParser.ArrayPopContext):
-        return self.visitChildren(ctx)
-
+        array = self.new_temp()
+        # Obtener el nombre del array de la variable
+        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(Cuadrupleta(arg1=ctx.IDENTIFIER().getText(), operacion='=', resultado=array))  
+        # Get the last element of the array
+        # Crear label
+        checkLabel = self.new_label()
+        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(Cuadrupleta(operacion='new_label',resultado=checkLabel))
+        # Crear temporal para el valor actual de la direccion de memoria ya que en caso se encuentre este sera el que tendra que ser null
+        punteroPosibleNull = Cuadrupleta(arg1=array,operacion='=',resultado=self.new_temp())
+        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(punteroPosibleNull)
+        # Crear temporal para calcular la direccion de memoria que tendra el puntero
+        punteroDireccion = Cuadrupleta(arg1=array,operacion='+',arg2=16,resultado=array)
+        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(punteroDireccion)
+        # Crear temporal para verificar si ya se llego al puntero nulo que es el ultimo
+        ultimoPuntero = Cuadrupleta(arg1=f'*{punteroDireccion.resultado}',operacion='!=',arg2='null',resultado=self.new_temp())
+        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(ultimoPuntero)
+        # Crear if para verificar si ya se llego al puntero nulo que es el ultimo
+        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(Cuadrupleta(operacion='if',arg1=ultimoPuntero.resultado,resultado=f'goto {checkLabel}'))
+        # Variable temporal para retornar el valor del puntero
+        retorno = Cuadrupleta(arg1=f'*{punteroPosibleNull.resultado}',operacion='=',resultado=self.new_temp())
+        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(retorno)
+        # Setear el puntero a null
+        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(Cuadrupleta(arg1='null',operacion='=',resultado=f'{punteroPosibleNull.resultado}'))
+        return retorno.resultado
+        
 
     # Visit a parse tree produced by CompiScriptLanguageParser#logic.
     def visitLogic(self, ctx:CompiScriptLanguageParser.LogicContext):
