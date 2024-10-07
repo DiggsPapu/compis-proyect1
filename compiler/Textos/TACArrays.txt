@@ -1,6 +1,7 @@
 var array2 = [1,2];
+array2[1];
 var array = [];
 array.push(1);
 var nuevo = array2.pop();
-
-var matrices = [[1,2,3,4,5,6],[7,8,9,10,11,12]];
+var matriz = [[0,1,2,3,4,5],[6,7,8,9,10,11]];
+var valorMatriz = matriz[1][5];

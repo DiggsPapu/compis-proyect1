@@ -153,7 +153,9 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 
     # Visit a parse tree produced by CompiScriptLanguageParser#program.
     def visitProgram(self, ctx:CompiScriptLanguageParser.ProgramContext):
-        return self.visitChildren(ctx)
+        # Recorrer el programa
+        for child in ctx.declaration():
+            self.visit(child)
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#declaration.
@@ -369,13 +371,41 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
             asignarMemoria = Cuadrupleta(arg1='null',operacion='=',resultado=f'*{punteroDireccion.resultado}')
             self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(asignarMemoria)
             return f'&{instruccion.resultado}'
-            
-        
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#arrayAccess.
     def visitArrayAccess(self, ctx:CompiScriptLanguageParser.ArrayAccessContext):
-        return self.visitChildren(ctx)
+        retorno = None
+        array = self.new_temp()
+        # Obtener el nombre del array de la variable
+        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(Cuadrupleta(arg1=ctx.IDENTIFIER().getText(), operacion='=', resultado=array))
+        for index in range(len(ctx.NUMBER())):
+            # Cargar el indice que se busca 
+            number = ctx.NUMBER(index).getText()
+            # Crear un temporal para cargar el indice que se busca
+            indiceBuscado = Cuadrupleta(arg1=number,operacion='=',resultado=self.new_temp())
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(indiceBuscado)
+            # Crear instruccion para crear un indice inicial de 0 hasta que se llegue al indice que se busca
+            indice = Cuadrupleta(arg1=0,operacion='=',resultado=self.new_temp())
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(indice)
+            # Crear label
+            checkLabel = self.new_label()
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(Cuadrupleta(operacion='new_label',resultado=checkLabel))
+            # Crear temporal para calcular la direccion de memoria que tendra el puntero
+            punteroDireccion = Cuadrupleta(arg1=array,operacion='+',arg2=16,resultado=array)
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(punteroDireccion)
+            # Crear temporal para verificar si ya se llego al puntero nulo que es el ultimo
+            ultimoPuntero = Cuadrupleta(arg1=f'{indiceBuscado.resultado}',operacion='!=',arg2=f'{indice.resultado}',resultado=self.new_temp())
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(ultimoPuntero)
+            # Sumar uno al indice
+            indice = Cuadrupleta(arg1=1,operacion='+',arg2=f'{indice.resultado}',resultado=indice.resultado)
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(indice)
+            # Crear if para verificar si ya se llego al puntero nulo que es el ultimo
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(Cuadrupleta(operacion='if',arg1=ultimoPuntero.resultado,resultado=f'goto {checkLabel}'))
+            # Crear temporal para almacenar el valor que se encontro
+            retorno = Cuadrupleta(arg1=f'*{punteroDireccion.resultado}',operacion='=',resultado=self.new_temp())
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(retorno)
+        return retorno.resultado
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#arrayPush.
@@ -490,7 +520,10 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
             return ctx.STRING().getText()
         elif ctx.expression():
             return self.visit(ctx.expression())
-        elif ctx.getText() == "false" or ctx.getText() == "true" or "nil": return ctx.getText()
+        # Array access
+        elif ctx.arrayAccess():
+            return self.visit(ctx.arrayAccess())   
+        elif ctx.getText() == "false" or ctx.getText() == "true" or "nil": return ctx.getText()     
         return self.visitChildren(ctx)
 
 
