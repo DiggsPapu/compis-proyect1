@@ -12,6 +12,8 @@ Para el proyecto se requiere la implementación de un compilador para el legunaj
 
 El compilador deberá tener un IDE interactivo que permita escribir y compilar el código de manera sencilla y visual la cuál sea amigable y facilite la experiencia de usuario.
 
+Dado a que el proceso de compilación de un lenguaje de programación consta de diferentes fases, una de las más importantes es la generación del código intermedio, el cual sirve como un puento entre el análisis semántico y la generación de código de máquina, permitiendo traducir un código fuente de alto nivel a una representación intermedia que sea manejable y optimizada.
+
 ## Temas vistos
 - CompiScript
 - ANTLR
@@ -20,6 +22,9 @@ El compilador deberá tener un IDE interactivo que permita escribir y compilar e
 - Análisis semántico
 - Construcción de tabla de símbolos
 - Manejo de errores y depuración
+- Código intermedio
+- Cuadrapletas
+- Código de tres direcciones
   
 ## Organización de archivos
 |- compiler
@@ -59,6 +64,12 @@ El compilador deberá tener un IDE interactivo que permita escribir y compilar e
 |-------- CompiScriptLexer.py
 
 |-------- CompiScriptLexer.tokens
+
+|---- Syntax
+
+|-------- CompiScriptTacVisitor.py
+
+|-------- Structures.py
 
 |---- Textos
 
@@ -137,7 +148,7 @@ El compilador deberá tener un IDE interactivo que permita escribir y compilar e
 |---- manage.py
 
 ## Compilación
-Como primer paso se necesita clonar el repositorio mediante el comando>
+Como primer paso se necesita clonar el repositorio mediante el comando
 ```bash
 git clone https://github.com/DiggsPapu/compis-proyect1.git
 ```
@@ -155,7 +166,14 @@ python manage.py runserver
 Este comando va a inicializar el proyecto de Django, el cual, cuando termine de compilar, va a mostrar un mensaje en la terminal donde se está corriendo el programa que indicará un hipervínculo que abre el IDE del proyecto y que permite utilizarlo.
 
 ## Informe
-[Informe aquí](https://docs.google.com/document/d/1MUOtgfo_JocxVRv28YzvuBl2Zi3Hz35omnp8Z-3jkU0/edit?usp=sharing)
+[Informe 1](https://docs.google.com/document/d/1MUOtgfo_JocxVRv28YzvuBl2Zi3Hz35omnp8Z-3jkU0/edit?usp=sharing)
+
+[Informe 2](https://docs.google.com/document/d/1BMCx6oPvcxqTYnhsura5meGajStbzOLjyqDPzApYwNo/edit?usp=sharing)
+
+## Videos
+[Video 1](URL)
+
+[Video 2](URL)
 
 ## Autores
 Diego Andrés Alonzo Medinilla - 20172
