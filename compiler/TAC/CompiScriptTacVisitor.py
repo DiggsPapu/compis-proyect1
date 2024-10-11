@@ -43,6 +43,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         self.code = []
         self.declarandoVariable = None
         self.stackFunciones = Stack([])
+        self.tablaDeAmbitos.get(0).aniadirCodigo(Cuadrupleta(operacion='new_label',resultado='main'))
         
     def new_label(self):
         label = f"L{self.label_counter}"
@@ -67,6 +68,8 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 print(f'    {instruccion.resultado} = {instruccion.arg1}')
             elif instruccion.operacion == 'EndFunc':
                 print(f'    EndFunc')
+            elif instruccion.operacion == 'print':
+                print(f'    print {instruccion.arg1}')
             else: 
                 print(f'    {instruccion.resultado} = {instruccion.arg1} {instruccion.operacion if instruccion.operacion else ""} {instruccion.arg2 if instruccion.arg2 else ""}')
         
@@ -317,8 +320,8 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#printStmt.
     def visitPrintStmt(self, ctx:CompiScriptLanguageParser.PrintStmtContext):
-        self.instructions.append(f'print {ctx.expression().getText()}')
-        return self.visitChildren(ctx)
+        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(Cuadrupleta(arg1=self.visit(ctx.expression()),operacion='print'))
+        return 'null'
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#returnStmt.
