@@ -6,4 +6,6 @@ fun funcion1(param1, param2)
     fun funcion2(param1, param2){
         param1+param2;
     }
+    return 1+2*54-13/(6+1);
 }
+var variable = 1;

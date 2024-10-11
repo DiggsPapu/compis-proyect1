@@ -70,6 +70,8 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 print(f'    EndFunc')
             elif instruccion.operacion == 'print':
                 print(f'    print {instruccion.arg1}')
+            elif instruccion.operacion == 'return':
+                print(f'    return {instruccion.arg1}')
             else: 
                 print(f'    {instruccion.resultado} = {instruccion.arg1} {instruccion.operacion if instruccion.operacion else ""} {instruccion.arg2 if instruccion.arg2 else ""}')
         
@@ -103,6 +105,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
     def new_temp(self):
         temp = f'_t{self.temp_counter}'  # Crear un nuevo temporal
         self.temp_counter += 1
+        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).numVariablesCreadas += 1
         return temp
     
     # Método para manejar una operacion basica
@@ -326,7 +329,9 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#returnStmt.
     def visitReturnStmt(self, ctx:CompiScriptLanguageParser.ReturnStmtContext):
-        return self.visitChildren(ctx)
+        retorno = Cuadrupleta(operacion='return', arg1=self.visit(ctx.expression()) if ctx.expression() else 'null')
+        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(retorno)
+        return retorno.arg1
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#block.
@@ -560,7 +565,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 
         # instruccion = Cuadrupleta(operacion='BeginFunc', )
         # Pushear 
-        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).codigo_pointer.insert(self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).codigo_pointer.first())
+        # self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).codigo_pointer.insert(self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).codigo_pointer.first())
         # Generar el código de la función
         self.visit(ctx.block())
         # Aniadir endfunc

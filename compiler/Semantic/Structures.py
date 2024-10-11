@@ -310,13 +310,19 @@ class Ambito():
         self.tablaDeTipos = HashMap()
         self.tablaDeTipos.replaceMap({"numero": Numero(), "booleano":Booleano(), "cadena": Cadena(), "nil":Nil(), "definidoPorUsuario":DefinidoPorUsuario(), "tipo":Tipo(), "tipoFuncion":TipoFuncion(), "array":Array()})
         self.codigo = []
-        self.codigo_pointer = Stack()
+        self.codigo_pointer = Stack([])
         self.codigo_pointer.insert(0)
-        self.ambitosHijosExplorados = Stack()
+        self.ambitosHijosExplorados = Stack([])
+        self.numVariablesCreadas = 0
+        
     def aniadirCodigoCompleto(self, codigo, linea):
+        pointerInicio = self.codigo_pointer.remove_first()
         self.codigo_pointer.insert(linea)
         for instruccion in codigo:
             self.aniadirCodigo(instruccion)
+        lineasSumar = self.codigo_pointer.remove_first() - linea
+        pointerFinal = pointerInicio + lineasSumar
+        self.codigo_pointer.insert(pointerFinal)
             
     def aniadirCodigo(self, codigo):
         self.codigo.insert(self.codigo_pointer.first(), codigo)
