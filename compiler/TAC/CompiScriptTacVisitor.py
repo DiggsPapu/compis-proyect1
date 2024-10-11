@@ -2,7 +2,7 @@
 import re
 from antlr4 import *
 
-from Semantic.Structures import Stack
+from Semantic.Structures import Ambito, Stack
 
 from .Structures import Cuadrupleta
 if "." in __name__:
@@ -33,6 +33,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
     def __init__(self, tablaDeAmbitos, correspondenciaNodosAmbitos):
         self.instructions = []  # Lista para almacenar las instrucciones TAC
         self.temp_counter = 0  # Contador para los temporales
+        self.param_counter = 0 # Contador para los parametros
         self.tablaDeAmbitos = tablaDeAmbitos    # Tabla de ámbitos con tabla de símbolos y de tipos
         self.correspondenciaNodosAmbitos = correspondenciaNodosAmbitos  # Diccionario que relaciona nodos con ámbitos
         self.ambitoActual = None    # Ámbito actual
@@ -41,6 +42,8 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         self.intoAmbito = False
         self.code = []
         self.declarandoVariable = None
+        self.stackFunciones = Stack([])
+        
     def new_label(self):
         label = f"L{self.label_counter}"
         self.label_counter += 1
@@ -62,6 +65,8 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 print(f'{instruccion.resultado}:')
             elif instruccion.operacion == '=':
                 print(f'    {instruccion.resultado} = {instruccion.arg1}')
+            elif instruccion.operacion == 'EndFunc':
+                print(f'    EndFunc')
             else: 
                 print(f'    {instruccion.resultado} = {instruccion.arg1} {instruccion.operacion if instruccion.operacion else ""} {instruccion.arg2 if instruccion.arg2 else ""}')
         
@@ -70,8 +75,11 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         This method is called each time a node is visited explicitly.
         """
         self.ultimoAmbito = self.ambitoActual
-        # Asignar el ambito actual
-        self.ambitoActual = self.correspondenciaNodosAmbitos.get(ctx)
+        if not self.stackFunciones.empty():
+            self.ambitoActual = self.stackFunciones.first()
+        else: 
+            # Asignar el ambito actual
+            self.ambitoActual = self.correspondenciaNodosAmbitos.get(ctx)
         # Visit the children of the node (traverse the tree)
         return super().visit(ctx)
 
@@ -80,8 +88,11 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         This method is called each time a node's children are visited.
         """
         self.ultimoAmbito = self.ambitoActual
-        # Asignar el ambito actual
-        self.ambitoActual = self.correspondenciaNodosAmbitos.get(ctx)
+        if not self.stackFunciones.empty():
+            self.ambitoActual = self.stackFunciones.first()
+        else: 
+            # Asignar el ambito actual
+            self.ambitoActual = self.correspondenciaNodosAmbitos.get(ctx)
         # Continue visiting the children as usual
         return super().visitChildren(ctx)
     
@@ -529,13 +540,31 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#function.
     def visitFunction(self, ctx:CompiScriptLanguageParser.FunctionContext):
+        # Crear un nuevo ambito porque todas las funciones no fueron trabajadas en el semantico en la definicion si no en la ejecucion y aqui es al reves
+        numAmbito = self.tablaDeAmbitos.size()
+        newFunctionAmbito = Ambito(numAmbito, self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).tablaDeSimbolos)
+        self.stackFunciones.insert(numAmbito)
+        self.tablaDeAmbitos.put(numAmbito, newFunctionAmbito)
         # Crear una instruccion para el label de la funcion
-        instruccion = Cuadrupleta()
-        instruccion.operacion = 'new_label'
-        instruccion.resultado = ctx.IDENTIFIER().getText()
-        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccion)
+        nombreFuncion = ctx.IDENTIFIER().getText()
+        instruccion = Cuadrupleta(operacion='new_label',resultado=nombreFuncion)
+        self.tablaDeAmbitos.get(numAmbito).aniadirCodigo(instruccion)
+        simboloFuncion = self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).tablaDeSimbolos.get(nombreFuncion)
+        # if simboloFuncion:
+        # if ctx.parameters():
+            # for indexParameter in len(ctx.parameters()):
+                
+                
+        # instruccion = Cuadrupleta(operacion='BeginFunc', )
+        # Pushear 
+        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).codigo_pointer.insert(self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).codigo_pointer.first())
         # Generar el código de la función
         self.visit(ctx.block())
+        # Aniadir endfunc
+        endFunc = Cuadrupleta(operacion='EndFunc')
+        self.tablaDeAmbitos.get(numAmbito).aniadirCodigo(endFunc)
+        self.stackFunciones.remove_first()
+        self.tablaDeAmbitos.get(0).aniadirCodigoCompleto(self.tablaDeAmbitos.get(numAmbito).codigo, 0)
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#parameters.

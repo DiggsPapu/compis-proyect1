@@ -313,7 +313,11 @@ class Ambito():
         self.codigo_pointer = Stack()
         self.codigo_pointer.insert(0)
         self.ambitosHijosExplorados = Stack()
-    
+    def aniadirCodigoCompleto(self, codigo, linea):
+        self.codigo_pointer.insert(linea)
+        for instruccion in codigo:
+            self.aniadirCodigo(instruccion)
+            
     def aniadirCodigo(self, codigo):
         self.codigo.insert(self.codigo_pointer.first(), codigo)
         newPointer = self.codigo_pointer.remove_first() + 1
