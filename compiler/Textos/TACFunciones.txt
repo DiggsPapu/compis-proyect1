@@ -1,11 +1,14 @@
 fun funcion1(param1, param2)
 {
     fun funcion3(parametro){
-        parametro=="Hola";
+        return parametro=="Hola";
     }
     fun funcion2(param1, param2){
-        param1+param2;
+        return param1+param2;
     }
-    return 1+2*54-13/(6+1);
+    var retorno = funcion2(param1, param2) * 3;
+    return funcion3(retorno);
 }
-var variable = funcion1("que hay", 22);
+    
+
+var variable = funcion1(1, 2);

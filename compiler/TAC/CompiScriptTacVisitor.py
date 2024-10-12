@@ -82,7 +82,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
             elif instruccion.operacion == 'param':
                 print(f'    param {instruccion.arg1}')
             elif instruccion.operacion == 'call':
-                print(f'    call {instruccion.arg1}')
+                print(f'    {instruccion.resultado} = call {instruccion.arg1}')
             elif instruccion.operacion == 'pushParam':
                 print(f'    pushParam {instruccion.arg1}')
             elif instruccion.operacion == 'popParams':
@@ -563,13 +563,14 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 for parametro in value.parametros:
                     parametroInstr = Cuadrupleta(operacion='pushParam',arg1=parametro)
                     self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(parametroInstr)
-                # Crear una instruccion para el call
-                callInstr = Cuadrupleta(operacion='call',arg1=firstPrimary)
+                # Crear una instruccion para el call y el retorno
+                temporalRetorno = self.new_temp()
+                callInstr = Cuadrupleta(resultado=temporalRetorno, operacion='call',arg1=firstPrimary)
                 self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(callInstr)
                 # Instruccion para pop params
                 popParams = Cuadrupleta(operacion='popParams', arg1=len(value.parametros))
                 self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(popParams)
-            return self.visitChildren(ctx)
+            return temporalRetorno
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#primary.
