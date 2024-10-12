@@ -235,6 +235,9 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         rangoExpr = len(ctx.expression())
         ifInstr = []
         blockInstr = []
+        # Crear el label para el despues
+        labelDespues = Cuadrupleta(operacion='new_label',resultado=self.new_label())
+        gotoDespues = Cuadrupleta(resultado = f'goto {labelDespues.resultado}')
         if not self.stackFunciones.empty():
             numAmbito = self.tablaDeAmbitos.size()
             # crear un ambito para el if entonces y que se desarrolle ahi
@@ -252,6 +255,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
             self.visit(ctx.block(index))
             # Aniadir el bloque de codigo al ambito actual
             blockInstr.extend(self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).codigo)
+            blockInstr.append(gotoDespues)
             self.ultimoAmbito = self.ambitoActual
             self.ambitoActual = ambitoIf
             if not self.stackFunciones.empty(): 
@@ -269,10 +273,12 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         ifInstr.reverse()
         for instruccion in ifInstr: 
             self.tablaDeAmbitos.get(ambitoIf).aniadirCodigo(instruccion)
+        self.tablaDeAmbitos.get(ambitoIf).aniadirCodigo(gotoDespues)
         for instruccion in blockInstr:
             self.tablaDeAmbitos.get(ambitoIf).aniadirCodigo(instruccion)
         if not self.stackFunciones.empty():
             self.stackFunciones.remove_first()
+        self.tablaDeAmbitos.get(ambitoIf).aniadirCodigo(labelDespues)
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#forStmt.
@@ -570,10 +576,15 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
             # Visitar el nombre esto puede ser una clase o una funcion y dependiendo se puede ir a visitar a la tabla de simbolos de cualquier contexto y el primero que aparezca se toma como el que es
             firstPrimary = self.visit(ctx.primary())
             value = self.searchSomethingInAmbitos(firstPrimary)
+            stackFuncionesWasEmpty = self.stackFunciones.empty()
+            if stackFuncionesWasEmpty:
+                self.stackFunciones.insert(self.ambitoActual)
             # Clase o funcion
             if isinstance(value ,Funcion):
+                parametros = self.visit(ctx.arguments(0))
                 # Pasar los parametros de la variable a la funcion
-                for parametro in value.parametros:
+                for index in range(len(parametros)):
+                    parametro = parametros[index]
                     parametroInstr = Cuadrupleta(operacion='pushParam',arg1=parametro)
                     self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(parametroInstr)
                 # Crear una instruccion para el call y el retorno
@@ -583,6 +594,8 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 # Instruccion para pop params
                 popParams = Cuadrupleta(operacion='popParams', arg1=len(value.parametros))
                 self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(popParams)
+            if stackFuncionesWasEmpty:
+                self.stackFunciones.remove_first()
             return temporalRetorno
 
 
@@ -640,8 +653,12 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#arguments.
     def visitArguments(self, ctx:CompiScriptLanguageParser.ArgumentsContext):
-        # Appendear los argumentos en el tac 
+        parametros = []
         for child in ctx.expression():
-            parametro = self.visit(child)
-            instruccion = Cuadrupleta(operacion='param',arg1=parametro)
-            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccion)
+            parametros.append(self.visit(child))
+        return parametros
+        # Appendear los argumentos en el tac 
+        # for child in ctx.expression():
+        #     parametro = self.visit(child)
+        #     instruccion = Cuadrupleta(operacion='param',arg1=parametro)
+        #     self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccion)
