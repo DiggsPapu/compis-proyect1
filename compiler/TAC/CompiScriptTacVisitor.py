@@ -325,6 +325,8 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         ambitoWhile = self.ambitoActual
         # Crear un nuevo label para evaluar la condicion del while
         checkLabel = self.new_label()
+        # Crear un nuevo label para la continuacion
+        continueLabel = self.new_label()
         # Crear una instruccion en el flujo para que lleve al nuevo label en cuestión
         instruccion = Cuadrupleta()
         instruccion.resultado = f'goto {checkLabel}'
@@ -338,6 +340,13 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         instruccion = Cuadrupleta()
         instruccion.operacion = 'if'
         instruccion.arg1 = self.visit(ctx.expression())
+        if not self.stackFunciones.empty():
+            numAmbito = self.tablaDeAmbitos.size()
+            # crear un ambito para el if entonces y que se desarrolle ahi
+            AmbitoIf = Ambito(numAmbito, HashMap())
+            self.tablaDeAmbitos.put(numAmbito, AmbitoIf)
+            self.ambitoActual = numAmbito
+            self.stackFunciones.insert(numAmbito)
         # Crear un nuevo label para el bloque del while
         blockLabel = Cuadrupleta()
         blockLabel.resultado = self.new_label()
@@ -348,6 +357,9 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         # Irse al bloque del while
         instruccion.resultado = f'goto {blockLabel.resultado}'
         self.tablaDeAmbitos.get(ambitoWhile).aniadirCodigo(instruccion)
+        # Irse a la continuacion
+        instruccionContinue = Cuadrupleta(resultado=f'goto {continueLabel}')
+        self.tablaDeAmbitos.get(ambitoWhile).aniadirCodigo(instruccionContinue)
         # Aniadir el goto al bloque del while
         instruccion = Cuadrupleta()
         instruccion.resultado = f'goto {checkLabel}'
@@ -356,6 +368,11 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         self.tablaDeAmbitos.get(ambitoWhile).aniadirCodigo(blockLabel)
         for instruccion in self.tablaDeAmbitos.get(self.ultimoAmbito).codigo:
             self.tablaDeAmbitos.get(ambitoWhile).aniadirCodigo(instruccion)
+        # Crear una instruccion que sea un nuevo label
+        instruccion = Cuadrupleta(resultado=continueLabel,operacion='new_label')
+        self.tablaDeAmbitos.get(ambitoWhile).aniadirCodigo(instruccion)
+        if not self.stackFunciones.empty():
+            self.stackFunciones.remove_first()
 
     # Visit a parse tree produced by CompiScriptLanguageParser#printStmt.
     def visitPrintStmt(self, ctx:CompiScriptLanguageParser.PrintStmtContext):

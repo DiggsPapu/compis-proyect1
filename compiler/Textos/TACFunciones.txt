@@ -12,3 +12,11 @@ fun funcion1(param1, param2)
     
 
 var variable = funcion1(1, 2);
+
+fun countdown() {
+    var i = 10;
+    while (i > 0) {
+        print i;
+        i = i - 1;
+    }
+}
