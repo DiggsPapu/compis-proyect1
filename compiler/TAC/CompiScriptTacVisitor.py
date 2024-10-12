@@ -598,7 +598,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 self.stackFunciones.insert(self.ambitoActual)
             # Clase o funcion
             if isinstance(value ,Funcion):
-                parametros = self.visit(ctx.arguments(0))
+                parametros = self.visit(ctx.arguments(0)) if ctx.arguments() else []
                 # Pasar los parametros de la variable a la funcion
                 for index in range(len(parametros)):
                     parametro = parametros[index]

@@ -20,3 +20,4 @@ fun countdown() {
         i = i - 1;
     }
 }
+countdown();
