@@ -2,7 +2,7 @@
 import re
 from antlr4 import *
 
-from Semantic.Structures import Ambito, Stack
+from Semantic.Structures import Ambito, Stack, HashMap, DefinidoPorUsuario, Funcion
 
 from .Structures import Cuadrupleta
 if "." in __name__:
@@ -44,7 +44,16 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         self.declarandoVariable = None
         self.stackFunciones = Stack([])
         self.tablaDeAmbitos.get(0).aniadirCodigo(Cuadrupleta(operacion='new_label',resultado='main'))
-        
+    
+    def searchSomethingInAmbitos(self, something):
+        # Primero buscar en el ambito 0 ya que ese es el main y es el final digamos
+        retorno = self.tablaDeAmbitos.get(0).tablaDeSimbolos.get(something) if self.tablaDeAmbitos.get(0).tablaDeSimbolos.get(something) else self.tablaDeAmbitos.get(0).tablaDeTipos.get(something)
+        if retorno: return retorno
+        for i in range(self.tablaDeAmbitos.size()-1,0,-1):
+            retorno = self.tablaDeAmbitos.get(i).tablaDeSimbolos.get(something) if self.tablaDeAmbitos.get(i).tablaDeSimbolos.get(something) else self.tablaDeAmbitos.get(i).tablaDeTipos.get(something)
+            if retorno: return retorno
+        return None
+    
     def new_label(self):
         label = f"L{self.label_counter}"
         self.label_counter += 1
@@ -70,6 +79,14 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 print(f'    EndFunc')
             elif instruccion.operacion == 'print':
                 print(f'    print {instruccion.arg1}')
+            elif instruccion.operacion == 'param':
+                print(f'    param {instruccion.arg1}')
+            elif instruccion.operacion == 'call':
+                print(f'    call {instruccion.arg1}')
+            elif instruccion.operacion == 'pushParam':
+                print(f'    pushParam {instruccion.arg1}')
+            elif instruccion.operacion == 'popParams':
+                print(f'    popParams {instruccion.arg1}')
             elif instruccion.operacion == 'return':
                 print(f'    return {instruccion.arg1}')
             else: 
@@ -528,7 +545,31 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#call.
     def visitCall(self, ctx:CompiScriptLanguageParser.CallContext):
-        return self.visitChildren(ctx)
+        # Solo es un primary
+        if ctx.getChildCount() == 1:
+            return self.visit(ctx.primary())
+        # En caso de que no solo sea un primary
+        # Es crear una clase
+        elif  self.visit(ctx.getChild(0))=="new":
+            return self.visitChildren(ctx)
+        # Es una llamada a una funcion o a una clase y atributos o una clase y metodos
+        else:
+            # Visitar el nombre esto puede ser una clase o una funcion y dependiendo se puede ir a visitar a la tabla de simbolos de cualquier contexto y el primero que aparezca se toma como el que es
+            firstPrimary = self.visit(ctx.primary())
+            value = self.searchSomethingInAmbitos(firstPrimary)
+            # Clase o funcion
+            if isinstance(value ,Funcion):
+                # Pasar los parametros de la variable a la funcion
+                for parametro in value.parametros:
+                    parametroInstr = Cuadrupleta(operacion='pushParam',arg1=parametro)
+                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(parametroInstr)
+                # Crear una instruccion para el call
+                callInstr = Cuadrupleta(operacion='call',arg1=firstPrimary)
+                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(callInstr)
+                # Instruccion para pop params
+                popParams = Cuadrupleta(operacion='popParams', arg1=len(value.parametros))
+                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(popParams)
+            return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#primary.
@@ -550,14 +591,17 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
     def visitFunction(self, ctx:CompiScriptLanguageParser.FunctionContext):
         # Crear un nuevo ambito porque todas las funciones no fueron trabajadas en el semantico en la definicion si no en la ejecucion y aqui es al reves
         numAmbito = self.tablaDeAmbitos.size()
-        newFunctionAmbito = Ambito(numAmbito, self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).tablaDeSimbolos)
+        newFunctionAmbito = Ambito(identificador=numAmbito, tablaDeSimbolos=HashMap())
         self.stackFunciones.insert(numAmbito)
         self.tablaDeAmbitos.put(numAmbito, newFunctionAmbito)
         # Crear una instruccion para el label de la funcion
         nombreFuncion = ctx.IDENTIFIER().getText()
         instruccion = Cuadrupleta(operacion='new_label',resultado=nombreFuncion)
         self.tablaDeAmbitos.get(numAmbito).aniadirCodigo(instruccion)
-        simboloFuncion = self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).tablaDeSimbolos.get(nombreFuncion)
+        simboloFuncion:Funcion = self.searchSomethingInAmbitos(nombreFuncion)
+        for parametro in simboloFuncion.parametros:
+            parametroInstruccion = Cuadrupleta(operacion='param',arg1=parametro)
+            self.tablaDeAmbitos.get(numAmbito).aniadirCodigo(parametroInstruccion)
         # if simboloFuncion:
         # if ctx.parameters():
             # for indexParameter in len(ctx.parameters()):
@@ -582,4 +626,8 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#arguments.
     def visitArguments(self, ctx:CompiScriptLanguageParser.ArgumentsContext):
-        return self.visitChildren(ctx)
+        # Appendear los argumentos en el tac 
+        for child in ctx.expression():
+            parametro = self.visit(child)
+            instruccion = Cuadrupleta(operacion='param',arg1=parametro)
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccion)
