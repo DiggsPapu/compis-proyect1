@@ -287,6 +287,13 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         # la declaracion de variable debe de estar en el flujo normal por ende no estara dentro del label
         if ctx.varDecl():
             self.visit(ctx.varDecl())
+        if not self.stackFunciones.empty():
+            numAmbito = self.tablaDeAmbitos.size()
+            # crear un ambito para el if entonces y que se desarrolle ahi
+            AmbitoIf = Ambito(numAmbito, HashMap())
+            self.tablaDeAmbitos.put(numAmbito, AmbitoIf)
+            self.ambitoActual = numAmbito
+            self.stackFunciones.insert(numAmbito)
         # Crear un nuevo label para evaluar la condicion del for
         checkLabel = Cuadrupleta()
         checkLabel.operacion = 'new_label'
@@ -573,8 +580,9 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
             instruction = Cuadrupleta()
             # Para el unary vamos a crear un temporal que almacene los valores de la operación booleana en cuestion
             instruction.resultado = self.new_temp()
-            instruction.operacion = self.visit(ctx.getChild(0))
-            instruction.arg1 = self.visit(ctx.unary())
+            instruction.operacion = ctx.getChild(0).getText()
+            instruction.arg1 = ''
+            instruction.arg2 = self.visit(ctx.unary())
             self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruction)
             return instruction.resultado
 

@@ -21,3 +21,14 @@ fun countdown() {
     }
 }
 countdown();
+
+fun forFun(i){
+    for (i; i<=10; i= i+1){
+        print i;
+        for (var k = 0; k<i; k=k+1){
+            print k;
+        }
+    }
+    return nil;
+}
+var forfunvar = forFun(50);
