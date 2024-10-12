@@ -235,6 +235,13 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         rangoExpr = len(ctx.expression())
         ifInstr = []
         blockInstr = []
+        if not self.stackFunciones.empty():
+            numAmbito = self.tablaDeAmbitos.size()
+            # crear un ambito para el if entonces y que se desarrolle ahi
+            AmbitoIf = Ambito(numAmbito, HashMap())
+            self.tablaDeAmbitos.put(numAmbito, AmbitoIf)
+            self.ambitoActual = numAmbito
+            self.stackFunciones.insert(numAmbito)
         for index in range(rangoBlock-1,-1,-1):
             instruccion = Cuadrupleta()
             instruccionLabel = Cuadrupleta()
@@ -247,6 +254,8 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
             blockInstr.extend(self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).codigo)
             self.ultimoAmbito = self.ambitoActual
             self.ambitoActual = ambitoIf
+            if not self.stackFunciones.empty(): 
+                self.stackFunciones.remove_first()
             # Significa que hay un else
             if rangoBlock>rangoExpr and index==rangoBlock-1:
                 instruccion.resultado = f'goto {instruccionLabel.resultado}'
@@ -254,12 +263,16 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 instruccion.operacion = 'if'
                 instruccion.resultado = f'goto {instruccionLabel.resultado}'
                 instruccion.arg1 = self.visit(ctx.expression(index))
+            if not self.stackFunciones.empty(): 
+                self.stackFunciones.insert(numAmbito)
             ifInstr.append(instruccion)
         ifInstr.reverse()
         for instruccion in ifInstr: 
             self.tablaDeAmbitos.get(ambitoIf).aniadirCodigo(instruccion)
         for instruccion in blockInstr:
             self.tablaDeAmbitos.get(ambitoIf).aniadirCodigo(instruccion)
+        if not self.stackFunciones.empty():
+            self.stackFunciones.remove_first()
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#forStmt.
