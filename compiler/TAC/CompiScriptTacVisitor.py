@@ -44,7 +44,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         self.declarandoVariable = None
         self.stackFunciones = Stack([])
         self.tablaDeAmbitos.get(0).aniadirCodigo(Cuadrupleta(operacion='new_label',resultado='main'))
-    
+        self.class_name = None
     def searchSomethingInAmbitos(self, something):
         # Primero buscar en el ambito 0 ya que ese es el main y es el final digamos
         retorno = self.tablaDeAmbitos.get(0).tablaDeSimbolos.get(something) if self.tablaDeAmbitos.get(0).tablaDeSimbolos.get(something) else self.tablaDeAmbitos.get(0).tablaDeTipos.get(something)
@@ -199,7 +199,11 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#classDecl.
     def visitClassDecl(self, ctx:CompiScriptLanguageParser.ClassDeclContext):
-        return self.visitChildren(ctx)
+        self.class_name = ctx.IDENTIFIER(0).getText()
+        # Practicamente crear una clase es hacer todos sus metodos
+        for child in ctx.function():
+            self.visit(child)
+        self.class_name = None
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#funDecl.
@@ -284,9 +288,11 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
     # Visit a parse tree produced by CompiScriptLanguageParser#forStmt.
     def visitForStmt(self, ctx:CompiScriptLanguageParser.ForStmtContext):
         ambitoFor = self.ambitoActual
-        # la declaracion de variable debe de estar en el flujo normal por ende no estara dentro del label
+        # la declaracion de variable debe de estar en el flujo normal por ende no estara dentro del label, igual si se reasigna el valor de una variable
         if ctx.varDecl():
             self.visit(ctx.varDecl())
+        elif ctx.exprStmt():
+            self.visit(ctx.exprStmt())
         if not self.stackFunciones.empty():
             numAmbito = self.tablaDeAmbitos.size()
             # crear un ambito para el if entonces y que se desarrolle ahi
@@ -295,37 +301,32 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
             self.ambitoActual = numAmbito
             self.stackFunciones.insert(numAmbito)
         # Crear un nuevo label para evaluar la condicion del for
-        checkLabel = Cuadrupleta()
-        checkLabel.operacion = 'new_label'
-        checkLabel.resultado = self.new_label()
+        checkLabel = Cuadrupleta(operacion = 'new_label',resultado = self.new_label())
         self.tablaDeAmbitos.get(ambitoFor).aniadirCodigo(checkLabel)
         # Crear un nuevo label para evaluar el bloque del for
-        blockLabel = Cuadrupleta()
-        blockLabel.operacion = 'new_label'
-        blockLabel.resultado = self.new_label()
-        # Esta puede declarar condiciones por lo que asumiremos que sera el goto y que hace el chequeo en el for semantico
-        if ctx.exprStmt():
-            self.visit(ctx.exprStmt())
-        # La primera expresion suele ser la de la condicion en vez del exprStmt
-        elif ctx.expression():
-            instruccion = Cuadrupleta()
-            instruccion.operacion = 'if'
-            instruccion.arg1 = self.visit(ctx.expression(0))
-            instruccion.resultado = f'goto {blockLabel.resultado}'
+        blockLabel = Cuadrupleta(operacion='new_label',resultado=self.new_label())
+        # Crear un nuevo label para la continuacion luego del for
+        continueLabel = Cuadrupleta(operacion='new_label',resultado=self.new_label())
+        # La primera expresion suele ser la de la condicion
+        if ctx.expression():
+            instruccion = Cuadrupleta(operacion='if',arg1=self.visit(ctx.expression(0)),resultado=f'goto {blockLabel.resultado}')
+            self.tablaDeAmbitos.get(ambitoFor).aniadirCodigo(instruccion)
+        # Crear goto a la continuacion en caso de que no aplique
+        instruccion = Cuadrupleta(resultado=f'goto {continueLabel.resultado}')
+        self.tablaDeAmbitos.get(ambitoFor).aniadirCodigo(instruccion)
         # Aniadir el label del bloque para que lo demas sea parte del bloque
         self.tablaDeAmbitos.get(ambitoFor).aniadirCodigo(blockLabel)
+        # Generar el bloque de codigo del for
+        self.visit(ctx.block())
+        self.tablaDeAmbitos.get(ambitoFor).aniadirCodigoCompleto(self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).codigo, self.tablaDeAmbitos.get(ambitoFor).codigo_pointer.first())
         # Condicion de sumar o lo que sea de la segunda expresion, eso va adentro del bloque
         if len(ctx.expression())>1:
             self.visit(ctx.expression(1))
-        # Generar el bloque de codigo del for
-        self.visit(ctx.block())
         # Agregar el goto para el bloque del for para que evalue la condicion
-        instruccion = Cuadrupleta()
-        instruccion.resultado = f'goto {checkLabel.resultado}'
+        instruccion = Cuadrupleta(resultado=f'goto {checkLabel.resultado}')
         self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccion)
-        # Aniadir el bloque de codigo al ambito actual
-        self.tablaDeAmbitos.get(ambitoFor).codigo.extend(self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).codigo)
-
+        # Aniadir el label de la continuacion
+        self.tablaDeAmbitos.get(ambitoFor).aniadirCodigo(continueLabel)
 
     # Visit a parse tree produced by CompiScriptLanguageParser#whileStmt.
     def visitWhileStmt(self, ctx:CompiScriptLanguageParser.WhileStmtContext):
@@ -650,6 +651,8 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         nombreFuncion = ctx.IDENTIFIER().getText()
         instruccion = Cuadrupleta(operacion='new_label',resultado=nombreFuncion)
         self.tablaDeAmbitos.get(numAmbito).aniadirCodigo(instruccion)
+        if self.class_name:
+            nombreFuncion = f'{self.class_name}.{nombreFuncion}'
         simboloFuncion:Funcion = self.searchSomethingInAmbitos(nombreFuncion)
         for parametro in simboloFuncion.parametros:
             parametroInstruccion = Cuadrupleta(operacion='param',arg1=parametro)

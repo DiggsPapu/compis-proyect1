@@ -1,0 +1,30 @@
+class Animal {
+    init(type, sound) {
+        this.type = type;
+        this.sound = sound;
+    }
+
+    getType() {
+        return this.type;
+    }
+
+    getSound() {
+        return this.sound;
+    }
+
+    speak() {
+        print this.type + " says: " + this.sound;
+    }
+
+    isSameType(otherType) {
+        if (this.type == otherType) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    isQuiet() {
+        return this.sound == nil;
+    }
+}
