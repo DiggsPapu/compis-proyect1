@@ -1,4 +1,4 @@
-# Proyecto 1 - Construcción de Compildores
+# Proyecto - Construcción de Compildores
 ## Índice
 - [Descripción](https://github.com/DiggsPapu/compis-proyect1?tab=readme-ov-file#descripci%C3%B3n)
 - [Temas vistos](https://github.com/DiggsPapu/compis-proyect1?tab=readme-ov-file#temas-vistos)
@@ -171,9 +171,9 @@ Este comando va a inicializar el proyecto de Django, el cual, cuando termine de 
 [Informe 2](https://docs.google.com/document/d/1BMCx6oPvcxqTYnhsura5meGajStbzOLjyqDPzApYwNo/edit?usp=sharing)
 
 ## Videos
-[Video 1](URL)
+[Video 1](URL)https://youtu.be/ynKdowK_XoY
 
-[Video 2](URL)
+[Video 2](URL)https://youtu.be/1D3zimnmNrQ
 
 ## Autores
 Diego Andrés Alonzo Medinilla - 20172
