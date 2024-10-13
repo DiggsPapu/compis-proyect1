@@ -1,15 +1,3 @@
-class Persona{
-    init(nombre, sexo, edad, mascota){
-        this.nombre = nombre;
-        this.macho = sexo;
-        this.edadHumana = edad;
-        this.mascota = mascota;
-    }
-    getMascota(){
-        return this.mascota;
-    }
-}
-
 var variable = 23;
 var array1 = [1];
 var array2 = [1,2,3,4,5];
