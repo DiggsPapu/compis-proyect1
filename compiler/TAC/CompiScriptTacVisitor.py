@@ -289,10 +289,12 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
     def visitForStmt(self, ctx:CompiScriptLanguageParser.ForStmtContext):
         ambitoFor = self.ambitoActual
         # la declaracion de variable debe de estar en el flujo normal por ende no estara dentro del label, igual si se reasigna el valor de una variable
+        # Crear temporal para la variable que se va a reasignar
+        variable = None
         if ctx.varDecl():
-            self.visit(ctx.varDecl())
+            variable = self.visit(ctx.varDecl())
         elif ctx.exprStmt():
-            self.visit(ctx.exprStmt())
+            variable = self.visit(ctx.exprStmt())
         if not self.stackFunciones.empty():
             numAmbito = self.tablaDeAmbitos.size()
             # crear un ambito para el if entonces y que se desarrolle ahi
@@ -321,7 +323,8 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         self.tablaDeAmbitos.get(ambitoFor).aniadirCodigoCompleto(self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).codigo, self.tablaDeAmbitos.get(ambitoFor).codigo_pointer.first())
         # Condicion de sumar o lo que sea de la segunda expresion, eso va adentro del bloque
         if len(ctx.expression())>1:
-            self.visit(ctx.expression(1))
+            sumaOLoQueSea = Cuadrupleta(operacion='=',arg1=self.visit(ctx.expression(1)),resultado=variable)
+            self.tablaDeAmbitos.get(ambitoFor).aniadirCodigo(sumaOLoQueSea)
         # Agregar el goto para el bloque del for para que evalue la condicion
         instruccion = Cuadrupleta(resultado=f'goto {checkLabel.resultado}')
         self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccion)
