@@ -208,7 +208,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#funDecl.
     def visitFunDecl(self, ctx:CompiScriptLanguageParser.FunDeclContext):
-        return self.visitChildren(ctx)
+        return self.visit(ctx.function())
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#varDecl.
@@ -229,7 +229,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#exprStmt.
     def visitExprStmt(self, ctx:CompiScriptLanguageParser.ExprStmtContext):
-        return self.visitChildren(ctx)
+        return self.visit(ctx.expression())
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#ifStmt.
@@ -295,13 +295,6 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
             variable = self.visit(ctx.varDecl())
         elif ctx.exprStmt():
             variable = self.visit(ctx.exprStmt())
-        if not self.stackFunciones.empty():
-            numAmbito = self.tablaDeAmbitos.size()
-            # crear un ambito para el if entonces y que se desarrolle ahi
-            AmbitoIf = Ambito(numAmbito, HashMap())
-            self.tablaDeAmbitos.put(numAmbito, AmbitoIf)
-            self.ambitoActual = numAmbito
-            self.stackFunciones.insert(numAmbito)
         # Crear un nuevo label para evaluar la condicion del for
         checkLabel = Cuadrupleta(operacion = 'new_label',resultado = self.new_label())
         self.tablaDeAmbitos.get(ambitoFor).aniadirCodigo(checkLabel)
@@ -318,8 +311,17 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         self.tablaDeAmbitos.get(ambitoFor).aniadirCodigo(instruccion)
         # Aniadir el label del bloque para que lo demas sea parte del bloque
         self.tablaDeAmbitos.get(ambitoFor).aniadirCodigo(blockLabel)
+        if not self.stackFunciones.empty():
+            numAmbito = self.tablaDeAmbitos.size()
+            # crear un ambito para el if entonces y que se desarrolle ahi
+            AmbitoIf = Ambito(numAmbito, HashMap())
+            self.tablaDeAmbitos.put(numAmbito, AmbitoIf)
+            self.ambitoActual = numAmbito
+            self.stackFunciones.insert(numAmbito)
         # Generar el bloque de codigo del for
         self.visit(ctx.block())
+        if not self.stackFunciones.empty():
+            self.stackFunciones.remove_first()
         self.tablaDeAmbitos.get(ambitoFor).aniadirCodigoCompleto(self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).codigo, self.tablaDeAmbitos.get(ambitoFor).codigo_pointer.first())
         # Condicion de sumar o lo que sea de la segunda expresion, eso va adentro del bloque
         if len(ctx.expression())>1:
@@ -405,7 +407,17 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#expression.
     def visitExpression(self, ctx:CompiScriptLanguageParser.ExpressionContext):
-        return self.visitChildren(ctx)
+        if ctx.array():
+            return self.visit(ctx.array())
+        elif ctx.logic():
+            return self.visit(ctx.logic())
+        else:
+            # Es una asignacion simple
+            if not ctx.call():
+                asignacion = Cuadrupleta(operacion='=',arg1=self.visit(ctx.expression()),resultado=ctx.IDENTIFIER().getText())
+                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(asignacion)
+                return asignacion.resultado
+            return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#array.
@@ -630,7 +642,9 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CompiScriptLanguageParser#primary.
     def visitPrimary(self, ctx:CompiScriptLanguageParser.PrimaryContext):
-        if ctx.NUMBER():
+        if ctx.IDENTIFIER():
+            return ctx.IDENTIFIER().getText()
+        elif ctx.NUMBER():
             return ctx.NUMBER().getText()
         elif ctx.STRING():
             return ctx.STRING().getText()
