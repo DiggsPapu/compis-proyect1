@@ -2,7 +2,7 @@
 import re
 from antlr4 import *
 
-from Semantic.Structures import Ambito, Stack, HashMap, DefinidoPorUsuario, Funcion
+from Semantic.Structures import Ambito, Stack, HashMap, DefinidoPorUsuario, Funcion, Metodo
 
 from .Structures import Cuadrupleta
 if "." in __name__:
@@ -45,6 +45,8 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         self.stackFunciones = Stack([])
         self.tablaDeAmbitos.get(0).aniadirCodigo(Cuadrupleta(operacion='new_label',resultado='main'))
         self.class_name = None
+        self.class_herency_name = None
+        self.init_method = False
     def searchSomethingInAmbitos(self, something):
         # Primero buscar en el ambito 0 ya que ese es el main y es el final digamos
         retorno = self.tablaDeAmbitos.get(0).tablaDeSimbolos.get(something) if self.tablaDeAmbitos.get(0).tablaDeSimbolos.get(something) else self.tablaDeAmbitos.get(0).tablaDeTipos.get(something)
@@ -200,10 +202,23 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
     # Visit a parse tree produced by CompiScriptLanguageParser#classDecl.
     def visitClassDecl(self, ctx:CompiScriptLanguageParser.ClassDeclContext):
         self.class_name = ctx.IDENTIFIER(0).getText()
+        # herencia
+        if ctx.IDENTIFIER(1):
+            self.class_herency_name = ctx.IDENTIFIER(1).getText()
+            # funcionInitHerencia:Metodo = self.searchSomethingInAmbitos(f'{self.class_herency_name}.init')
+            # if funcionInitHerencia:
+            #     for parametro in funcionInitHerencia.parametros:
+            #         parametroInstr = Cuadrupleta(operacion='pushParam',arg1=parametro)
+            #         self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(parametroInstr)
+            #     callInstr = Cuadrupleta(operacion='call',arg1=f'{self.class_herency_name}_init',resultado=self.new_temp())
+            #     self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(callInstr)
+            #     popInstr = Cuadrupleta(operacion='popParams', arg1=len(funcionInitHerencia.parametros))
+            #     self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(popInstr)
         # Practicamente crear una clase es hacer todos sus metodos
         for child in ctx.function():
             self.visit(child)
         self.class_name = None
+        self.class_herency_name = None
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#funDecl.
@@ -632,8 +647,53 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(popParams)
             if stackFuncionesWasEmpty:
                 self.stackFunciones.remove_first()
-            # if firstPrimary == 'this':
-                
+            if firstPrimary == 'this' and self.class_name:
+                coso = ctx.getChildCount()-1
+                for index in range(1,ctx.getChildCount()):
+                    node = ctx.getChild(index)
+                    if isinstance(node, TerminalNodeImpl):
+                        child = ctx.getChild(index).getText()
+                        value = self.searchSomethingInAmbitos(f'{self.class_name}.{child}')
+                        if child == '.':
+                            continue
+                        # Llamar metodo
+                        elif value:
+                            if isinstance(value, Funcion):
+                                parametros = self.visit(ctx.arguments(index)) if ctx.arguments() else []
+                                # Pasar los parametros de la variable a la funcion
+                                for index in range(len(parametros)):
+                                    parametro = parametros[index]
+                                    parametroInstr = Cuadrupleta(operacion='pushParam',arg1=parametro)
+                                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(parametroInstr)
+                                # Crear una instruccion para el call y el retorno
+                                temporalRetorno = self.new_temp()
+                                callInstr = Cuadrupleta(resultado=temporalRetorno, operacion='call',arg1=f'{self.class_name}.{child}')
+                                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(callInstr)
+                                # Instruccion para pop params
+                                popParams = Cuadrupleta(operacion='popParams', arg1=len(value.parametros))
+                                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(popParams)
+                            # Atributos
+                            else:
+                                atributos:set = self.searchSomethingInAmbitos(f'{self.class_name}').atributos
+                                atributos.add(child)
+                                listaAtributos = list(atributos)
+                                # Crear un temporal para el valor del atributo
+                                # El object siempre sera la representacion del atributo y se pasara como parametro
+                                # Crear una instruccion para el calculo de la direccion del atributo
+                                direccionAtributo = Cuadrupleta(operacion='+',arg1=f'object', arg2=f'{16*listaAtributos.index(child)}',resultado=self.new_temp())
+                                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(direccionAtributo)
+                                temporalRetorno = f'*{direccionAtributo.resultado}'
+                        else:
+                            # Aniadir el parametro a la clase
+                            atributos:set = self.searchSomethingInAmbitos(f'{self.class_name}').atributos
+                            atributos.add(child)
+                            listaAtributos = list(atributos)
+                            # Crear un temporal para el valor del atributo
+                            # El object siempre sera la representacion del atributo y se pasara como parametro
+                            # Crear una instruccion para el calculo de la direccion del atributo
+                            direccionAtributo = Cuadrupleta(operacion='+',arg1=f'object', arg2=f'{16*listaAtributos.index(child)}',resultado=self.new_temp())
+                            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(direccionAtributo)
+                            temporalRetorno = f'*{direccionAtributo.resultado}'
             return temporalRetorno
 
 
@@ -651,7 +711,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         elif ctx.arrayAccess():
             return self.visit(ctx.arrayAccess())   
         elif ctx.getText() ==  "nil": return "null"
-        elif ctx.getText() == "false" or ctx.getText() == "true": return ctx.getText()     
+        elif ctx.getText() == "false" or ctx.getText() == "true" or ctx.getText()=="this": return ctx.getText()     
         return self.visitChildren(ctx)
 
 
@@ -664,10 +724,23 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         self.tablaDeAmbitos.put(numAmbito, newFunctionAmbito)
         # Crear una instruccion para el label de la funcion
         nombreFuncion = ctx.IDENTIFIER().getText()
-        instruccion = Cuadrupleta(operacion='new_label',resultado=nombreFuncion)
+        instruccion = Cuadrupleta(operacion='new_label',resultado=nombreFuncion if not self.class_name else f'{self.class_name}_{nombreFuncion}')
         self.tablaDeAmbitos.get(numAmbito).aniadirCodigo(instruccion)
+        # En caso que tenga herencia hay que ponerle eso
+        if nombreFuncion == 'init' and self.class_herency_name != None:
+            funcionInitHerencia:Metodo = self.searchSomethingInAmbitos(f'{self.class_herency_name}.init')
+            if funcionInitHerencia:
+                for parametro in funcionInitHerencia.parametros:
+                    parametroInstr = Cuadrupleta(operacion='pushParam',arg1=parametro)
+                    self.tablaDeAmbitos.get(numAmbito).aniadirCodigo(parametroInstr)
+                callInstr = Cuadrupleta(operacion='call',arg1=f'{self.class_herency_name}_init',resultado=self.new_temp())
+                self.tablaDeAmbitos.get(numAmbito).aniadirCodigo(callInstr)
+                popInstr = Cuadrupleta(operacion='popParams', arg1=len(funcionInitHerencia.parametros))
+                self.tablaDeAmbitos.get(numAmbito).aniadirCodigo(popInstr)
         if self.class_name:
             nombreFuncion = f'{self.class_name}.{nombreFuncion}'
+            # Aniadir parametro de objeto
+            self.tablaDeAmbitos.get(numAmbito).aniadirCodigo(Cuadrupleta(operacion='param',arg1='object'))
         simboloFuncion:Funcion = self.searchSomethingInAmbitos(nombreFuncion)
         for parametro in simboloFuncion.parametros:
             parametroInstruccion = Cuadrupleta(operacion='param',arg1=parametro)

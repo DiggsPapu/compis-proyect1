@@ -2,6 +2,73 @@ var globalVar1 = 10;
 var globalVar2 = "Global String";
 var globalBoolean = true;
 
+class Animal {
+    init(type, sound) {
+        this.type = type;
+        this.sound = sound;
+    }
+
+    getType() {
+        return this.type;
+    }
+
+    getSound() {
+        return this.sound;
+    }
+
+    speak() {
+        print this.type + " says: " + this.sound;
+    }
+
+    isSameType(otherType) {
+        if (this.type == otherType) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    isQuiet() {
+        return this.sound == nil;
+    }
+}
+
+class Dog extends Animal {
+    init(breed, sound) {
+        this.breed = breed;
+        this.sound = sound;
+        this.type = "Dog";
+    }
+
+    getBreed() {
+        return this.breed;
+    }
+
+    bark() {
+        print this.breed + " barks: " + this.sound;
+    }
+
+    sit() {
+        print this.breed + " is sitting.";
+    }
+
+    fetch() {
+        print this.breed + " is fetching.";
+    }
+
+    isQuietBreed() {
+        if (this.sound == nil) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+var myDog = new Dog("Golden Retriever", "Woof");
+myDog.bark();
+myDog.sit();
+myDog.fetch();
 
 globalVar1 = 20;
 print "Global Variable inside function: " + globalVar1;

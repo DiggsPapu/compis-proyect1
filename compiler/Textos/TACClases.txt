@@ -28,3 +28,35 @@ class Animal {
         return this.sound == nil;
     }
 }
+
+class Dog extends Animal {
+    init(breed, sound) {
+        this.breed = breed;
+        this.sound = sound;
+        this.type = "Dog";
+    }
+
+    getBreed() {
+        return this.breed;
+    }
+
+    bark() {
+        print this.breed + " barks: " + this.sound;
+    }
+
+    sit() {
+        print this.breed + " is sitting.";
+    }
+
+    fetch() {
+        print this.breed + " is fetching.";
+    }
+
+    isQuietBreed() {
+        if (this.sound == nil) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}

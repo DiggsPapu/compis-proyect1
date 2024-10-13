@@ -35,6 +35,7 @@ class DefinidoPorUsuario(Tipo):
         self.init = None
         self.initParams = None
         self.inheritance = None
+        self.atributos = set()
         
     def __str__(self) -> str:
         return self.nombreTipo
