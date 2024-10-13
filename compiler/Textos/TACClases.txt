@@ -61,3 +61,6 @@ class Dog extends Animal {
     }
 }
 var myDog = new Dog("Golden Retriever", "Woof");
+myDog.bark();
+myDog.sit();
+myDog.fetch();

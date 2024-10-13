@@ -712,6 +712,42 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                             direccionAtributo = Cuadrupleta(operacion='+',arg1=f'object', arg2=f'{16*listaAtributos.index(child)}',resultado=self.new_temp())
                             self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(direccionAtributo)
                             temporalRetorno = f'*{direccionAtributo.resultado}'
+            # Es una variable o algo como una clase
+            else:
+                class_name = firstPrimary
+                # Cargar en el temporal lo que sea que vayamos resolviendo
+                temporalRetorno = self.new_temp()
+                resolucionInstruccion = Cuadrupleta(operacion='=',arg1=class_name,resultado=temporalRetorno)
+                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(resolucionInstruccion)
+                instancia = self.searchSomethingInAmbitos(class_name)
+                clase = instancia.tipo
+                for index in range(1,ctx.getChildCount()):
+                    child = None
+                    if isinstance(ctx.getChild(index), TerminalNodeImpl):
+                        child = ctx.getChild(index).getText()
+                    else:
+                        child = self.visit(ctx.getChild(index))
+                    funcionIdentifier = self.searchSomethingInAmbitos(f'{clase}.{child}')
+                    if funcionIdentifier and isinstance(funcionIdentifier, Metodo):
+                        # Se tiene que recorrer hasta que se encuentre a un ')' para saber que se terminaron los parametros
+                        parametros = []
+                        while (ctx.getChild(index).getText() != ')'):
+                            if not isinstance(ctx.getChild(index), TerminalNodeImpl):
+                                possibleParameter = self.visit(ctx.getChild(index))
+                                parametros.append(possibleParameter)
+                            index += 1
+                        # Pasar los parametros de la variable a la funcion
+                        for index in range(len(parametros)):
+                            parametro = parametros[index]
+                            parametroInstr = Cuadrupleta(operacion='pushParam',arg1=parametro)
+                            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(parametroInstr)
+                        # Crear una instruccion para el call y el retorno
+                        temporalRetorno = temporalRetorno
+                        callInstr = Cuadrupleta(resultado=temporalRetorno, operacion='call',arg1=f'{clase}_{child}')
+                        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(callInstr)
+                        # Instruccion para pop params
+                        popParams = Cuadrupleta(operacion='popParams', arg1=len(funcionIdentifier.parametros))
+                        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(popParams)
             return temporalRetorno
 
 
