@@ -679,7 +679,12 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                         # Llamar metodo
                         elif value:
                             if isinstance(value, Funcion):
-                                parametros = self.visit(ctx.arguments(index)) if ctx.arguments() else []
+                                parametros = []
+                                while (ctx.getChild(index).getText() != ')'):
+                                    if not isinstance(ctx.getChild(index), TerminalNodeImpl):
+                                        possibleParameter = self.visit(ctx.getChild(index))
+                                        parametros.append(possibleParameter)
+                                    index += 1
                                 # Pasar los parametros de la variable a la funcion
                                 for index in range(len(parametros)):
                                     parametro = parametros[index]
@@ -743,6 +748,8 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                             self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(parametroInstr)
                         # Crear una instruccion para el call y el retorno
                         temporalRetorno = temporalRetorno
+                        pushParam = Cuadrupleta(operacion='pushParam',arg1=temporalRetorno)
+                        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(pushParam)
                         callInstr = Cuadrupleta(resultado=temporalRetorno, operacion='call',arg1=f'{clase}_{child}')
                         self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(callInstr)
                         # Instruccion para pop params
