@@ -422,6 +422,16 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 asignacion = Cuadrupleta(operacion='=',arg1=self.visit(ctx.expression()),resultado=ctx.IDENTIFIER().getText())
                 self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(asignacion)
                 return asignacion.resultado
+            else:
+                child = self.visit(ctx.call())
+                if child == 'this' and self.class_name:
+                    search:DefinidoPorUsuario = self.searchSomethingInAmbitos(f'{self.class_name}')
+                    search.aniadirAtributo(ctx.IDENTIFIER().getText())
+                    direccionAtributo = Cuadrupleta(operacion='+',arg1=f'object', arg2=f'{16*search.atributos.index(ctx.IDENTIFIER().getText())}',resultado=self.new_temp())
+                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(direccionAtributo)
+                    asignacion = Cuadrupleta(operacion='=',arg1=self.visit(ctx.expression()),resultado=f'*{direccionAtributo.resultado}')
+                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(asignacion)
+                
             return self.visitChildren(ctx)
 
 
