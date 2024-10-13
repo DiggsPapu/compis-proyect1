@@ -97,7 +97,6 @@ class CompiScriptVisitorSemantic(CompiScriptLanguageVisitor):
             for nombreAtributo in atributos:
                 atributo = self.TablaDeAmbitos.get(lastAmbito).tablaDeSimbolos.get(nombreAtributo)
                 self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeSimbolos.put(nombreAtributo, atributo)
-                self.TablaDeAmbitos.get(self.stackAmbitos.first()).tablaDeTipos.get(nombreClase).atributos.add(nombreAtributo.split('.')[1])
         if self.variableEnDefinicion.first()=="return": self.variableEnDefinicion.remove_first()
         self.classDeclarationName.remove_first()
         self.insideVariable.remove_first()

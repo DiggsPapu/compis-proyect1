@@ -625,8 +625,23 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
             return self.visit(ctx.primary())
         # En caso de que no solo sea un primary
         # Es crear una clase
-        elif  self.visit(ctx.getChild(0))=="new":
-            return self.visitChildren(ctx)
+        elif isinstance(ctx.getChild(0), TerminalNodeImpl) and ctx.getChild(0).getText()=="new":
+            ambitoLlamada = self.ambitoActual
+            class_name = self.visit(ctx.primary())
+            # initMethod:Metodo = self.searchSomethingInAmbitos(f'{class_name}.init')
+            parametros = self.visit(ctx.arguments(0)) if ctx.arguments() else []
+            for parametro in parametros:
+                # Push params
+                parametroInstr = Cuadrupleta(operacion='pushParam',arg1=parametro)
+                self.tablaDeAmbitos.get(ambitoLlamada).aniadirCodigo(parametroInstr)
+            # Crear una instruccion para el call y el retorno
+            temporalRetorno = self.new_temp()
+            callInstr = Cuadrupleta(resultado=temporalRetorno, operacion='call',arg1=f'{class_name}_init')
+            self.tablaDeAmbitos.get(ambitoLlamada).aniadirCodigo(callInstr)
+            # pop params
+            popParams = Cuadrupleta(operacion='popParams', arg1=len(parametros))
+            self.tablaDeAmbitos.get(ambitoLlamada).aniadirCodigo(popParams)
+            return temporalRetorno
         # Es una llamada a una funcion o a una clase y atributos o una clase y metodos
         else:
             # Visitar el nombre esto puede ser una clase o una funcion y dependiendo se puede ir a visitar a la tabla de simbolos de cualquier contexto y el primero que aparezca se toma como el que es
