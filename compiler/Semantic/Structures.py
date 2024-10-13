@@ -35,8 +35,12 @@ class DefinidoPorUsuario(Tipo):
         self.init = None
         self.initParams = None
         self.inheritance = None
-        self.atributos = set()
-        
+        self.atributos = []
+    
+    def aniadirAtributo(self, atributo):
+        if atributo not in self.atributos:
+            self.atributos.append(atributo)
+            
     def __str__(self) -> str:
         return self.nombreTipo
         

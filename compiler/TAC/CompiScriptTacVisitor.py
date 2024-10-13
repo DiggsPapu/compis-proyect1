@@ -205,15 +205,10 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         # herencia
         if ctx.IDENTIFIER(1):
             self.class_herency_name = ctx.IDENTIFIER(1).getText()
-            # funcionInitHerencia:Metodo = self.searchSomethingInAmbitos(f'{self.class_herency_name}.init')
-            # if funcionInitHerencia:
-            #     for parametro in funcionInitHerencia.parametros:
-            #         parametroInstr = Cuadrupleta(operacion='pushParam',arg1=parametro)
-            #         self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(parametroInstr)
-            #     callInstr = Cuadrupleta(operacion='call',arg1=f'{self.class_herency_name}_init',resultado=self.new_temp())
-            #     self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(callInstr)
-            #     popInstr = Cuadrupleta(operacion='popParams', arg1=len(funcionInitHerencia.parametros))
-            #     self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(popInstr)
+            claseHerencia:DefinidoPorUsuario = self.searchSomethingInAmbitos(f'{self.class_herency_name}')
+            claseHeredar:DefinidoPorUsuario = self.searchSomethingInAmbitos(f'{self.class_name}')
+            for index in range(len(claseHerencia.atributos)-1, -1, -1):
+                claseHeredar.atributos.insert(0, claseHerencia.atributos[index])
         # Practicamente crear una clase es hacer todos sus metodos
         for child in ctx.function():
             self.visit(child)
@@ -674,9 +669,8 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                                 self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(popParams)
                             # Atributos
                             else:
-                                atributos:set = self.searchSomethingInAmbitos(f'{self.class_name}').atributos
-                                atributos.add(child)
-                                listaAtributos = list(atributos)
+                                self.searchSomethingInAmbitos(f'{self.class_name}').aniadirAtributo(child)
+                                listaAtributos = self.searchSomethingInAmbitos(f'{self.class_name}').atributos
                                 # Crear un temporal para el valor del atributo
                                 # El object siempre sera la representacion del atributo y se pasara como parametro
                                 # Crear una instruccion para el calculo de la direccion del atributo
@@ -685,9 +679,8 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                                 temporalRetorno = f'*{direccionAtributo.resultado}'
                         else:
                             # Aniadir el parametro a la clase
-                            atributos:set = self.searchSomethingInAmbitos(f'{self.class_name}').atributos
-                            atributos.add(child)
-                            listaAtributos = list(atributos)
+                            self.searchSomethingInAmbitos(f'{self.class_name}').aniadirAtributo(child)
+                            listaAtributos = self.searchSomethingInAmbitos(f'{self.class_name}').atributos
                             # Crear un temporal para el valor del atributo
                             # El object siempre sera la representacion del atributo y se pasara como parametro
                             # Crear una instruccion para el calculo de la direccion del atributo
