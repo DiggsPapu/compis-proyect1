@@ -242,19 +242,18 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         # Crear el label para el despues
         labelDespues = Cuadrupleta(operacion='new_label',resultado=self.new_label())
         gotoDespues = Cuadrupleta(resultado = f'goto {labelDespues.resultado}')
-        if not self.stackFunciones.empty():
-            numAmbito = self.tablaDeAmbitos.size()
-            # crear un ambito para el if entonces y que se desarrolle ahi
-            AmbitoIf = Ambito(numAmbito, HashMap())
-            self.tablaDeAmbitos.put(numAmbito, AmbitoIf)
-            self.ambitoActual = numAmbito
-            self.stackFunciones.insert(numAmbito)
+        
         for index in range(rangoBlock-1,-1,-1):
             instruccion = Cuadrupleta()
-            instruccionLabel = Cuadrupleta()
-            instruccionLabel.operacion = 'new_label'
-            instruccionLabel.resultado = self.new_label()
+            instruccionLabel = Cuadrupleta(operacion='new_label', resultado=self.new_label())
             blockInstr.append(instruccionLabel)
+            if not self.stackFunciones.empty():
+                numAmbito = self.tablaDeAmbitos.size()
+                # crear un ambito para el if entonces y que se desarrolle ahi
+                AmbitoIf = Ambito(numAmbito, HashMap())
+                self.tablaDeAmbitos.put(numAmbito, AmbitoIf)
+                self.ambitoActual = numAmbito
+                self.stackFunciones.insert(numAmbito)
             # Generar el codigo del bloque de primero
             self.visit(ctx.block(index))
             # Aniadir el bloque de codigo al ambito actual
@@ -271,8 +270,6 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 instruccion.operacion = 'if'
                 instruccion.resultado = f'goto {instruccionLabel.resultado}'
                 instruccion.arg1 = self.visit(ctx.expression(index))
-            if not self.stackFunciones.empty(): 
-                self.stackFunciones.insert(numAmbito)
             ifInstr.append(instruccion)
         ifInstr.reverse()
         for instruccion in ifInstr: 
@@ -280,8 +277,6 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         self.tablaDeAmbitos.get(ambitoIf).aniadirCodigo(gotoDespues)
         for instruccion in blockInstr:
             self.tablaDeAmbitos.get(ambitoIf).aniadirCodigo(instruccion)
-        if not self.stackFunciones.empty():
-            self.stackFunciones.remove_first()
         self.tablaDeAmbitos.get(ambitoIf).aniadirCodigo(labelDespues)
 
 
@@ -637,6 +632,8 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(popParams)
             if stackFuncionesWasEmpty:
                 self.stackFunciones.remove_first()
+            # if firstPrimary == 'this':
+                
             return temporalRetorno
 
 
@@ -653,7 +650,8 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         # Array access
         elif ctx.arrayAccess():
             return self.visit(ctx.arrayAccess())   
-        elif ctx.getText() == "false" or ctx.getText() == "true" or "nil": return ctx.getText()     
+        elif ctx.getText() ==  "nil": return "null"
+        elif ctx.getText() == "false" or ctx.getText() == "true": return ctx.getText()     
         return self.visitChildren(ctx)
 
 
