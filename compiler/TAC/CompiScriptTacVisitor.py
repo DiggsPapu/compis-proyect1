@@ -30,7 +30,7 @@ class CodeGenerator:
         return "\n".join(self.code)
 
 class CompiScriptTacVisitor(ParseTreeVisitor):
-    def __init__(self, tablaDeAmbitos, correspondenciaNodosAmbitos):
+    def __init__(self, tablaDeAmbitos, correspondenciaNodosAmbitos, register_manager):
         self.instructions = []  # Lista para almacenar las instrucciones TAC
         self.temp_counter = 0  # Contador para los temporales
         self.param_counter = 0 # Contador para los parametros
@@ -47,6 +47,8 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         self.class_name = None
         self.class_herency_name = None
         self.init_method = False
+        self.registers = register_manager
+
     def searchSomethingInAmbitos(self, something):
         # Primero buscar en el ambito 0 ya que ese es el main y es el final digamos
         retorno = self.tablaDeAmbitos.get(0).tablaDeSimbolos.get(something) if self.tablaDeAmbitos.get(0).tablaDeSimbolos.get(something) else self.tablaDeAmbitos.get(0).tablaDeTipos.get(something)
@@ -68,10 +70,11 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         return "\n".join(self.code)
     
     def generateTAC(self):
-        for instruccion in self.tablaDeAmbitos.get(0).codigo:
+        print("\n=== Instrucciones TAC generadas ===")
+        for instruccion in self.instructions:
             if instruccion.operacion == 'if':
                 print(f'    {instruccion.operacion} {instruccion.arg1} {instruccion.resultado}')
-            elif instruccion.operacion==None and re.search(r'goto', instruccion.resultado):
+            elif instruccion.operacion == None and re.search(r'goto', instruccion.resultado):
                 print(f'    {instruccion.resultado}')
             elif instruccion.operacion == 'new_label':
                 print(f'{instruccion.resultado}:')
@@ -91,9 +94,9 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 print(f'    popParams {instruccion.arg1}')
             elif instruccion.operacion == 'return':
                 print(f'    return {instruccion.arg1}')
-            else: 
+            else:
                 print(f'    {instruccion.resultado} = {instruccion.arg1} {instruccion.operacion if instruccion.operacion else ""} {instruccion.arg2 if instruccion.arg2 else ""}')
-        
+
     def visit(self, ctx):
         """
         This method is called each time a node is visited explicitly.
@@ -130,63 +133,90 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
     # Método para manejar una operacion basica
     def handleBasicOperation(self, ctx):
         def procesar_operadores(operadores, operandos):
-            # Procesar operadores con mayor precedencia (* y /)
-            while len(operadores) > 0:
+            # Procesar operadores en orden
+            while operadores:
                 operador = operadores.pop(0)
                 operando1 = operandos.pop(0)
                 operando2 = operandos.pop(0)
-                
-                instruction = Cuadrupleta()
-                instruction.arg1 = operando1
-                instruction.operacion = operador
-                instruction.arg2 = operando2
-                instruction.resultado = self.new_temp()  # Crear temporal para el resultado
-                
-                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruction)
-                operandos.insert(0, instruction.resultado)  # Insertar el resultado de vuelta a los operandos
-        
+
+                # Crear un nuevo temporal para el resultado
+                temp_result = self.new_temp()
+
+                # Asignar registros a operandos
+                reg_arg1 = self.registers.getReg(operando1)
+                reg_arg2 = self.registers.getReg(operando2)
+                reg_result = self.registers.getReg(temp_result)
+
+                # Generar la instrucción TAC
+                instruction = Cuadrupleta(
+                    operacion=operador,
+                    arg1=reg_arg1,
+                    arg2=reg_arg2,
+                    resultado=reg_result
+                )
+                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(instruction)
+                self.instructions.append(instruction)
+
+                # Liberar registros usados por operandos
+                self.registers.freeReg(operando1)
+                self.registers.freeReg(operando2)
+
+                # Insertar el temporal del resultado como nuevo operando
+                operandos.insert(0, temp_result)
+
         # Si solo hay un término (número o variable)
         if ctx.getChildCount() == 1:
             return self.visit(ctx.getChild(0))
-        
+
         # Separar operadores y operandos
         operandos = []
         operadores = []
-        
+
         for i in range(ctx.getChildCount()):
             if i % 2 == 0:  # Es un operando
                 operandos.append(self.visit(ctx.getChild(i)))
             else:  # Es un operador
                 operadores.append(ctx.getChild(i).getText())
-        
-        # Primero, procesar operadores de mayor precedencia (*, /)
+
+        # Procesar operadores de mayor precedencia (*, /)
         operadores_pendientes = []
         operandos_pendientes = [operandos.pop(0)]  # El primer operando
 
         i = 0
         while i < len(operadores):
             operador = operadores[i]
-            if operador in ['*', '/', '%', 'and', '>', '>=', '<', '<=', '!=', '==']:
-                instruction = Cuadrupleta()
-                instruction.arg1 = operandos_pendientes.pop()  # Último operando procesado
-                instruction.operacion = operador
-                instruction.arg2 = operandos.pop(0)  # Siguiente operando
-                
-                instruction.resultado = self.new_temp()  # Crear temporal para el resultado
-                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruction)
-                
-                operandos_pendientes.append(instruction.resultado)  # Guardar el resultado
+            if operador in ['*', '/']:
+                reg_arg1 = self.registers.getReg(operandos_pendientes.pop())  # Último operando procesado
+                reg_arg2 = self.registers.getReg(operandos.pop(0))  # Siguiente operando
+                temp_result = self.new_temp()
+
+                # Generar la instrucción TAC
+                instruction = Cuadrupleta(
+                    operacion=operador,
+                    arg1=reg_arg1,
+                    arg2=reg_arg2,
+                    resultado=temp_result
+                )
+                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(instruction)
+                self.instructions.append(instruction)
+
+                # Liberar registros usados por operandos
+                self.registers.freeReg(reg_arg1)
+                self.registers.freeReg(reg_arg2)
+
+                # Insertar el temporal del resultado como nuevo operando
+                operandos_pendientes.append(temp_result)
             else:
                 operadores_pendientes.append(operador)
-                operandos_pendientes.append(operandos.pop(0))  # Guardar el siguiente operando pendiente
+                operandos_pendientes.append(operandos.pop(0))
             i += 1
-        
-        # Luego, procesar operadores de menor precedencia (+, -)
+
+        # Procesar operadores de menor precedencia (+, -)
         procesar_operadores(operadores_pendientes, operandos_pendientes)
-        
+
         # El último resultado es el valor final
         return operandos_pendientes[0]
-                
+        
     # Visit a parse tree produced by CompiScriptLanguageParser#program.
     def visitProgram(self, ctx:CompiScriptLanguageParser.ProgramContext):
         # Recorrer el programa
@@ -222,15 +252,18 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#varDecl.
-    def visitVarDecl(self, ctx:CompiScriptLanguageParser.VarDeclContext):
+    def visitVarDecl(self, ctx: CompiScriptLanguageParser.VarDeclContext):
         instruccion = Cuadrupleta()
         instruccion.resultado = ctx.IDENTIFIER().getText()
         self.declarandoVariable = instruccion.resultado
         instruccion.arg1 = self.visit(ctx.expression()) if ctx.expression() else "null"
-        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccion)
+
+        # Añadir instrucción al ámbito y a self.instructions
+        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(instruccion)
+        self.instructions.append(instruccion)
+
         self.declarandoVariable = None
         return instruccion.resultado
-
 
     # Visit a parse tree produced by CompiScriptLanguageParser#statement.
     def visitStatement(self, ctx:CompiScriptLanguageParser.StatementContext):
