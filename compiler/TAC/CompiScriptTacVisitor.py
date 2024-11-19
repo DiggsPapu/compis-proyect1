@@ -773,7 +773,6 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 self.stackFunciones.remove_first()
 
             if firstPrimary == 'this' and self.class_name:
-                coso = ctx.getChildCount() - 1
                 for index in range(1, ctx.getChildCount()):
                     node = ctx.getChild(index)
                     if isinstance(node, TerminalNodeImpl):
@@ -785,7 +784,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                         elif value:
                             if isinstance(value, Funcion):
                                 parametros = []
-                                while (ctx.getChild(index).getText() != ')'):
+                                while ctx.getChild(index).getText() != ')':
                                     if not isinstance(ctx.getChild(index), TerminalNodeImpl):
                                         possibleParameter = self.visit(ctx.getChild(index))
                                         parametros.append(possibleParameter)
@@ -804,31 +803,67 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
                                 self.free_temp("temp_retorno")
                         else:
+                            # Manejo de atributos
                             listaAtributos = self.searchSomethingInAmbitos(f'{self.class_name}').atributos
-                            direccionAtributo = Cuadrupleta(operacion='+', arg1='object',
-                                                            arg2=f'{16 * listaAtributos.index(child)}',
-                                                            resultado=self.new_temp("temp_direccion"))
-                            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual else 0).aniadirCodigo(direccionAtributo)
+                            if child in listaAtributos:
+                                offset = listaAtributos.index(child) * 16  # Offset asumido de 16 bytes por atributo
+                                direccionAtributo = Cuadrupleta(
+                                    operacion='+',
+                                    arg1='object',  # `object` es el puntero a la instancia actual
+                                    arg2=str(offset),
+                                    resultado=self.new_temp("temp_direccion")
+                                )
+                                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual else 0).aniadirCodigo(direccionAtributo)
 
-                            self.free_temp("temp_direccion")
+                                # Retornar la dirección calculada
+                                return direccionAtributo.resultado
+                            else:
+                                raise Exception(f"El atributo '{child}' no existe en la clase '{self.class_name}'.")
 
             return firstPrimary
 
     # Visit a parse tree produced by CompiScriptLanguageParser#primary.
-    def visitPrimary(self, ctx:CompiScriptLanguageParser.PrimaryContext):
+    def visitPrimary(self, ctx: CompiScriptLanguageParser.PrimaryContext):
         if ctx.IDENTIFIER():
-            return ctx.IDENTIFIER().getText()
+            identifier = ctx.IDENTIFIER().getText()
+            # Si estamos dentro de una clase y el identificador pertenece a un atributo
+            if self.class_name and identifier in self.searchSomethingInAmbitos(f'{self.class_name}').atributos:
+                listaAtributos = self.searchSomethingInAmbitos(f'{self.class_name}').atributos
+                offset = listaAtributos.index(identifier) * 16  # Offset basado en el índice del atributo
+                temp_direccion = self.new_temp("temp_direccion")
+                direccionAtributo = Cuadrupleta(
+                    operacion='+',
+                    arg1='object',  # El puntero a la instancia actual
+                    arg2=str(offset),
+                    resultado=temp_direccion
+                )
+                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual else 0).aniadirCodigo(direccionAtributo)
+                return f'*{temp_direccion}'
+            else:
+                # Si no es un atributo, retornar el identificador como está
+                return identifier
+
         elif ctx.NUMBER():
             return ctx.NUMBER().getText()
+
         elif ctx.STRING():
             return ctx.STRING().getText()
+
         elif ctx.expression():
             return self.visit(ctx.expression())
+
         # Array access
         elif ctx.arrayAccess():
-            return self.visit(ctx.arrayAccess())   
-        elif ctx.getText() ==  "nil": return "null"
-        elif ctx.getText() == "false" or ctx.getText() == "true" or ctx.getText()=="this": return ctx.getText()     
+            return self.visit(ctx.arrayAccess())
+
+        elif ctx.getText() == "nil":
+            return "null"
+
+        elif ctx.getText() in ["false", "true", "this"]:
+            if ctx.getText() == "this" and self.class_name:
+                return "object"  # `object` representa el puntero a la instancia actual
+            return ctx.getText()
+
         return self.visitChildren(ctx)
 
 
