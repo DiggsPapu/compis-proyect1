@@ -239,15 +239,19 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#varDecl.
-    def visitVarDecl(self, ctx:CompiScriptLanguageParser.VarDeclContext):
+    def visitVarDecl(self, ctx: CompiScriptLanguageParser.VarDeclContext):
         instruccion = Cuadrupleta()
-        instruccion.resultado = ctx.IDENTIFIER().getText()
+        instruccion.resultado = ctx.IDENTIFIER().getText()  # Nombre de la variable
         self.declarandoVariable = instruccion.resultado
-        instruccion.arg1 = self.visit(ctx.expression()) if ctx.expression() else "null"
-        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccion)
+
+        # Asignar directamente si hay una expresión, de lo contrario, omitir
+        if ctx.expression():
+            instruccion.arg1 = self.visit(ctx.expression())
+            instruccion.operacion = "="
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(instruccion)
+
         self.declarandoVariable = None
         return instruccion.resultado
-
 
     # Visit a parse tree produced by CompiScriptLanguageParser#statement.
     def visitStatement(self, ctx:CompiScriptLanguageParser.StatementContext):
@@ -435,50 +439,21 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
             return self.visit(ctx.logic())
         else:
             # Es una asignación simple
-            if not ctx.call():
-                # Crear un registro temporal para la asignación
-                temp_asignacion = self.new_temp("asignacion_temp")
+            if ctx.getChildCount() == 3 and ctx.getChild(1).getText() == "=":
+                variable = ctx.getChild(0).getText()
+                valor = self.visit(ctx.getChild(2))
+
+                # Crear instrucción de asignación
                 asignacion = Cuadrupleta(
-                    operacion='=',
-                    arg1=self.visit(ctx.expression()),
-                    resultado=temp_asignacion
+                    operacion="=",
+                    arg1=valor,
+                    resultado=variable
                 )
                 self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(asignacion)
-                
-                # Liberar el registro usado para la asignación
-                self.free_temp(temp_asignacion)
+                return variable
 
-                return asignacion.resultado
-            else:
-                child = self.visit(ctx.call())
-                if child == 'this' and self.class_name:
-                    search: DefinidoPorUsuario = self.searchSomethingInAmbitos(f'{self.class_name}')
-                    search.aniadirAtributo(ctx.IDENTIFIER().getText())
-
-                    # Crear un registro temporal para la dirección del atributo
-                    temp_direccion = self.new_temp("direccion_atributo_temp")
-                    direccionAtributo = Cuadrupleta(
-                        operacion='+',
-                        arg1='object',
-                        arg2=f'{16 * search.atributos.index(ctx.IDENTIFIER().getText())}',
-                        resultado=temp_direccion
-                    )
-                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(direccionAtributo)
-
-                    # Crear un registro temporal para la asignación
-                    temp_asignacion = self.new_temp("asignacion_temp")
-                    asignacion = Cuadrupleta(
-                        operacion='=',
-                        arg1=self.visit(ctx.expression()),
-                        resultado=f'*{direccionAtributo.resultado}'
-                    )
-                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(asignacion)
-
-                    # Liberar los registros temporales usados
-                    self.free_temp(temp_direccion)
-                    self.free_temp(temp_asignacion)
-
-            return self.visitChildren(ctx)
+            # Caso de operación aritmética
+            return self.handleBasicOperation(ctx)
 
     # Visit a parse tree produced by CompiScriptLanguageParser#array.
     def visitArray(self, ctx:CompiScriptLanguageParser.ArrayContext):

@@ -1,318 +1,67 @@
-outerFunction:
-    $t6 = call innerFunction
-    popParams 0
-    print "This is inside the outer function."
-    EndFunc
-innerFunction:
-    print "This is inside the inner function."
-    EndFunc
-printMessage:
-    param message
-    print message
-    EndFunc
-addNumbers:
-    param x
-    param y
-    $t2 = x + y
-    return $t2
-    EndFunc
-lateAssignment:
-    lateVar = null  
-    $t1 = 25
-    print lateVar
-    EndFunc
-operationsDemo:
-    $t3 = true and false
-    boolResult = $t3  
-    $t2 = 5 + 10
-    numResult = $t2  
-    $t2 = "Hello" + " World"
-    stringResult = $t2  
-    $t2 = "Number: " + 10
-    mixedResult = $t2  
-    print boolResult
-    print numResult
-    print stringResult
-    print mixedResult
-    EndFunc
-checkForNil:
-    someVar = null  
-    $t3 = someVar == null
-    if $t3 goto L35
-    goto L34
-L35:
-    print "someVar is nil"
-    goto L34
-L34:
-    EndFunc
-compareValues:
-    param a
-    param b
-    $t3 = a < b
-    $t3 = a > b
-    if $t3 goto L27
-    if $t3 goto L26
-    goto L25
-    goto L24
-L25:
-    print "a is equal to b"
-    goto L24
-L26:
-    print "a is less than b"
-    goto L24
-L27:
-    print "a is greater than b"
-    goto L24
-L24:
-    $t3 = a == 10
-    $t3 = b == 20
-    $t3 = $t3 and $t3
-    if $t3 goto L29
-    goto L28
-L29:
-    print "Both conditions met."
-    goto L28
-L28:
-    $t3 = a > b
-    $t2 = globalBoolean or $t3
-    if $t2 goto L31
-    goto L30
-L31:
-    print "At least one condition met."
-    goto L30
-L30:
-    $t3 = a == b
-    $t5 =  ! $t3
-    if $t5 goto L33
-    goto L32
-L33:
-    print "a is not equal to b"
-    goto L32
-L32:
-    EndFunc
-findFirstOdd:
-    i = 10  
-    goto L19
-L19:
-    $t3 = i > 0
-    if $t3 goto L21
-    goto L20
-L21:
-    $t2 = i - 1
-    $t1 = $t2
-    $t3 = i % 2
-    $t3 = $t3 != 0
-    if $t3 goto L23
-    goto L22
-L23:
-    $t2 = i + " is odd."
-    print $t2
-    goto L22
-L22:
-    goto L19
-L20:
-    EndFunc
-countdown:
-    i = 10  
-    goto L16
-L16:
-    $t3 = i > 0
-    if $t3 goto L18
-    goto L17
-L18:
-    print i
-    $t2 = i - 1
-    $t1 = $t2
-    goto L16
-L17:
-    EndFunc
-findEvenNumber:
-    i = 0  
-    $t1 = 0
-L9:
-    $t3 = i < 10
-    if $t3 goto L10
-    goto L11
-L10:
-    $t3 = i % 2
-    $t3 = $t3 == 0
-    if $t3 goto L13
-    goto L12
-L13:
-    $t2 = i + " is even."
-    print $t2
-    goto L12
-L12:
-    $t3 = i == 7
-    if $t3 goto L15
-    goto L14
-L15:
-    goto L14
-L14:
-    $t2 = i + 1
-    $t1 = $t2
-    $t1 = $t1
-    goto L9
-L11:
-    EndFunc
-countToTen:
-    i = 0  
-    $t1 = 0
-L6:
-    $t3 = i < 10
-    if $t3 goto L7
-    goto L8
-L7:
-    print i
-    $t2 = i + 1
-    $t1 = $t2
-    $t1 = $t1
-    goto L6
-L8:
-    EndFunc
-Dog_isQuietBreed:
-    param object
-    $t5 = object + 16
-    $t3 = this == null
-    if $t3 goto L5
-    goto L4
-    goto L3
-L4:
-    return false
-    goto L3
-L5:
-    return true
-    goto L3
-L3:
-    EndFunc
-Dog_fetch:
-    param object
-    $t5 = object + 32
-    $t2 = this + " is fetching."
-    print $t2
-    EndFunc
-Dog_sit:
-    param object
-    $t5 = object + 32
-    $t2 = this + " is sitting."
-    print $t2
-    EndFunc
-Dog_bark:
-    param object
-    $t5 = object + 32
-    $t5 = object + 16
-    $t2 = this + " barks: "
-    $t2 = $t2 + this
-    print $t2
-    EndFunc
-Dog_getBreed:
-    param object
-    $t5 = object + 32
-    return this
-    EndFunc
-Dog_init:
-    pushParam type
-    pushParam sound
-    $t4 = call Animal_init
-    popParams 2
-    param object
-    param breed
-    param sound
-    $t0 = object + 32
-    *$t0 = breed
-    $t0 = object + 16
-    *$t0 = sound
-    $t0 = object + 0
-    *$t0 = "Dog"
-    EndFunc
-Animal_isQuiet:
-    param object
-    $t4 = object + 16
-    $t3 = this == null
-    return $t3
-    EndFunc
-Animal_isSameType:
-    param object
-    param otherType
-    $t3 = object + 0
-    $t3 = this == otherType
-    if $t3 goto L2
-    goto L1
-    goto L0
-L1:
-    return false
-    goto L0
-L2:
-    return true
-    goto L0
-L0:
-    EndFunc
-Animal_speak:
-    param object
-    $t2 = object + 0
-    $t2 = object + 16
-    $t2 = this + " says: "
-    $t2 = $t2 + this
-    print $t2
-    EndFunc
-Animal_getSound:
-    param object
-    $t2 = object + 16
-    return this
-    EndFunc
-Animal_getType:
-    param object
-    $t2 = object + 0
-    return this
-    EndFunc
-Animal_init:
-    param object
-    param type
-    param sound
-    $t0 = object + 0
-    *$t0 = type
-    $t0 = object + 16
-    *$t0 = sound
-    EndFunc
 main:
-    globalVar1 = 10  
-    globalVar2 = "Global String"  
-    globalBoolean = true  
-    pushParam $t5
-    pushParam "Golden Retriever"
-    pushParam "Woof"
-    $t6 = call Dog_init
-    popParams 2
-    $t1 = 20
-    $t2 = "Global Variable inside function: " + globalVar1
-    print $t2
-    $t2 = "Local Variable: " + globalVar1
-    print $t2
-    $t6 = call countToTen
-    popParams 0
-    $t6 = call findEvenNumber
-    popParams 0
-    $t6 = call countdown
-    popParams 0
-    $t6 = call findFirstOdd
-    popParams 0
-    pushParam 10
-    pushParam 20
-    $t6 = call compareValues
-    popParams 2
-    $t6 = call checkForNil
-    popParams 0
-    $t6 = call operationsDemo
-    popParams 0
-    $t6 = call lateAssignment
-    popParams 0
-    pushParam 5
-    pushParam 15
-    $t6 = call addNumbers
-    popParams 2
-    print addNumbers
-    pushParam "Hello from CompiScript!"
-    $t6 = call printMessage
-    popParams 1
-    $t6 = call outerFunction
-    popParams 0
+    variable = 1
+    variable2 = 4
+    $t0 = 1 * 2
+    $t0 = 7 / 4
+    $t0 = variable * variable2
+    $t0 = $t0 % 4
+    $t1 = $t0 + 3
+    $t1 = $t1 - $t0
+    $t1 = $t1 + $t0
+    variable3 = $t1
+    $t0 = 67890 > 789
+    $t0 = 567 < 7890
+    $t0 = variable > variable3
+    $t0 = variable <= variable2
+    $t0 = 789 <= 1344
+    $t0 = 890 >= 98765
+    $t0 = variable2 >= 23456
+    variable0 = true
+    variable5 = true
+    $t0 = true > false
+    $t0 = false < true
+    $t0 = true >= false
+    $t0 = false <= true
+    $t0 = variable0 > false
+    $t0 = variable0 < true
+    $t0 = variable5 >= false
+    $t0 = false <= variable5
+    $t1 = "string" + variable2
+    string = $t1
+    $t0 = string == variable
+    $t0 = variable != 20
+    $t0 = 50 == 0
+    $t0 = "hola" != 10
+    $t0 = true == false
+    $t0 = true != "demonios"
+    $t0 = variable2 > 2
+    $t0 = $t0 and false
+    $t0 = 20 > 2
+    $t0 = "yellow" >= "black"
+    $t0 = $t0 and false
+    $t0 = true and $t0
+    $t1 = $t0 or $t0
+    $t2 =  - variable2
+    $t2 =  - variable
+    $t0 = $t2 * 1
+    $t1 = $t0 + $t2
+    $t0 = 2 * 8
+    $t1 = 50 + $t0
+    $t0 = $t1 >= $t1
+    $t0 = "raul albiol" != string
+    $t0 = $t0 and $t0
+    $t0 = 1 > 2
+    $t2 =  ! $t0
+    $t2 =  ! $t2
+    $t2 =  ! $t2
+    $t2 =  ! $t2
+    $t2 =  ! $t2
+    $t2 =  ! $t2
+    $t2 =  ! $t2
+    $t2 =  ! $t2
+    $t2 =  ! $t2
+    $t2 =  ! $t2
+    $t2 =  ! $t2
+    $t2 =  ! $t2
+    $t2 =  ! $t2
+    variableprueba = $t2

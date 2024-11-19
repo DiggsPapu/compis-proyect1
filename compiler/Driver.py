@@ -5,6 +5,7 @@ from Syntax.CompiScriptLanguageParser import *
 from Semantic.CompiScriptVisitorSemantic import *
 from Syntax.CompiScriptLanguageVisitor import *
 from TAC.CompiScriptTacVisitor import CompiScriptTacVisitor
+from MIPS.TacToMipsVisitor import TacToMipsVisitor
 from antlr4.tree.Trees import Trees
 import graphviz
 import os
@@ -14,19 +15,27 @@ class RegisterManager:
         self.registers = {f"$t{i}": None for i in range(10)}  # $t0-$t9 disponibles
         self.stack = []  # Pila para valores desbordados
         self.usage = {}  # Seguimiento de uso de variables/temporales
+
     def getReg(self, var_name):
         """Asignar un registro para una variable/temporal."""
+        # Si el temporal ya tiene el formato $tX, no reasignarlo
+        if re.match(r"^\$t\d+$", var_name):
+            return var_name
+
         # Si ya tiene un registro asignado, devuélvelo
         for reg, value in self.registers.items():
             if value == var_name:
                 return reg
+
         # Si hay registros libres, asígnalos
         for reg, value in self.registers.items():
             if value is None:
                 self.registers[reg] = var_name
                 return reg
+
         # Si no hay registros libres, hacer spill al stack
         return self.spillToStack(var_name)
+
     def freeReg(self, var_name):
         """Liberar el registro asociado a una variable/temporal."""
         for reg, value in self.registers.items():
@@ -55,7 +64,7 @@ def main(argv):
     register_manager = RegisterManager()
 
     # Leer el código desde stdin (el código que se envía desde Django)
-    input_stream = FileStream(f"{os.getcwd()}/compiler/Textos/Brolo1.txt")
+    input_stream = FileStream(f"{os.getcwd()}/compiler/Textos/Operaciones.txt")
     # input_stream = InputStream(sys.stdin.read())
     lexer = CompiScriptLanguageLexer(input_stream)
     stream = CommonTokenStream(lexer)
@@ -79,5 +88,9 @@ def main(argv):
     tac_visitor.generateTAC()
     tac_instructions = tac_visitor.instructions  # Lista de instrucciones TAC
 
+    mips_visitor = TacToMipsVisitor("compiler/TAC/Tac_output.txt", register_manager)
+    mips_visitor.read_tac_instructions()
+    mips_visitor.translate()
+    mips_visitor.save_mips_code("compiler/MIPS/Mips_output.asm")
 if __name__ == '__main__':
     main(sys.argv)
