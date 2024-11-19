@@ -1,34 +1,9 @@
-var globalVar1 = 10;
-var globalVar2 = "Global String";
-var globalBoolean = true;
+var a= 0;
 
-class Animal {
-    init(type, sound) {
-        this.type = type;
-        this.sound = sound;
-    }
+print a;
 
-    getType() {
-        return this.type;
-    }
-
-    getSound() {
-        return this.sound;
-    }
-
-    speak() {
-        print this.type + " says: " + this.sound;
-    }
-
-    isSameType(otherType) {
-        if (this.type == otherType) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    isQuiet() {
-        return this.sound == nil;
-    }
-}
+var b = a + 5;
+a= 15;
+var c= a + b;
+print b;
+print c;

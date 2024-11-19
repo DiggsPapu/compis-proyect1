@@ -15,7 +15,7 @@ class RegisterManager:
         self.registers = {f"$t{i}": None for i in range(10)}  # $t0-$t9 disponibles
         self.stack = []  # Pila para valores desbordados
         self.usage = {}  # Seguimiento de uso de variables/temporales
-
+        
     def getReg(self, var_name):
         """Asignar un registro para una variable/temporal."""
         # Si el temporal ya tiene el formato $tX, no reasignarlo
@@ -64,7 +64,7 @@ def main(argv):
     register_manager = RegisterManager()
 
     # Leer el código desde stdin (el código que se envía desde Django)
-    input_stream = FileStream(f"{os.getcwd()}/compiler/Textos/Operaciones.txt")
+    input_stream = FileStream(f"{os.getcwd()}/compiler/Textos/prueba.txt")
     # input_stream = InputStream(sys.stdin.read())
     lexer = CompiScriptLanguageLexer(input_stream)
     stream = CommonTokenStream(lexer)

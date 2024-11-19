@@ -1,50 +1,10 @@
 main:
-    variable = 1
-    variable2 = 4
-    $t0 = 1 * 2
-    $t0 = 7 / 4
-    $t0 = variable * variable2
-    $t0 = $t0 % 4
-    $t1 = $t0 + 3
-    $t1 = $t1 - $t0
-    $t1 = $t1 + $t0
-    variable3 = $t1
-    $t0 = 67890 > 789
-    $t0 = 567 < 7890
-    $t0 = variable > variable3
-    $t0 = variable <= variable2
-    $t0 = 789 <= 1344
-    $t0 = 890 >= 98765
-    $t0 = variable2 >= 23456
-    variable0 = true
-    variable5 = true
-    $t0 = true > false
-    $t0 = false < true
-    $t0 = true >= false
-    $t0 = false <= true
-    $t0 = variable0 > false
-    $t0 = variable0 < true
-    $t0 = variable5 >= false
-    $t0 = false <= variable5
-    $t1 = "string" + variable2
-    string = $t1
-    $t0 = string == variable
-    $t0 = variable != 20
-    $t0 = 50 == 0
-    $t0 = "hola" != 10
-    $t0 = true == false
-    $t0 = true != "demonios"
-    $t0 = variable2 > 2
-    $t0 = $t0 and false
-    $t0 = 20 > 2
-    $t0 = "yellow" >= "black"
-    $t0 = $t0 and false
-    $t0 = true and $t0
-    $t1 = $t0 or $t0
-    $t2 =  - variable2
-    $t2 =  - variable
-    $t0 = $t2 * 1
-    $t1 = $t0 + $t2
-    $t0 = 2 * 8
-    $t1 = 50 + $t0
-    $t0 = $t1 >= $t1
+    a = 0
+    print a
+    $t0 = a + 5
+    b = $t0
+    a = 15
+    $t0 = a + b
+    c = $t0
+    print b
+    print c

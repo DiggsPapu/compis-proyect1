@@ -49,6 +49,11 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         self.init_method = False
         self.register_manager = register_manager
 
+    def is_string(self, operando):
+        """Verifica si un operando es una cadena."""
+        # Asegúrate de que operando sea un string y comience/termine con comillas
+        return isinstance(operando, str) and (operando.startswith('"') and operando.endswith('"'))
+
     def searchSomethingInAmbitos(self, something):
         # Primero buscar en el ambito 0 ya que ese es el main y es el final digamos
         retorno = self.tablaDeAmbitos.get(0).tablaDeSimbolos.get(something) if self.tablaDeAmbitos.get(0).tablaDeSimbolos.get(something) else self.tablaDeAmbitos.get(0).tablaDeTipos.get(something)
@@ -103,6 +108,8 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 tac_lines.append(f'    popParams {instruccion.arg1}')
             elif instruccion.operacion == 'return':
                 tac_lines.append(f'    return {instruccion.arg1}')
+            elif instruccion.operacion == 'concat':
+                tac_lines.append(f'    {instruccion.resultado} = {instruccion.arg1} + {instruccion.arg2}')
             else:
                 tac_lines.append(f'    {instruccion.resultado} = {instruccion.arg1} {instruccion.operacion if instruccion.operacion else ""} {instruccion.arg2 if instruccion.arg2 else ""}')
 
@@ -145,14 +152,25 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 operando1 = operandos.pop(0)
                 operando2 = operandos.pop(0)
                 
-                instruction = Cuadrupleta()
-                instruction.arg1 = operando1
-                instruction.operacion = operador
-                instruction.arg2 = operando2
-                instruction.resultado = self.new_temp("temp_result")
-                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(instruction)
-                
-                operandos.insert(0, instruction.resultado)  # Insertar el resultado de vuelta a los operandos
+                # Verificar si es concatenación de cadenas
+                if operador == '+' and (self.is_string(operando1) or self.is_string(operando2)):
+                    instruction = Cuadrupleta()
+                    instruction.arg1 = operando1
+                    instruction.operacion = 'concat'  # Nuevo tipo de operación para concatenación
+                    instruction.arg2 = operando2
+                    instruction.resultado = self.new_temp("temp_concat")
+                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(instruction)
+
+                    operandos.insert(0, instruction.resultado)  # Guardar el resultado como operando
+                else:
+                    instruction = Cuadrupleta()
+                    instruction.arg1 = operando1
+                    instruction.operacion = operador
+                    instruction.arg2 = operando2
+                    instruction.resultado = self.new_temp("temp_result")
+                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(instruction)
+
+                    operandos.insert(0, instruction.resultado)
 
                 # Liberar registros temporales usados
                 self.free_temp(operando1)
