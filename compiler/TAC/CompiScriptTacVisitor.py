@@ -30,7 +30,7 @@ class CodeGenerator:
         return "\n".join(self.code)
 
 class CompiScriptTacVisitor(ParseTreeVisitor):
-    def __init__(self, tablaDeAmbitos, correspondenciaNodosAmbitos):
+    def __init__(self, tablaDeAmbitos, correspondenciaNodosAmbitos, register_manager):
         self.instructions = []  # Lista para almacenar las instrucciones TAC
         self.temp_counter = 0  # Contador para los temporales
         self.param_counter = 0 # Contador para los parametros
@@ -47,6 +47,8 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         self.class_name = None
         self.class_herency_name = None
         self.init_method = False
+        self.register_manager = register_manager
+
     def searchSomethingInAmbitos(self, something):
         # Primero buscar en el ambito 0 ya que ese es el main y es el final digamos
         retorno = self.tablaDeAmbitos.get(0).tablaDeSimbolos.get(something) if self.tablaDeAmbitos.get(0).tablaDeSimbolos.get(something) else self.tablaDeAmbitos.get(0).tablaDeTipos.get(something)
@@ -66,6 +68,15 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
     def get_code(self):
         return "\n".join(self.code)
+
+    def new_temp(self, var_name):
+        """Obtener un registro para un temporal."""
+        reg = self.register_manager.getReg(var_name)
+        return reg
+
+    def free_temp(self, var_name):
+        """Liberar un registro asociado a un temporal."""
+        self.register_manager.freeReg(var_name)
     
     def generateTAC(self):
         for instruccion in self.tablaDeAmbitos.get(0).codigo:
@@ -120,17 +131,10 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         # Continue visiting the children as usual
         return super().visitChildren(ctx)
     
-    # Método para obtener un nuevo temporal  
-    def new_temp(self):
-        temp = f'_t{self.temp_counter}'  # Crear un nuevo temporal
-        self.temp_counter += 1
-        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).numVariablesCreadas += 1
-        return temp
-    
     # Método para manejar una operacion basica
     def handleBasicOperation(self, ctx):
         def procesar_operadores(operadores, operandos):
-            # Procesar operadores con mayor precedencia (* y /)
+            # Procesar operadores con mayor precedencia (*, /)
             while len(operadores) > 0:
                 operador = operadores.pop(0)
                 operando1 = operandos.pop(0)
@@ -140,15 +144,19 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 instruction.arg1 = operando1
                 instruction.operacion = operador
                 instruction.arg2 = operando2
-                instruction.resultado = self.new_temp()  # Crear temporal para el resultado
+                instruction.resultado = self.new_temp("temp_result")
+                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(instruction)
                 
-                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruction)
                 operandos.insert(0, instruction.resultado)  # Insertar el resultado de vuelta a los operandos
-        
+
+                # Liberar registros temporales usados
+                self.free_temp(operando1)
+                self.free_temp(operando2)
+
         # Si solo hay un término (número o variable)
         if ctx.getChildCount() == 1:
             return self.visit(ctx.getChild(0))
-        
+
         # Separar operadores y operandos
         operandos = []
         operadores = []
@@ -172,21 +180,25 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                 instruction.operacion = operador
                 instruction.arg2 = operandos.pop(0)  # Siguiente operando
                 
-                instruction.resultado = self.new_temp()  # Crear temporal para el resultado
-                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruction)
+                instruction.resultado = self.new_temp("temp_high_precedence")
+                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(instruction)
                 
                 operandos_pendientes.append(instruction.resultado)  # Guardar el resultado
+
+                # Liberar registros temporales usados
+                self.free_temp(instruction.arg1)
+                self.free_temp(instruction.arg2)
             else:
                 operadores_pendientes.append(operador)
                 operandos_pendientes.append(operandos.pop(0))  # Guardar el siguiente operando pendiente
             i += 1
-        
+
         # Luego, procesar operadores de menor precedencia (+, -)
         procesar_operadores(operadores_pendientes, operandos_pendientes)
         
         # El último resultado es el valor final
         return operandos_pendientes[0]
-                
+         
     # Visit a parse tree produced by CompiScriptLanguageParser#program.
     def visitProgram(self, ctx:CompiScriptLanguageParser.ProgramContext):
         # Recorrer el programa
@@ -411,29 +423,57 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#expression.
-    def visitExpression(self, ctx:CompiScriptLanguageParser.ExpressionContext):
+    def visitExpression(self, ctx: CompiScriptLanguageParser.ExpressionContext):
         if ctx.array():
             return self.visit(ctx.array())
         elif ctx.logic():
             return self.visit(ctx.logic())
         else:
-            # Es una asignacion simple
+            # Es una asignación simple
             if not ctx.call():
-                asignacion = Cuadrupleta(operacion='=',arg1=self.visit(ctx.expression()),resultado=ctx.IDENTIFIER().getText())
-                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(asignacion)
+                # Crear un registro temporal para la asignación
+                temp_asignacion = self.new_temp("asignacion_temp")
+                asignacion = Cuadrupleta(
+                    operacion='=',
+                    arg1=self.visit(ctx.expression()),
+                    resultado=temp_asignacion
+                )
+                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(asignacion)
+                
+                # Liberar el registro usado para la asignación
+                self.free_temp(temp_asignacion)
+
                 return asignacion.resultado
             else:
                 child = self.visit(ctx.call())
                 if child == 'this' and self.class_name:
-                    search:DefinidoPorUsuario = self.searchSomethingInAmbitos(f'{self.class_name}')
+                    search: DefinidoPorUsuario = self.searchSomethingInAmbitos(f'{self.class_name}')
                     search.aniadirAtributo(ctx.IDENTIFIER().getText())
-                    direccionAtributo = Cuadrupleta(operacion='+',arg1=f'object', arg2=f'{16*search.atributos.index(ctx.IDENTIFIER().getText())}',resultado=self.new_temp())
-                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(direccionAtributo)
-                    asignacion = Cuadrupleta(operacion='=',arg1=self.visit(ctx.expression()),resultado=f'*{direccionAtributo.resultado}')
-                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(asignacion)
-                
-            return self.visitChildren(ctx)
 
+                    # Crear un registro temporal para la dirección del atributo
+                    temp_direccion = self.new_temp("direccion_atributo_temp")
+                    direccionAtributo = Cuadrupleta(
+                        operacion='+',
+                        arg1='object',
+                        arg2=f'{16 * search.atributos.index(ctx.IDENTIFIER().getText())}',
+                        resultado=temp_direccion
+                    )
+                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(direccionAtributo)
+
+                    # Crear un registro temporal para la asignación
+                    temp_asignacion = self.new_temp("asignacion_temp")
+                    asignacion = Cuadrupleta(
+                        operacion='=',
+                        arg1=self.visit(ctx.expression()),
+                        resultado=f'*{direccionAtributo.resultado}'
+                    )
+                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(asignacion)
+
+                    # Liberar los registros temporales usados
+                    self.free_temp(temp_direccion)
+                    self.free_temp(temp_asignacion)
+
+            return self.visitChildren(ctx)
 
     # Visit a parse tree produced by CompiScriptLanguageParser#array.
     def visitArray(self, ctx:CompiScriptLanguageParser.ArrayContext):
@@ -441,82 +481,144 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#arrayCreation.
-    def visitArrayCreation(self, ctx:CompiScriptLanguageParser.ArrayCreationContext):
+    def visitArrayCreation(self, ctx: CompiScriptLanguageParser.ArrayCreationContext):
         instruccion = Cuadrupleta()
-        # O es un array de arrays o es algo con elementos primitivos
+
+        # Es un array de arrays o con elementos primitivos
         if ctx.logic() or ctx.array():
             direccionesDeMemoria = []
             inicial = None
             for index in range(len(ctx.logic() if ctx.logic() else ctx.array())):
-                # Instruccion de temporal del valor
-                valor = Cuadrupleta(arg1=self.visit(ctx.logic(index) if ctx.logic() else ctx.array(index)),operacion='=',resultado=self.new_temp())
-                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(valor)
-                # Instruccion de para la direccion de memoria
-                direccion = Cuadrupleta(arg1=f'&{valor.resultado}',operacion='=',resultado=self.new_temp())
-                if inicial == None: inicial = direccion.resultado
-                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(direccion)
+                # Temporal para el valor
+                valor_temp = self.new_temp(f"valor_temp_{index}")
+                valor = Cuadrupleta(
+                    arg1=self.visit(ctx.logic(index) if ctx.logic() else ctx.array(index)),
+                    operacion='=',
+                    resultado=valor_temp
+                )
+                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(valor)
+
+                # Dirección de memoria
+                direccion_temp = self.new_temp(f"direccion_temp_{index}")
+                direccion = Cuadrupleta(arg1=f'&{valor.resultado}', operacion='=', resultado=direccion_temp)
+                if inicial is None:
+                    inicial = direccion.resultado
+                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(direccion)
                 direccionesDeMemoria.append(direccion.resultado)
-            for index in range(0,len(direccionesDeMemoria),2):
+
+                # Liberar temporales usados
+                self.free_temp(valor_temp)
+
+            for index in range(0, len(direccionesDeMemoria), 2):
                 direccion1 = direccionesDeMemoria[index]
-                direccion2 = direccionesDeMemoria[index+1] if index+1<len(direccionesDeMemoria) else 'null'
-                # Temporal para calcular la direccion de memoria que tendra el puntero
-                punteroDireccion = Cuadrupleta(arg1=direccion1,operacion='+',arg2=16,resultado=self.new_temp()) # 16 bytes por direccion
-                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(punteroDireccion)
-                # Temporal para asignar la direccion de memoria al puntero
-                asignarMemoria = Cuadrupleta(arg1=direccion2,operacion='=',resultado=f'*{punteroDireccion.resultado}')
-                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(asignarMemoria)
-                if index == len(direccionesDeMemoria)-2:
-                    ultimoPuntero = Cuadrupleta(arg1=direccion2,operacion='+',arg2=16,resultado=self.new_temp()) # 16 bytes por direccion
-                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(ultimoPuntero)
-                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(Cuadrupleta(arg1='null',operacion='=',resultado=f'*{ultimoPuntero.resultado}'))
+                direccion2 = direccionesDeMemoria[index + 1] if index + 1 < len(direccionesDeMemoria) else 'null'
+
+                # Temporal para calcular la dirección de memoria del puntero
+                puntero_temp = self.new_temp(f"puntero_temp_{index}")
+                punteroDireccion = Cuadrupleta(arg1=direccion1, operacion='+', arg2=16, resultado=puntero_temp)  # 16 bytes
+                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(punteroDireccion)
+
+                # Asignar la dirección de memoria al puntero
+                asignarMemoria = Cuadrupleta(arg1=direccion2, operacion='=', resultado=f'*{punteroDireccion.resultado}')
+                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(asignarMemoria)
+
+                if index == len(direccionesDeMemoria) - 2:
+                    ultimoPuntero_temp = self.new_temp("ultimo_puntero_temp")
+                    ultimoPuntero = Cuadrupleta(arg1=direccion2, operacion='+', arg2=16, resultado=ultimoPuntero_temp)
+                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(ultimoPuntero)
+                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(
+                        Cuadrupleta(arg1='null', operacion='=', resultado=f'*{ultimoPuntero.resultado}')
+                    )
+
+                    # Liberar el último puntero
+                    self.free_temp(ultimoPuntero_temp)
+
+                # Liberar puntero temporal
+                self.free_temp(puntero_temp)
+
             return inicial
+
         # Es un array vacío
         else:
-            instruccion = Cuadrupleta(arg1='null', operacion='=', resultado=self.new_temp())
-            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruccion)
-            # Temporal para calcular la direccion de memoria que tendra el puntero
-            punteroDireccion = Cuadrupleta(arg1=f'&{instruccion.resultado}',operacion='+',arg2=16,resultado=self.new_temp()) # 16 bytes por direccion
-            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(punteroDireccion)
-            # Temporal para asignar la direccion de memoria al puntero
-            asignarMemoria = Cuadrupleta(arg1='null',operacion='=',resultado=f'*{punteroDireccion.resultado}')
-            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(asignarMemoria)
+            # Temporal para inicializar el array vacío
+            array_temp = self.new_temp("array_vacio_temp")
+            instruccion = Cuadrupleta(arg1='null', operacion='=', resultado=array_temp)
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(instruccion)
+
+            # Calcular la dirección de memoria del puntero
+            puntero_temp = self.new_temp("puntero_direccion_temp")
+            punteroDireccion = Cuadrupleta(arg1=f'&{instruccion.resultado}', operacion='+', arg2=16, resultado=puntero_temp)
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(punteroDireccion)
+
+            # Asignar memoria al puntero
+            asignarMemoria = Cuadrupleta(arg1='null', operacion='=', resultado=f'*{punteroDireccion.resultado}')
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(asignarMemoria)
+
+            # Liberar temporales
+            self.free_temp(array_temp)
+            self.free_temp(puntero_temp)
+
             return f'&{instruccion.resultado}'
 
-
     # Visit a parse tree produced by CompiScriptLanguageParser#arrayAccess.
-    def visitArrayAccess(self, ctx:CompiScriptLanguageParser.ArrayAccessContext):
+    def visitArrayAccess(self, ctx: CompiScriptLanguageParser.ArrayAccessContext):
         retorno = None
-        array = self.new_temp()
-        # Obtener el nombre del array de la variable
-        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(Cuadrupleta(arg1=ctx.IDENTIFIER().getText(), operacion='=', resultado=array))
-        for index in range(len(ctx.NUMBER())):
-            # Cargar el indice que se busca 
-            number = ctx.NUMBER(index).getText()
-            # Crear un temporal para cargar el indice que se busca
-            indiceBuscado = Cuadrupleta(arg1=number,operacion='=',resultado=self.new_temp())
-            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(indiceBuscado)
-            # Crear instruccion para crear un indice inicial de 0 hasta que se llegue al indice que se busca
-            indice = Cuadrupleta(arg1=0,operacion='=',resultado=self.new_temp())
-            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(indice)
-            # Crear label
-            checkLabel = self.new_label()
-            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(Cuadrupleta(operacion='new_label',resultado=checkLabel))
-            # Crear temporal para calcular la direccion de memoria que tendra el puntero
-            punteroDireccion = Cuadrupleta(arg1=array,operacion='+',arg2=16,resultado=array)
-            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(punteroDireccion)
-            # Crear temporal para verificar si ya se llego al puntero nulo que es el ultimo
-            ultimoPuntero = Cuadrupleta(arg1=f'{indiceBuscado.resultado}',operacion='!=',arg2=f'{indice.resultado}',resultado=self.new_temp())
-            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(ultimoPuntero)
-            # Sumar uno al indice
-            indice = Cuadrupleta(arg1=1,operacion='+',arg2=f'{indice.resultado}',resultado=indice.resultado)
-            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(indice)
-            # Crear if para verificar si ya se llego al puntero nulo que es el ultimo
-            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(Cuadrupleta(operacion='if',arg1=ultimoPuntero.resultado,resultado=f'goto {checkLabel}'))
-            # Crear temporal para almacenar el valor que se encontro
-            retorno = Cuadrupleta(arg1=f'*{punteroDireccion.resultado}',operacion='=',resultado=self.new_temp())
-            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(retorno)
-        return retorno.resultado
+        
+        # Obtener un registro temporal para el array
+        array = self.new_temp("array_temp")
+        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(
+            Cuadrupleta(arg1=ctx.IDENTIFIER().getText(), operacion='=', resultado=array)
+        )
 
+        for index in range(len(ctx.NUMBER())):
+            # Cargar el índice que se busca 
+            number = ctx.NUMBER(index).getText()
+            indiceBuscado = Cuadrupleta(arg1=number, operacion='=', resultado=self.new_temp("indice_temp"))
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(indiceBuscado)
+
+            # Crear un índice inicial de 0
+            indice = Cuadrupleta(arg1=0, operacion='=', resultado=self.new_temp("indice_inicial_temp"))
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(indice)
+
+            # Crear un label
+            checkLabel = self.new_label()
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(
+                Cuadrupleta(operacion='new_label', resultado=checkLabel)
+            )
+
+            # Calcular la dirección de memoria del puntero
+            punteroDireccion = Cuadrupleta(arg1=array, operacion='+', arg2=16, resultado=self.new_temp("puntero_temp"))
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(punteroDireccion)
+
+            # Verificar si ya se llegó al puntero nulo (último)
+            ultimoPuntero = Cuadrupleta(
+                arg1=indiceBuscado.resultado, operacion='!=', arg2=indice.resultado, resultado=self.new_temp("ultimo_temp")
+            )
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(ultimoPuntero)
+
+            # Sumar uno al índice
+            indice = Cuadrupleta(arg1=1, operacion='+', arg2=indice.resultado, resultado=indice.resultado)
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(indice)
+
+            # Crear una instrucción `if` para verificar si se llegó al puntero nulo
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(
+                Cuadrupleta(operacion='if', arg1=ultimoPuntero.resultado, resultado=f'goto {checkLabel}')
+            )
+
+            # Almacenar el valor encontrado en un registro temporal
+            retorno = Cuadrupleta(arg1=f'*{punteroDireccion.resultado}', operacion='=', resultado=self.new_temp("valor_temp"))
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(retorno)
+
+            # Liberar registros temporales que ya no se necesitan
+            self.free_temp("indice_temp")
+            self.free_temp("indice_inicial_temp")
+            self.free_temp("puntero_temp")
+            self.free_temp("ultimo_temp")
+
+        # Liberar el registro del array
+        self.free_temp("array_temp")
+
+        return retorno.resultado
 
     # Visit a parse tree produced by CompiScriptLanguageParser#arrayPush.
     def visitArrayPush(self, ctx:CompiScriptLanguageParser.ArrayPushContext):
@@ -602,84 +704,104 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         return self.handleBasicOperation(ctx)
 
     # Visit a parse tree produced by CompiScriptLanguageParser#unary.
-    def visitUnary(self, ctx:CompiScriptLanguageParser.UnaryContext):
+    def visitUnary(self, ctx: CompiScriptLanguageParser.UnaryContext):
         # En caso de que sea una call que retorne solo el call
         if ctx.call():
             return self.visit(ctx.call())
+
         # Esto implica que puede negarse el valor o puede volverse negativo
         if ctx.unary():
             instruction = Cuadrupleta()
-            # Para el unary vamos a crear un temporal que almacene los valores de la operación booleana en cuestion
-            instruction.resultado = self.new_temp()
+            
+            # Obtener un registro temporal para el resultado de la operación unaria
+            temporal_resultado = self.new_temp("unary_temp")
+            instruction.resultado = temporal_resultado
             instruction.operacion = ctx.getChild(0).getText()
             instruction.arg1 = ''
-            instruction.arg2 = self.visit(ctx.unary())
-            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(instruction)
-            return instruction.resultado
+            
+            # Obtener el registro temporal del operando
+            operando = self.visit(ctx.unary())
+            instruction.arg2 = operando
+            
+            # Añadir la instrucción al ámbito actual
+            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual is not None else 0).aniadirCodigo(instruction)
 
+            # Liberar el registro temporal del operando
+            self.free_temp(operando)
+            
+            return temporal_resultado
 
     # Visit a parse tree produced by CompiScriptLanguageParser#call.
-    def visitCall(self, ctx:CompiScriptLanguageParser.CallContext):
+    def visitCall(self, ctx: CompiScriptLanguageParser.CallContext):
         # Solo es un primary
         if ctx.getChildCount() == 1:
             return self.visit(ctx.primary())
+
         # En caso de que no solo sea un primary
         # Es crear una clase
-        elif isinstance(ctx.getChild(0), TerminalNodeImpl) and ctx.getChild(0).getText()=="new":
+        elif isinstance(ctx.getChild(0), TerminalNodeImpl) and ctx.getChild(0).getText() == "new":
             ambitoLlamada = self.ambitoActual
             class_name = self.visit(ctx.primary())
-            temporalParaAlmacenarObjeto = self.new_temp()
-            objetoInstr = Cuadrupleta(operacion='pushParam',arg1=temporalParaAlmacenarObjeto)
+            temporalParaAlmacenarObjeto = self.new_temp("temp_objeto")
+            objetoInstr = Cuadrupleta(operacion='pushParam', arg1=temporalParaAlmacenarObjeto)
             self.tablaDeAmbitos.get(ambitoLlamada).aniadirCodigo(objetoInstr)
-            # initMethod:Metodo = self.searchSomethingInAmbitos(f'{class_name}.init')
+
             parametros = self.visit(ctx.arguments(0)) if ctx.arguments() else []
             for parametro in parametros:
-                # Push params
-                parametroInstr = Cuadrupleta(operacion='pushParam',arg1=parametro)
+                parametroInstr = Cuadrupleta(operacion='pushParam', arg1=parametro)
                 self.tablaDeAmbitos.get(ambitoLlamada).aniadirCodigo(parametroInstr)
-            # Crear una instruccion para el call y el retorno
-            temporalRetorno = self.new_temp()
-            callInstr = Cuadrupleta(resultado=temporalRetorno, operacion='call',arg1=f'{class_name}_init')
+
+            # Crear una instrucción para el call y el retorno
+            temporalRetorno = self.new_temp("temp_retorno")
+            callInstr = Cuadrupleta(resultado=temporalRetorno, operacion='call', arg1=f'{class_name}_init')
             self.tablaDeAmbitos.get(ambitoLlamada).aniadirCodigo(callInstr)
+
             # pop params
             popParams = Cuadrupleta(operacion='popParams', arg1=len(parametros))
             self.tablaDeAmbitos.get(ambitoLlamada).aniadirCodigo(popParams)
+
+            self.free_temp("temp_objeto")
+            self.free_temp("temp_retorno")
             return temporalParaAlmacenarObjeto
-        # Es una llamada a una funcion o a una clase y atributos o una clase y metodos
+
+        # Es una llamada a una función o a una clase y atributos o una clase y métodos
         else:
-            # Visitar el nombre esto puede ser una clase o una funcion y dependiendo se puede ir a visitar a la tabla de simbolos de cualquier contexto y el primero que aparezca se toma como el que es
             firstPrimary = self.visit(ctx.primary())
             value = self.searchSomethingInAmbitos(firstPrimary)
             stackFuncionesWasEmpty = self.stackFunciones.empty()
+
             if stackFuncionesWasEmpty:
                 self.stackFunciones.insert(self.ambitoActual)
-            # Clase o funcion
-            if isinstance(value ,Funcion):
+
+            # Clase o función
+            if isinstance(value, Funcion):
                 parametros = self.visit(ctx.arguments(0)) if ctx.arguments() else []
-                # Pasar los parametros de la variable a la funcion
-                for index in range(len(parametros)):
-                    parametro = parametros[index]
-                    parametroInstr = Cuadrupleta(operacion='pushParam',arg1=parametro)
-                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(parametroInstr)
-                # Crear una instruccion para el call y el retorno
-                temporalRetorno = self.new_temp()
-                callInstr = Cuadrupleta(resultado=temporalRetorno, operacion='call',arg1=firstPrimary)
-                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(callInstr)
-                # Instruccion para pop params
+                for parametro in parametros:
+                    parametroInstr = Cuadrupleta(operacion='pushParam', arg1=parametro)
+                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual else 0).aniadirCodigo(parametroInstr)
+
+                temporalRetorno = self.new_temp("temp_retorno")
+                callInstr = Cuadrupleta(resultado=temporalRetorno, operacion='call', arg1=firstPrimary)
+                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual else 0).aniadirCodigo(callInstr)
+
                 popParams = Cuadrupleta(operacion='popParams', arg1=len(value.parametros))
-                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(popParams)
+                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual else 0).aniadirCodigo(popParams)
+
+                self.free_temp("temp_retorno")
+
             if stackFuncionesWasEmpty:
                 self.stackFunciones.remove_first()
+
             if firstPrimary == 'this' and self.class_name:
-                coso = ctx.getChildCount()-1
-                for index in range(1,ctx.getChildCount()):
+                coso = ctx.getChildCount() - 1
+                for index in range(1, ctx.getChildCount()):
                     node = ctx.getChild(index)
                     if isinstance(node, TerminalNodeImpl):
                         child = ctx.getChild(index).getText()
                         value = self.searchSomethingInAmbitos(f'{self.class_name}.{child}')
                         if child == '.':
                             continue
-                        # Llamar metodo
+
                         elif value:
                             if isinstance(value, Funcion):
                                 parametros = []
@@ -688,78 +810,29 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
                                         possibleParameter = self.visit(ctx.getChild(index))
                                         parametros.append(possibleParameter)
                                     index += 1
-                                # Pasar los parametros de la variable a la funcion
-                                for index in range(len(parametros)):
-                                    parametro = parametros[index]
-                                    parametroInstr = Cuadrupleta(operacion='pushParam',arg1=parametro)
-                                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(parametroInstr)
-                                # Crear una instruccion para el call y el retorno
-                                temporalRetorno = self.new_temp()
-                                callInstr = Cuadrupleta(resultado=temporalRetorno, operacion='call',arg1=f'{self.class_name}.{child}')
-                                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(callInstr)
-                                # Instruccion para pop params
-                                popParams = Cuadrupleta(operacion='popParams', arg1=len(value.parametros))
-                                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(popParams)
-                            # Atributos
-                            else:
-                                self.searchSomethingInAmbitos(f'{self.class_name}').aniadirAtributo(child)
-                                listaAtributos = self.searchSomethingInAmbitos(f'{self.class_name}').atributos
-                                # Crear un temporal para el valor del atributo
-                                # El object siempre sera la representacion del atributo y se pasara como parametro
-                                # Crear una instruccion para el calculo de la direccion del atributo
-                                direccionAtributo = Cuadrupleta(operacion='+',arg1=f'object', arg2=f'{16*listaAtributos.index(child)}',resultado=self.new_temp())
-                                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(direccionAtributo)
-                                temporalRetorno = f'*{direccionAtributo.resultado}'
-                        else:
-                            # Aniadir el parametro a la clase
-                            self.searchSomethingInAmbitos(f'{self.class_name}').aniadirAtributo(child)
-                            listaAtributos = self.searchSomethingInAmbitos(f'{self.class_name}').atributos
-                            # Crear un temporal para el valor del atributo
-                            # El object siempre sera la representacion del atributo y se pasara como parametro
-                            # Crear una instruccion para el calculo de la direccion del atributo
-                            direccionAtributo = Cuadrupleta(operacion='+',arg1=f'object', arg2=f'{16*listaAtributos.index(child)}',resultado=self.new_temp())
-                            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(direccionAtributo)
-                            temporalRetorno = f'*{direccionAtributo.resultado}'
-            # Es una variable o algo como una clase
-            else:
-                class_name = firstPrimary
-                # Cargar en el temporal lo que sea que vayamos resolviendo
-                temporalRetorno = self.new_temp()
-                resolucionInstruccion = Cuadrupleta(operacion='=',arg1=class_name,resultado=temporalRetorno)
-                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(resolucionInstruccion)
-                instancia = self.searchSomethingInAmbitos(class_name)
-                clase = instancia.tipo
-                for index in range(1,ctx.getChildCount()):
-                    child = None
-                    if isinstance(ctx.getChild(index), TerminalNodeImpl):
-                        child = ctx.getChild(index).getText()
-                    else:
-                        child = self.visit(ctx.getChild(index))
-                    funcionIdentifier = self.searchSomethingInAmbitos(f'{clase}.{child}')
-                    if funcionIdentifier and isinstance(funcionIdentifier, Metodo):
-                        # Se tiene que recorrer hasta que se encuentre a un ')' para saber que se terminaron los parametros
-                        parametros = []
-                        while (ctx.getChild(index).getText() != ')'):
-                            if not isinstance(ctx.getChild(index), TerminalNodeImpl):
-                                possibleParameter = self.visit(ctx.getChild(index))
-                                parametros.append(possibleParameter)
-                            index += 1
-                        # Pasar los parametros de la variable a la funcion
-                        for index in range(len(parametros)):
-                            parametro = parametros[index]
-                            parametroInstr = Cuadrupleta(operacion='pushParam',arg1=parametro)
-                            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(parametroInstr)
-                        # Crear una instruccion para el call y el retorno
-                        temporalRetorno = temporalRetorno
-                        pushParam = Cuadrupleta(operacion='pushParam',arg1=temporalRetorno)
-                        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(pushParam)
-                        callInstr = Cuadrupleta(resultado=temporalRetorno, operacion='call',arg1=f'{clase}_{child}')
-                        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(callInstr)
-                        # Instruccion para pop params
-                        popParams = Cuadrupleta(operacion='popParams', arg1=len(funcionIdentifier.parametros))
-                        self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).aniadirCodigo(popParams)
-            return temporalRetorno
 
+                                for parametro in parametros:
+                                    parametroInstr = Cuadrupleta(operacion='pushParam', arg1=parametro)
+                                    self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual else 0).aniadirCodigo(parametroInstr)
+
+                                temporalRetorno = self.new_temp("temp_retorno")
+                                callInstr = Cuadrupleta(resultado=temporalRetorno, operacion='call', arg1=f'{self.class_name}.{child}')
+                                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual else 0).aniadirCodigo(callInstr)
+
+                                popParams = Cuadrupleta(operacion='popParams', arg1=len(value.parametros))
+                                self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual else 0).aniadirCodigo(popParams)
+
+                                self.free_temp("temp_retorno")
+                        else:
+                            listaAtributos = self.searchSomethingInAmbitos(f'{self.class_name}').atributos
+                            direccionAtributo = Cuadrupleta(operacion='+', arg1='object',
+                                                            arg2=f'{16 * listaAtributos.index(child)}',
+                                                            resultado=self.new_temp("temp_direccion"))
+                            self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual else 0).aniadirCodigo(direccionAtributo)
+
+                            self.free_temp("temp_direccion")
+
+            return firstPrimary
 
     # Visit a parse tree produced by CompiScriptLanguageParser#primary.
     def visitPrimary(self, ctx:CompiScriptLanguageParser.PrimaryContext):
@@ -780,51 +853,73 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
 
 
     # Visit a parse tree produced by CompiScriptLanguageParser#function.
-    def visitFunction(self, ctx:CompiScriptLanguageParser.FunctionContext):
-        # Crear un nuevo ambito porque todas las funciones no fueron trabajadas en el semantico en la definicion si no en la ejecucion y aqui es al reves
+    def visitFunction(self, ctx: CompiScriptLanguageParser.FunctionContext):
+        # Crear un nuevo ámbito
         numAmbito = self.tablaDeAmbitos.size()
         newFunctionAmbito = Ambito(identificador=numAmbito, tablaDeSimbolos=HashMap())
         self.stackFunciones.insert(numAmbito)
         self.tablaDeAmbitos.put(numAmbito, newFunctionAmbito)
-        # Crear una instruccion para el label de la funcion
+
+        # Crear una instrucción para el label de la función
         nombreFuncion = ctx.IDENTIFIER().getText()
-        instruccion = Cuadrupleta(operacion='new_label',resultado=nombreFuncion if not self.class_name else f'{self.class_name}_{nombreFuncion}')
+        instruccion = Cuadrupleta(
+            operacion='new_label',
+            resultado=nombreFuncion if not self.class_name else f'{self.class_name}_{nombreFuncion}'
+        )
         self.tablaDeAmbitos.get(numAmbito).aniadirCodigo(instruccion)
-        # En caso que tenga herencia hay que ponerle eso
-        if nombreFuncion == 'init' and self.class_herency_name != None:
-            funcionInitHerencia:Metodo = self.searchSomethingInAmbitos(f'{self.class_herency_name}.init')
+
+        # Manejo de herencia
+        if nombreFuncion == 'init' and self.class_herency_name is not None:
+            funcionInitHerencia: Metodo = self.searchSomethingInAmbitos(f'{self.class_herency_name}.init')
             if funcionInitHerencia:
                 for parametro in funcionInitHerencia.parametros:
-                    parametroInstr = Cuadrupleta(operacion='pushParam',arg1=parametro)
+                    parametroInstr = Cuadrupleta(operacion='pushParam', arg1=parametro)
                     self.tablaDeAmbitos.get(numAmbito).aniadirCodigo(parametroInstr)
-                callInstr = Cuadrupleta(operacion='call',arg1=f'{self.class_herency_name}_init',resultado=self.new_temp())
+
+                # Crear un temporal para la llamada al método heredado
+                temp_call = self.new_temp("call_init_herencia_temp")
+                callInstr = Cuadrupleta(
+                    operacion='call',
+                    arg1=f'{self.class_herency_name}_init',
+                    resultado=temp_call
+                )
                 self.tablaDeAmbitos.get(numAmbito).aniadirCodigo(callInstr)
-                popInstr = Cuadrupleta(operacion='popParams', arg1=len(funcionInitHerencia.parametros))
+
+                # Crear instrucción para popParams
+                popInstr = Cuadrupleta(
+                    operacion='popParams',
+                    arg1=len(funcionInitHerencia.parametros)
+                )
                 self.tablaDeAmbitos.get(numAmbito).aniadirCodigo(popInstr)
+
+                # Liberar el registro temporal utilizado para la llamada
+                self.free_temp(temp_call)
+
         if self.class_name:
             nombreFuncion = f'{self.class_name}.{nombreFuncion}'
-            # Aniadir parametro de objeto
-            self.tablaDeAmbitos.get(numAmbito).aniadirCodigo(Cuadrupleta(operacion='param',arg1='object'))
-        simboloFuncion:Funcion = self.searchSomethingInAmbitos(nombreFuncion)
+            # Añadir parámetro de objeto
+            self.tablaDeAmbitos.get(numAmbito).aniadirCodigo(
+                Cuadrupleta(operacion='param', arg1='object')
+            )
+
+        # Manejo de parámetros de la función
+        simboloFuncion: Funcion = self.searchSomethingInAmbitos(nombreFuncion)
         for parametro in simboloFuncion.parametros:
-            parametroInstruccion = Cuadrupleta(operacion='param',arg1=parametro)
+            parametroInstruccion = Cuadrupleta(operacion='param', arg1=parametro)
             self.tablaDeAmbitos.get(numAmbito).aniadirCodigo(parametroInstruccion)
-        # if simboloFuncion:
-        # if ctx.parameters():
-            # for indexParameter in len(ctx.parameters()):
-                
-                
-        # instruccion = Cuadrupleta(operacion='BeginFunc', )
-        # Pushear 
-        # self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).codigo_pointer.insert(self.tablaDeAmbitos.get(self.ambitoActual if self.ambitoActual != None else 0).codigo_pointer.first())
-        # Generar el código de la función
+
+        # Generar el código del bloque de la función
         self.visit(ctx.block())
-        # Aniadir endfunc
+
+        # Añadir endFunc
         endFunc = Cuadrupleta(operacion='EndFunc')
         self.tablaDeAmbitos.get(numAmbito).aniadirCodigo(endFunc)
-        self.stackFunciones.remove_first()
-        self.tablaDeAmbitos.get(0).aniadirCodigoCompleto(self.tablaDeAmbitos.get(numAmbito).codigo, 0)
 
+        # Actualizar los ámbitos
+        self.stackFunciones.remove_first()
+        self.tablaDeAmbitos.get(0).aniadirCodigoCompleto(
+            self.tablaDeAmbitos.get(numAmbito).codigo, 0
+        )
 
     # Visit a parse tree produced by CompiScriptLanguageParser#parameters.
     def visitParameters(self, ctx:CompiScriptLanguageParser.ParametersContext):
