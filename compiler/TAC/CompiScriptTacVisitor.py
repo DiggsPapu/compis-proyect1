@@ -78,33 +78,38 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         """Liberar un registro asociado a un temporal."""
         self.register_manager.freeReg(var_name)
     
-    def generateTAC(self):
+    def generateTAC(self, output_file="compiler/TAC/Tac_output.txt"):
+        tac_lines = []
         for instruccion in self.tablaDeAmbitos.get(0).codigo:
             if instruccion.operacion == 'if':
-                print(f'    {instruccion.operacion} {instruccion.arg1} {instruccion.resultado}')
-            elif instruccion.operacion==None and re.search(r'goto', instruccion.resultado):
-                print(f'    {instruccion.resultado}')
+                tac_lines.append(f'    {instruccion.operacion} {instruccion.arg1} {instruccion.resultado}')
+            elif instruccion.operacion == None and re.search(r'goto', instruccion.resultado):
+                tac_lines.append(f'    {instruccion.resultado}')
             elif instruccion.operacion == 'new_label':
-                print(f'{instruccion.resultado}:')
+                tac_lines.append(f'{instruccion.resultado}:')
             elif instruccion.operacion == '=':
-                print(f'    {instruccion.resultado} = {instruccion.arg1}')
+                tac_lines.append(f'    {instruccion.resultado} = {instruccion.arg1}')
             elif instruccion.operacion == 'EndFunc':
-                print(f'    EndFunc')
+                tac_lines.append(f'    EndFunc')
             elif instruccion.operacion == 'print':
-                print(f'    print {instruccion.arg1}')
+                tac_lines.append(f'    print {instruccion.arg1}')
             elif instruccion.operacion == 'param':
-                print(f'    param {instruccion.arg1}')
+                tac_lines.append(f'    param {instruccion.arg1}')
             elif instruccion.operacion == 'call':
-                print(f'    {instruccion.resultado} = call {instruccion.arg1}')
+                tac_lines.append(f'    {instruccion.resultado} = call {instruccion.arg1}')
             elif instruccion.operacion == 'pushParam':
-                print(f'    pushParam {instruccion.arg1}')
+                tac_lines.append(f'    pushParam {instruccion.arg1}')
             elif instruccion.operacion == 'popParams':
-                print(f'    popParams {instruccion.arg1}')
+                tac_lines.append(f'    popParams {instruccion.arg1}')
             elif instruccion.operacion == 'return':
-                print(f'    return {instruccion.arg1}')
-            else: 
-                print(f'    {instruccion.resultado} = {instruccion.arg1} {instruccion.operacion if instruccion.operacion else ""} {instruccion.arg2 if instruccion.arg2 else ""}')
-        
+                tac_lines.append(f'    return {instruccion.arg1}')
+            else:
+                tac_lines.append(f'    {instruccion.resultado} = {instruccion.arg1} {instruccion.operacion if instruccion.operacion else ""} {instruccion.arg2 if instruccion.arg2 else ""}')
+
+        # Escribir las líneas formateadas en un archivo
+        with open(output_file, "w") as f:
+            f.write("\n".join(tac_lines))
+
     def visit(self, ctx):
         """
         This method is called each time a node is visited explicitly.
