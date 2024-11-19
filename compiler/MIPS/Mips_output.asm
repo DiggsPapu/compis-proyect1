@@ -37,12 +37,12 @@ slt $t0, $t0, $t0  # $t0 = (b > a)
 xori $t0, $t0, 1      # $t0 = not($t0)
 add $t1, $t0, $t4  # $t1 = "string" + variable2
 move $t0, $t1  # Assign $t1 to string
-# Unhandled operator: ==
-# Unhandled operator: !=
-# Unhandled operator: ==
-# Unhandled operator: !=
-# Unhandled operator: ==
-# Unhandled operator: !=
+seq $t0, $t0, $t3  # $t0 = (string == variable)
+sne $t0, $t3, $t0  # $t0 = (variable != 20)
+seq $t0, $t0, $t0  # $t0 = (50 == 0)
+sne $t0, $t0, $t0  # $t0 = ("hola" != 10)
+seq $t0, $t0, $t0  # $t0 = (true == false)
+sne $t0, $t0, $t0  # $t0 = (true != "demonios")
 slt $t0, $t6, $t4  # $t0 = (variable2 > 2)
 # Unhandled operator: and
 slt $t0, $t6, $t0  # $t0 = (20 > 2)

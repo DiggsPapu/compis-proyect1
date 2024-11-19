@@ -64,6 +64,10 @@ class TacToMipsVisitor:
                 return f"""slt {reg_result}, {reg_op2}, {reg_op1}  # {result} = (b > a)\nxori {reg_result}, {reg_result}, 1      # {result} = not({result})"""
             elif operator == ">=":
                 return f"""slt {reg_result}, {reg_op1}, {reg_op2}  # {result} = (b < a)\nxori {reg_result}, {reg_result}, 1      # {result} = not({result})"""
+            elif operator == "==":
+                return f"seq {reg_result}, {reg_op1}, {reg_op2}  # {result} = ({op1} == {op2})"
+            elif operator == "!=":
+                return f"sne {reg_result}, {reg_op1}, {reg_op2}  # {result} = ({op1} != {op2})"
             else:
                 return f"# Unhandled operator: {operator}"
 
