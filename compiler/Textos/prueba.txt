@@ -1,6 +1,4 @@
 var a;
 a=35;
-var b =15;
+var b ="prueba";
 
-var c;
-c= a + b -10;

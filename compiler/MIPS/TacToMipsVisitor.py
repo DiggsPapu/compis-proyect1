@@ -56,6 +56,8 @@ class TacToMipsVisitor:
                 return f"mul {reg_result}, {reg_op1}, {reg_op2}  # {result} = {op1} * {op2}"
             elif operator == "/":
                 return f"div {reg_op1}, {reg_op2}  # Divide {op1} / {op2}\nmflo {reg_result}  # Store result in {result}"
+            elif operator == "%":
+                return f"""div {reg_op1}, {reg_op2}  # Divide {op1} by {op2}\nmfhi {reg_result}         # {result} = {op1} % {op2} (remainder)"""
             elif operator == "<":
                 return f"slt {reg_result}, {reg_op1}, {reg_op2}  # {result} = ({op1} < {op2})"
             elif operator == ">":
@@ -68,6 +70,10 @@ class TacToMipsVisitor:
                 return f"seq {reg_result}, {reg_op1}, {reg_op2}  # {result} = ({op1} == {op2})"
             elif operator == "!=":
                 return f"sne {reg_result}, {reg_op1}, {reg_op2}  # {result} = ({op1} != {op2})"
+            elif operator == "and":
+                return f"and {reg_result}, {reg_op1}, {reg_op2}  # {result} = {op1} and {op2}"
+            elif operator == "or":
+                return f"or {reg_result}, {reg_op1}, {reg_op2}  # {result} = {op1} or {op2}"
             else:
                 return f"# Unhandled operator: {operator}"
 
