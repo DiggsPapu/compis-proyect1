@@ -41,6 +41,17 @@ class TacToMipsVisitor:
                 reg_value = self.register_manager.getReg(value)
                 return f"move {reg_var}, {reg_value}  # Assign {value} to {var}"
 
+        if "=" in instruction and len(parts) == 4:
+            # Manejar operaciones unarias: $t2 = -variable2
+            result, _, operator, operand = parts
+            reg_result = self.register_manager.getReg(result)
+            reg_operand = self.register_manager.getReg(operand)
+            
+            if operator == "-":
+                return f"neg {reg_result}, {reg_operand}  # {result} = -{operand}"
+            else:
+                return f"# Unhandled unary operator: {operator}"
+
         # Manejar operaciones aritméticas: result = op1 operator op2
         if "=" in instruction and len(parts) == 5:
             result, _, op1, operator, op2 = parts
