@@ -1,4 +1,8 @@
-globalVar1 = 20;
-print "Global Variable inside function: " + globalVar1;
-print globalVar1;
-print 5;
+fun countToTen() {
+    var i = 0;
+    for (i = 0; i < 10; i = i + 1) {
+        print i;
+    }
+}
+
+countToTen();

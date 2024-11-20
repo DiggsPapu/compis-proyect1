@@ -25,6 +25,7 @@ class TacToMipsVisitor:
                 self.mips_code.append(translated)
 
     def translate_instruction(self, instruction):
+        """Traducir una sola instrucción TAC a MIPS."""
         # Divide la instrucción respetando las comillas
         parts = re.findall(r'".*?"|\S+', instruction)
 
@@ -42,13 +43,12 @@ class TacToMipsVisitor:
             if value.startswith('"') and value.endswith('"'):
                 # Manejar cadenas
                 label = f"str_{value[1:-1].replace(' ', '_')}"  # Crear una etiqueta para la cadena
-                # print(f"str_{value[1:-1].replace(' ', '_')}")
                 if label not in self.string_table:
                     self.string_table[label] = value[1:-1]  # Guardar la cadena en la tabla de strings
                 reg = self.register_manager.getReg(var)
                 self.variable_types[var] = "string"  # Marcar como cadena
                 return f"la {reg}, {label}  # Load address of string {value} into {var}"
-            
+
             elif value.isdigit():  # Asignación de un valor constante
                 reg = self.register_manager.getReg(var)
                 self.variable_types[var] = "number"  # Marcar como número
@@ -68,31 +68,38 @@ class TacToMipsVisitor:
             result, _, operator, operand = parts
             reg_result = self.register_manager.getReg(result)
             reg_operand = self.register_manager.getReg(operand)
-            
+
             if operator == "-":
                 return f"neg {reg_result}, {reg_operand}  # {result} = -{operand}"
+            elif operator == "call":
+                return f"jal {operand}  # Saltar a la direccion de la funcion"
             else:
                 return f"# Unhandled unary operator: {operator}"
 
         # Manejar operaciones aritméticas: result = op1 operator op2
         if "=" in instruction and len(parts) == 5:
-            print(instruction)
             result, _, op1, operator, op2 = parts
+
+            # Manejar accesos a atributos (this.type, obj.attr)
+            if "." in op1:
+                base, attr = op1.split(".")
+                if base == "this":
+                    op1 = f"{base}.{attr}"
+                    if op1 not in self.variable_types:
+                        self.variable_types[op1] = "unknown"
+
+            if "." in op2:
+                base, attr = op2.split(".")
+                if base == "this":
+                    op2 = f"{base}.{attr}"
+                    if op2 not in self.variable_types:
+                        self.variable_types[op2] = "unknown"
+
             reg_result = self.register_manager.getReg(result)
             reg_op1 = self.register_manager.getReg(op1)
             reg_op2 = self.register_manager.getReg(op2)
 
-            # Registrar literales de cadenas
-            if op1.startswith('"') and op1.endswith('"') and op1 not in self.variable_types:
-                self.variable_types[op1] = "string"
-                self.addToStrTable(op1, reg_op1)
-
-
-            if op2.startswith('"') and op2.endswith('"') and op2 not in self.variable_types:
-                self.variable_types[op2] = "string"
-                self.addToStrTable(op2, reg_op2)
-
-            # Comprobar si los operandos son digitos
+            # Comprobar si los operandos son literales
             if op1.isdigit():
                 reg_op1 = self.register_manager.getReg("temp_op1")
                 self.mips_code.append(f"li {reg_op1}, {op1}  # Cargar literal {op1}")
@@ -106,8 +113,12 @@ class TacToMipsVisitor:
                 reg_op2 = self.register_manager.getReg(op2)
 
             if operator == "+":
-                if self.variable_types[op1] == "string" or self.variable_types[op2] == "string": #Concatenación
-                    return self.handle_string_concatenation(reg_result, reg_op1, self.variable_types[op1], reg_op2, self.variable_types[op2])
+                # Detectar si op1 u op2 son cadenas
+                is_op1_string = self.variable_types.get(op1, None) == "string"
+                is_op2_string = self.variable_types.get(op2, None) == "string"
+
+                if is_op1_string or is_op2_string:  # Manejar concatenación
+                    return self.handle_string_concatenation(result, op1, op2)
                 else:
                     return f"add {reg_result}, {reg_op1}, {reg_op2}  # {result} = {op1} + {op2}"
             elif operator == "-":
@@ -134,6 +145,9 @@ class TacToMipsVisitor:
                 return f"and {reg_result}, {reg_op1}, {reg_op2}  # {result} = {op1} and {op2}"
             elif operator == "or":
                 return f"or {reg_result}, {reg_op1}, {reg_op2}  # {result} = {op1} or {op2}"
+            elif operator == "call":
+                function_name = parts[1]
+                return f"""# Llamar a la funcion {function_name}\njal {function_name}  # Salta a la dirección de la función"""
             else:
                 return f"# Unhandled operator: {operator}"
 
@@ -151,7 +165,6 @@ class TacToMipsVisitor:
         # Manejar impresión
         if parts[0] == "print":
             value = parts[1]
-            self.newLine()
             return self.handle_print(value)
 
         # Manejar funciones
@@ -169,11 +182,22 @@ class TacToMipsVisitor:
             return_value = parts[1]
             reg = self.register_manager.getReg(return_value)
             return f"""move $v0, {reg}  # Move return value to $v0\njr $ra  # Return {return_value}"""
-            
+
         # Manejar EndFunc
         if parts[0] == "EndFunc":
             return """# End of function\nlw $ra, 4($sp)  # Restore return address\nlw $fp, 0($sp)  # Restore frame pointer\naddiu $sp, $sp, 8  # Adjust stack pointer\njr $ra  # Return to caller"""
+
+        # Manejar `pushParam`
+        if parts[0] == "pushParam":
+            param = parts[1]
+            reg = self.register_manager.getReg(param)
+            return f"""# Guardar parametro en la pila\naddi $sp, $sp, -4  # Reservar espacio en la pila\nsw {reg}, 0($sp)  # Guardar {param} en la pila"""
         
+        # Manejar `popParams`
+        if parts[0] == "popParams":
+            num_params = int(parts[1])
+            return f"""# Liberar parametros de la pila\naddi $sp, $sp, {4 * num_params}  # Ajustar la pila para {num_params} parámetros"""
+
         # Instrucción no manejada
         return f"# Unhandled TAC operation: {instruction}"
 
@@ -189,7 +213,7 @@ class TacToMipsVisitor:
             return f"""la $a0, {value}  # Cargar dirección de cadena {value}\nli $v0, 4  # syscall para imprimir cadena\nsyscall"""
 
         elif value.isdigit():  # Si es un número inmediato: print 10
-            return f"""li $a0, {value}  # Cargar valor inmediato {value}\nli $v0, 1  # syscall para imprimir entero\nsyscall"""
+            return f"""li $a0, {value}  # Cargar valor inmediato {value}\nli $v0, 1  # syscall para imprimir Entero\nsyscall"""
 
         elif value.startswith("$t"):  # Si es un registro temporal con concatenación
             return f"""move $a0, {value}  # Mover valor de {value} a $a0\nli $v0, 4  # syscall para imprimir concatenación\nsyscall"""
