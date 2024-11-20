@@ -1,10 +1,6 @@
 main:
-    a = 0
-    print a
-    $t0 = a + 5
-    b = $t0
-    a = 15
-    $t0 = a + b
-    c = $t0
-    print b
-    print c
+    globalVar1 = 20
+    $t0 = "Global Variable inside function: " + globalVar1
+    print $t0
+    print globalVar1
+    print 5

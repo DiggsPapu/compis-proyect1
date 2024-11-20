@@ -1,9 +1,4 @@
-var a= 0;
-
-print a;
-
-var b = a + 5;
-a= 15;
-var c= a + b;
-print b;
-print c;
+globalVar1 = 20;
+print "Global Variable inside function: " + globalVar1;
+print globalVar1;
+print 5;

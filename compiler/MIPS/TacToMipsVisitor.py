@@ -7,6 +7,7 @@ class TacToMipsVisitor:
         self.mips_code = []
         self.register_manager = register_manager
         self.string_table = {}  # Diccionario para almacenar strings únicos
+        self.variable_types = {}
 
     def read_tac_instructions(self):
         """Leer las instrucciones TAC desde el archivo de texto."""
@@ -24,21 +25,39 @@ class TacToMipsVisitor:
                 self.mips_code.append(translated)
 
     def translate_instruction(self, instruction):
-        """Traducir una sola instrucción TAC a MIPS."""
-        parts = instruction.split()
+        # Divide la instrucción respetando las comillas
+        parts = re.findall(r'".*?"|\S+', instruction)
+
         if not parts:
             return ""  # Ignorar líneas vacías
 
         # Detectar etiquetas
-        if ":" in instruction:
+        if ":" in instruction and not re.search(r'".*:.*"', instruction):
             return instruction
 
         # Manejar asignaciones simples: var = value
         if "=" in instruction and len(parts) == 3:
             var, _, value = parts
-            if value.isdigit():  # Asignación de un valor constante
+
+            if value.startswith('"') and value.endswith('"'):
+                # Manejar cadenas
+                label = f"str_{value[1:-1].replace(' ', '_')}"  # Crear una etiqueta para la cadena
+                # print(f"str_{value[1:-1].replace(' ', '_')}")
+                if label not in self.string_table:
+                    self.string_table[label] = value[1:-1]  # Guardar la cadena en la tabla de strings
                 reg = self.register_manager.getReg(var)
+                self.variable_types[var] = "string"  # Marcar como cadena
+                return f"la {reg}, {label}  # Load address of string {value} into {var}"
+            
+            elif value.isdigit():  # Asignación de un valor constante
+                reg = self.register_manager.getReg(var)
+                self.variable_types[var] = "number"  # Marcar como número
                 return f"li {reg}, {value}  # Assign {value} to {var}"
+            elif value in ["true", "false"]:
+                # Manejar booleanos
+                boolean_value = 1 if value == "true" else 0
+                self.variable_types[var] = "boolean"  # Marcar como número
+                return f"li {self.register_manager.getReg(var)}, {boolean_value}  # Assign boolean {value}"
             else:  # Asignación de una variable
                 reg_var = self.register_manager.getReg(var)
                 reg_value = self.register_manager.getReg(value)
@@ -57,12 +76,23 @@ class TacToMipsVisitor:
 
         # Manejar operaciones aritméticas: result = op1 operator op2
         if "=" in instruction and len(parts) == 5:
+            print(instruction)
             result, _, op1, operator, op2 = parts
             reg_result = self.register_manager.getReg(result)
             reg_op1 = self.register_manager.getReg(op1)
             reg_op2 = self.register_manager.getReg(op2)
 
-            # Comprobar si los operandos son literales
+            # Registrar literales de cadenas
+            if op1.startswith('"') and op1.endswith('"') and op1 not in self.variable_types:
+                self.variable_types[op1] = "string"
+                self.addToStrTable(op1, reg_op1)
+
+
+            if op2.startswith('"') and op2.endswith('"') and op2 not in self.variable_types:
+                self.variable_types[op2] = "string"
+                self.addToStrTable(op2, reg_op2)
+
+            # Comprobar si los operandos son digitos
             if op1.isdigit():
                 reg_op1 = self.register_manager.getReg("temp_op1")
                 self.mips_code.append(f"li {reg_op1}, {op1}  # Cargar literal {op1}")
@@ -76,8 +106,8 @@ class TacToMipsVisitor:
                 reg_op2 = self.register_manager.getReg(op2)
 
             if operator == "+":
-                if self.is_string(reg_op1) or self.is_string(reg_op2):
-                    return self.handle_string_concatenation(reg_result, reg_op1, reg_op2)
+                if self.variable_types[op1] == "string" or self.variable_types[op2] == "string": #Concatenación
+                    return self.handle_string_concatenation(reg_result, reg_op1, self.variable_types[op1], reg_op2, self.variable_types[op2])
                 else:
                     return f"add {reg_result}, {reg_op1}, {reg_op2}  # {result} = {op1} + {op2}"
             elif operator == "-":
@@ -121,6 +151,7 @@ class TacToMipsVisitor:
         # Manejar impresión
         if parts[0] == "print":
             value = parts[1]
+            self.newLine()
             return self.handle_print(value)
 
         # Manejar funciones
@@ -148,71 +179,127 @@ class TacToMipsVisitor:
 
     def handle_print(self, value):
         """Generar código MIPS para una instrucción print."""
-        return f"""li $v0, 1\nmove $a0, {self.register_manager.getReg(value)}\nsyscall"""
+        if value.startswith('"') and value.endswith('"'):  # Si es una cadena: print "hola"
+            label = f"str_{value[1:-1].replace(' ', '_')}"  # Crear etiqueta para la cadena
+            if label not in self.string_table:
+                self.string_table[label] = value[1:-1]  # Guardar la cadena en .data
+            return f"""la $a0, {label}  # Cargar dirección de cadena {value}\nli $v0, 4  # syscall para imprimir cadena\nsyscall"""
+
+        elif value in self.string_table:  # Si es una variable que apunta a una cadena
+            return f"""la $a0, {value}  # Cargar dirección de cadena {value}\nli $v0, 4  # syscall para imprimir cadena\nsyscall"""
+
+        elif value.isdigit():  # Si es un número inmediato: print 10
+            return f"""li $a0, {value}  # Cargar valor inmediato {value}\nli $v0, 1  # syscall para imprimir entero\nsyscall"""
+
+        elif value.startswith("$t"):  # Si es un registro temporal con concatenación
+            return f"""move $a0, {value}  # Mover valor de {value} a $a0\nli $v0, 4  # syscall para imprimir concatenación\nsyscall"""
+
+        elif value in ["true", "false"]:  # Si es un booleano: print true
+            bool_value = 1 if value == "true" else 0
+            return f"""li $a0, {bool_value}  # Cargar valor booleano {value}\nli $v0, 1  # syscall para imprimir entero\nsyscall"""
+
+        else:  # Si es una variable
+            reg = self.register_manager.getReg(value)
+            if self.variable_types.get(value) == "string":  # Si la variable es una cadena
+                return f"""move $a0, {reg}  # Mover dirección de cadena {value} a $a0\nli $v0, 4  # syscall para imprimir cadena\nsyscall"""
+            else:  # Variable numérica o desconocida
+                return f"""move $a0, {reg}  # Mover valor de {value} a $a0\nli $v0, 1  # syscall para imprimir entero\nsyscall"""
 
     def handle_call(self, function_name):
         """Generar código MIPS para una instrucción call."""
         return f"jal {function_name}"
 
-    def handle_string_concatenation(self, result, op1, op2):
+    def handle_string_concatenation(self, result, op1, op1Type, op2, op2Type):
         """Generar MIPS para concatenación de cadenas."""
         code = []
 
-        # Manejar operandos que son cadenas o variables
-        if self.is_string(op1):
-            code.append(f'la $t0, str_{op1[1:-1]}  # Cargar cadena "{op1}"')
-        else:
+        # Manejar operandos que pueden ser literales o variables
+        if op1.startswith('"') and op1.endswith('"'):  # Si op1 es un literal
+            label1 = f"str_{op1[1:-1].replace(' ', '_')}"
+            if label1 not in self.string_table:
+                self.string_table[label1] = op1[1:-1]
+            code.append(f"la $t0, {label1}  # Cargar dirección de cadena {op1}")
+        else:  # Si op1 es una variable
             reg_op1 = self.register_manager.getReg(op1)
-            code.append(f'move $t0, {reg_op1}  # Cargar variable {op1}')
+            code.append(f"move $t0, {reg_op1}  # Cargar {op1}")
 
-        if self.is_string(op2):
-            code.append(f'la $t1, str_{op2[1:-1]}  # Cargar cadena "{op2}"')
-        else:
+        if op2.startswith('"') and op2.endswith('"'):  # Si op2 es un literal
+            label2 = f"str_{op2[1:-1].replace(' ', '_')}"
+            if label2 not in self.string_table:
+                self.string_table[label2] = op2[1:-1]
+            code.append(f"la $t1, {label2}  # Cargar dirección de cadena {op2}")
+        else:  # Si op2 es una variable
             reg_op2 = self.register_manager.getReg(op2)
-            code.append(f'move $t1, {reg_op2}  # Cargar variable {op2}')
+            code.append(f"move $t1, {reg_op2}  # Cargar {op2}")
 
-        # Concatenar las cadenas
-        code.append('move $a0, $t0  # Copiar primera cadena al buffer')
-        code.append('li $v0, 4  # syscall para imprimir cadena')
-        code.append('syscall')
-        code.append('move $a0, $t1  # Copiar segunda cadena al buffer')
-        code.append('li $v0, 4  # syscall para imprimir cadena')
-        code.append('syscall')
+        # Reservar espacio para la cadena resultante
+        result_label = f"str_{result}"
+        if result_label not in self.string_table:
+            self.string_table[result_label] = ".space 256"  # Inicializar como vacío
+        code.append(f"la $t2, {result_label}  # Cargar dirección para resultado")
 
-        # Devolver la referencia concatenada (puede ser un registro o memoria)
+        #tipos de impresión primer operador
+        if op1Type == "string":
+            op1Tam = 4
+        else: #Impresion de booleanos y enteros
+            op1Tam = 1
+
+        #tipos de impresión segundo operador
+        if op2Type == "string":
+            op2Tam = 4
+        else: #Impresion de booleanos y enteros
+            op2Tam = 1
+
+        # Concatenar cadenas
+        code.append(f"""\n\n# Concatenación de cadenas\nmove $a0, $t0  # Primera cadena\nli $v0, {op1Tam}      # syscall para imprimir cadena\nsyscall""")
+        code.append(f"""\nli $a0, 32     # Cargar el valor ASCII del espacio en blanco en $a0\nli $v0, 11     # syscall para imprimir un carácter\nsyscall        # Llamada al sistema""")
+        code.append(f"""\nmove $a0, $t1  # Segunda cadena\nli $v0, {op2Tam}      # syscall para imprimir cadena\nsyscall""")
+
+        # Almacenar la dirección del resultado en el registro
         reg_result = self.register_manager.getReg(result)
-        code.append(f'move {reg_result}, $a0  # Guardar resultado en {result}')
+        code.append(f"move {reg_result}, $t2  # Guardar dirección del resultado en {result}")
 
         return "\n".join(code)
 
     def get_strings(self):
         """Extraer cadenas únicas del TAC."""
-        strings = set()
         for line in self.instructions:
             if '"' in line:
-                match = re.findall(r'"(.*?)"', line)
-                strings.update(match)
-        return strings
+                matches = re.findall(r'"(.*?)"', line)
+                for match in matches:
+                    label = f'str_{match.replace(" ", "_")}'
+                    if label not in self.string_table:
+                        self.string_table[label] = match
+        return self.string_table
 
     def is_string(self, value):
-        """
-        Verifica si un valor es una cadena de texto.
-        Una cadena se define como un valor entre comillas dobles.
-        """
-        if isinstance(value, str) and (value.startswith('"') and value.endswith('"')):
-            return True
-        # Si el valor está en la tabla de cadenas (en caso de tener una tabla de strings)
-        if value in self.string_table:
-            return True
-        return False
+        """Verifica si un valor es una cadena de texto."""
+        return isinstance(value, str) and value.startswith('"') and value.endswith('"')
 
+    def addToStrTable(self, value, regName):
+        value = f"{value[1:-1].replace(',', ' ')}"
+        value = f"{value.replace(':', ' ')}"
+        value = value.strip()
+        label1 = f"str_{value.replace(' ', '_')}"
+
+        if label1 not in self.string_table:
+            self.string_table[label1] = value
+
+        self.mips_code.append(f"la {regName}, {label1}  # Cargar direccion de cadena {value}")
+
+    def newLine(self):
+        self.mips_code.append(F"""li $a0, 10\nli $v0, 11\nsyscall""")
     def save_mips_code(self, output_file):
         """Guardar el código MIPS generado en un archivo."""
         with open(output_file, "w") as file:
             # Sección de datos para almacenar cadenas
             file.write(".data\n")
-            for string in self.get_strings():
-                file.write(f'str_{string}: .asciiz "{string}"\n')
+            for label, string in self.string_table.items():
+                if ".space" in string:
+                    file.write(f"{label}: {string}\n")
+                    continue
+
+                file.write(f'{label}: .asciiz "{string}"\n')
 
             # Sección de texto para el código MIPS
             file.write(".text\n")
