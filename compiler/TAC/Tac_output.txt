@@ -1,6 +1,16 @@
 main:
+    globalVar1 = 10
+    globalVar2 = "Global String"
+    globalBoolean = true
     globalVar1 = 20
     $t0 = "Global Variable inside function: " + globalVar1
     print $t0
-    print globalVar1
-    print 5
+    print 20
+    $t1 = 10 % 2
+    $t1 = $t1 == 0
+    if $t1 goto L1
+    goto L0
+L1:
+    print "is even."
+    goto L0
+L0:

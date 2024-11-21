@@ -58,6 +58,10 @@ class TacToMipsVisitor:
                 boolean_value = 1 if value == "true" else 0
                 self.variable_types[var] = "boolean"  # Marcar como número
                 return f"li {self.register_manager.getReg(var)}, {boolean_value}  # Assign boolean {value}"
+            elif value == "null":  # Asignación de null
+                reg = self.register_manager.getReg(var)
+                self.variable_types[var] = "null"
+                return f"move {reg}, $zero  # Assign null to {var}"
             else:  # Asignación de una variable
                 reg_var = self.register_manager.getReg(var)
                 reg_value = self.register_manager.getReg(value)
@@ -71,6 +75,8 @@ class TacToMipsVisitor:
             
             if operator == "-":
                 return f"neg {reg_result}, {reg_operand}  # {result} = -{operand}"
+            elif operator == "call":
+                return f"""jal {operand}  # Llamar a la función {operand}"""
             else:
                 return f"# Unhandled unary operator: {operator}"
 
@@ -158,6 +164,17 @@ class TacToMipsVisitor:
         if parts[0] == "call":
             function_name = parts[1]
             return self.handle_call(function_name)
+
+        if parts[0] == "popParams":
+            num_params = int(parts[1]) * 4  # Cada parámetro ocupa 4 bytes en la pila
+            return f"addi $sp, $sp, {num_params}  # Liberar {num_params} bytes de la pila"
+            
+        if parts[0] == "pushParam":
+            param = parts[1]
+            reg = self.register_manager.getReg(param)
+            return f"""# Push parameter {param} to the stack
+        addi $sp, $sp, -4  # Reservar espacio en la pila
+        sw {reg}, 0($sp)  # Almacenar el valor de {param} en la pila"""
 
         if parts[0] == "param":
             param = parts[1]
