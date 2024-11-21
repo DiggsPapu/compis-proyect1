@@ -64,8 +64,8 @@ def main(argv):
     register_manager = RegisterManager()
 
     # Leer el código desde stdin (el código que se envía desde Django)
-    input_stream = FileStream(f"{os.getcwd()}/compiler/Textos/prueba.txt")
-    # input_stream = InputStream(sys.stdin.read())
+    # input_stream = FileStream(f"{os.getcwd()}/compiler/Textos/prueba.txt")
+    input_stream = InputStream(sys.stdin.read())
     lexer = CompiScriptLanguageLexer(input_stream)
     stream = CommonTokenStream(lexer)
     parser = CompiScriptLanguageParser(stream)
@@ -87,10 +87,10 @@ def main(argv):
     # Obtener las instrucciones TAC generadas
     tac_visitor.generateTAC()
     tac_instructions = tac_visitor.instructions  # Lista de instrucciones TAC
-
-    mips_visitor = TacToMipsVisitor("compiler/TAC/Tac_output.txt", register_manager)
+    
+    mips_visitor = TacToMipsVisitor("../../compiler/TAC/Tac_output.txt", register_manager)
     mips_visitor.read_tac_instructions()
     mips_visitor.translate()
-    mips_visitor.save_mips_code("compiler/MIPS/Mips_output.asm")
+    mips_visitor.save_mips_code("../../compiler/MIPS/Mips_output.asm")
 if __name__ == '__main__':
     main(sys.argv)

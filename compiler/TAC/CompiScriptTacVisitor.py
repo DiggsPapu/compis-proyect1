@@ -83,7 +83,7 @@ class CompiScriptTacVisitor(ParseTreeVisitor):
         """Liberar un registro asociado a un temporal."""
         self.register_manager.freeReg(var_name)
     
-    def generateTAC(self, output_file="compiler/TAC/Tac_output.txt"):
+    def generateTAC(self, output_file="../../compiler/TAC/Tac_output.txt"):
         tac_lines = []
         for instruccion in self.tablaDeAmbitos.get(0).codigo:
             if instruccion.operacion == 'if':
