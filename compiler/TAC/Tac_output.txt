@@ -1,0 +1,6 @@
+main:
+    globalVar1 = 20
+    $t0 = "Global Variable inside function: " + globalVar1
+    print $t0
+    print globalVar1
+    print 5

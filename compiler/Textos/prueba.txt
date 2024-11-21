@@ -1,0 +1,4 @@
+globalVar1 = 20;
+print "Global Variable inside function: " + globalVar1;
+print globalVar1;
+print 5;
